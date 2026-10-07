@@ -119,5 +119,6 @@ filesystem state is not implemented.
 Hashes detect changed objects, manifests and ancestry; they are not signatures
 or authorization. Someone with write access to the whole store can remove or
 replace history. [Hosted accounts and remote synchronization](native-hosting.md) now protect a
-private shared workspace. Signed checkpoints, named mutable branch heads,
-automatic merges and review workflows remain platform work.
+private projects through explicit membership and role ceilings. See [native collaboration](native-collaboration.md) for branch heads, bounded
+diffs/merges and divergent DAG synchronization. Signed checkpoints, full hosted merge
+execution and review workflows remain platform work.

@@ -37,6 +37,8 @@ export type Env = {
   NATIVE_VERIFIER_BINARY_HASH?: string;
   NATIVE_VERIFICATIONS: Workflow<import('./verification').VerificationJob>;
   DB: D1Database; ARTIFACTS: R2Bucket;
+  BACKUPS?:R2Bucket; RESTORE_STORAGE?:R2Bucket; RESTORE_DB?:D1Database;
+  RESTORE_COORDINATORS?:DurableObjectNamespace; BACKUP_WORKFLOW?:Workflow<import('./backups').BackupJob>;
   COORDINATORS: DurableObjectNamespace;
   SANDBOXES: DurableObjectNamespace<import('./sandbox').EvaluationSandbox>;
   EVALUATIONS: Queue<Job>; FINALIZATIONS: Queue<FinalizeJob>;

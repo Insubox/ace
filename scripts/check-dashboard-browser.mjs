@@ -3,6 +3,7 @@
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { writeFile,readFile } from 'node:fs/promises';
+import {nativeHash} from '../cloud/scripts/native-wire.mjs';
 import { settings,api } from '../cloud/scripts/client.mjs';
 
 const config=settings(),name=process.argv[2]??'native-platform-v030';
@@ -15,7 +16,7 @@ const csp=process.env.ACE_DASHBOARD_HTML?deployedCsp.replace(/(?:font-src data:;
 assert.match(csp,/font-src data:/);
 const fixtureToken='browser-fixture-not-a-production-credential';
 const setupCode='0'.repeat(64),password='isolated-browser-test-password';
-let setupCalls=0,createCalls=0,recoveryCalls=0,memberCalls=0,role='admin',liveReads=0,corruptObjects=false;
+let setupCalls=0,createCalls=0,recoveryCalls=0,memberCalls=0,branchCalls=0,branchFixture={schema_version:1,events:[],heads:{},tip:null},role='admin',liveReads=0,corruptObjects=false;
 const server=createServer(async(req,res)=>{
   try{
     const url=new URL(req.url,'http://localhost');
@@ -46,10 +47,11 @@ const server=createServer(async(req,res)=>{
     if(url.pathname==='/v1/auth/audit')return send(200,{events:[{recorded_at:Date.now(),actor:'account:fixture-admin',action:'recovery.issue',username:'fixture-reader'}]});
     if(url.pathname===`/v1/projects/${name}/audit`)return send(200,{events:[{recorded_at:Date.now(),actor:'account:fixture-admin',action:'member.grant',resource:'fixture-reader:reader'}]});
     if(url.pathname===`/v1/projects/${name}/members`){if(req.method==='POST'){assert.equal(role,'admin');memberCalls++;}return send(200,{members:[{username:'fixture-admin',role:'owner'},{username:'fixture-reader',role:'reader'}]});}
+    if(url.pathname===`/v1/stores/${name}/refs`){if(req.method==='POST'){assert.equal(role,'admin');const args=JSON.parse(input);assert.equal(args.branch,'browser-branch');assert.equal(args.expected,null);assert.equal(args.content_hash,nativeHash([1,args.sequence,args.previous,args.branch,args.expected,args.target]));branchCalls++;branchFixture={schema_version:1,events:[args],heads:{[args.branch]:args.target},tip:args.content_hash};}return send(200,branchFixture);}
     // Only read deployed store data. No production account or source is mutated.
     if(req.method==='GET'&&(url.pathname==='/v1/stores'||url.pathname.startsWith(`/v1/stores/${name}`))){
       liveReads++;const response=await api(config,url.pathname,{signal:AbortSignal.timeout(30000)});
-      if(url.pathname==='/v1/stores'){const data=await response.json();for(const store of data.stores)store.project_role=role==='admin'?'owner':'reader';return send(200,data);}
+      if(url.pathname==='/v1/stores'){const data=await response.json();data.stores=data.stores.filter(s=>s.name===name);for(const store of data.stores)store.project_role=role==='admin'?'owner':'reader';return send(200,data);}
       res.writeHead(200,{'content-type':response.headers.get('content-type')});return res.end(corruptObjects&&url.pathname.includes('/objects/')?Buffer.from('corrupted fixture bytes'):Buffer.from(await response.arrayBuffer()));
     }
     send(404,{error:'fixture route not found'});
@@ -119,6 +121,7 @@ try{
   }
   await call('Emulation.setDeviceMetricsOverride',{width:1366,height:1050,deviceScaleFactor:1,mobile:false});
   await evaluate("document.getElementById('nav-versions').click()");
+  await fill({'branch-name':'browser-branch'});await submit('branch-form');await until("document.getElementById('branch-heads').textContent.includes('browser-branch')");assert.equal(branchCalls,1);
   assert.match(await evaluate("document.getElementById('version-count').textContent"),/6 of 6/);
   const sourceVersion='330e16358a8b4299e5b9b8f1ba5ed170813e07c24e9a0de879b4665a9226886f';
   await evaluate(`[...document.querySelectorAll('#versions button')].find(n=>n.textContent===${JSON.stringify(sourceVersion.slice(0,12))}).click()`);
@@ -146,5 +149,5 @@ try{
   await call('Page.navigate',{url:`${origin}/recover#recover=${setupCode}&user=fixture-admin`});await until("document.getElementById('recovery')&&!document.getElementById('recovery').hidden");assert.equal(await evaluate('location.hash'),'');
   await fill({'recover-password':password,'recover-confirm':password});await submit('recover-form');await until("document.getElementById('recover-result').textContent.includes('Password updated')");assert.equal(recoveryCalls,1);assert.equal(await evaluate("document.getElementById('recover-password').value"),'');
   assert.deepEqual(exceptions,[]);assert.deepEqual(violations,[]);
-  console.log(JSON.stringify({browser:'Chromium',deployed_html:!process.env.ACE_DASHBOARD_HTML,observatory_main_views:4,mobile_layout:true,loaded_observations:18,winning_and_failed_source:true,csp_violations:0,corrupt_objects_refused:true,logout_clears_private_views:true,server_verification:process.env.ACE_EXPECT_SERVER_VERIFICATION==='1',deployed_native_versions:6,deployed_read_requests:liveReads,source_hash_verified:true,inert_source:true,setup_fragment_removed:true,account_forms:'isolated_fixture_only',password_confirmation:true,project_team_form:true,recovery_fragment_removed:true,recovery_form:true,admin_and_reader_views:true,production_mutations:0}));
+  console.log(JSON.stringify({browser:'Chromium',deployed_html:!process.env.ACE_DASHBOARD_HTML,observatory_main_views:4,mobile_layout:true,loaded_observations:18,winning_and_failed_source:true,csp_violations:0,corrupt_objects_refused:true,logout_clears_private_views:true,server_verification:process.env.ACE_EXPECT_SERVER_VERIFICATION==='1',deployed_native_versions:6,deployed_read_requests:liveReads,source_hash_verified:true,inert_source:true,setup_fragment_removed:true,account_forms:'isolated_fixture_only',password_confirmation:true,project_team_form:true,native_branch_form:true,recovery_fragment_removed:true,recovery_form:true,admin_and_reader_views:true,production_mutations:0}));
 }finally{socket.close();server.closeAllConnections();await new Promise(done=>server.close(done));}

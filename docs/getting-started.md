@@ -176,10 +176,15 @@ args = ["mcp", "--workspace", "/absolute/path/to/ace-workspace"]
 ```
 
 On Windows use the absolute path to `ace.exe` and escape backslashes in JSON.
-The client starts ACE, performs the MCP handshake and discovers twenty-five tools:
+The client starts ACE, performs the MCP handshake and discovers thirty tools:
 
 | Tool | Purpose |
 | --- | --- |
+| `ace_store_refs` | Verify native branch heads and reference history |
+| `ace_store_branch` | Create/advance a branch with an explicit expectation |
+| `ace_store_diff` | Compare version files and bounded text edits |
+| `ace_store_merge` | Merge ancestry and preserve unresolved conflicts |
+| `ace_store_fetch` | Import verified native DAG nodes between local stores |
 | `ace_store_save` | Retain winner source, evidence and all learning in native ACE versions |
 | `ace_store_log` | Verify native objects, version ancestry and ordered history |
 | `ace_store_checkout` | Restore exact files from a version into a fresh folder |

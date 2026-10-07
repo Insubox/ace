@@ -31,12 +31,14 @@ Additional Cells, the IDE extension and production promotion remain unfinished. 
 local technical preview of ACE; development continues toward the architecture.
 An interactive offline inspector displays verified source, candidate outcomes,
 evidence, policy and retained learning: `ace inspect ace-demo/run --output ace-report.html`.
-The same executable exposes twenty-five [local MCP tools](docs/getting-started.md#connect-a-development-agent-through-mcp)
+The same executable exposes thirty [local MCP tools](docs/getting-started.md#connect-a-development-agent-through-mcp)
 so development agents can generate populations, run experiments and inspect
 verified evidence inside an explicitly selected workspace. Agents can submit their own
 WAT through `ace_propose`; the declared provider metadata remains caller asserted.
 ACE owns a [native version engine](docs/native-versions.md) for source snapshots,
 version ancestry, verified winners and learning from all evaluated versions.
+[Native branches, diffs and merges](docs/native-collaboration.md) preserve exact
+source and explicit conflicts; remote sync reconciles version DAGs by identity.
 Git export remains an optional compatibility adapter. See [agent proposals and Git history](docs/agents-and-git.md).
 [Bounded agent campaigns](docs/agent-campaigns.md) feed verified winning source and
 positive/negative learning into subsequent proposals, retain generator faults,
@@ -47,7 +49,9 @@ The deployed private preview is at [ACE](https://ace-control-plane.nex-insure.wo
 its data requires an ACE account. The [Observatory](docs/observatory.md) is the main
 interface for native versions, completed trials and learning from winners and losers.
 [Independent server verification](docs/server-verification.md) checks uploaded
-evaluations and retains separate server evidence. Local experiments remain account-free.
+evaluations and retains separate server evidence. [Private project permissions](docs/native-hosting.md)
+and account recovery protect hosted access. [Automated backups](docs/backups.md)
+restore into isolated resources for verification. Local experiments remain account-free.
 
 The [0.3.0 delivery record](docs/local-delivery-0.3.md) distinguishes tested behavior
 from the remaining architecture and remote platform checks.
@@ -78,7 +82,7 @@ See its [real cloud results and model comparison](docs/diverse-validation.md).
   status, Champion, knowledge, explanations and replay, plus offline generation,
   self-contained demos and successive-generation campaigns. Additional schemas
   describe generation, evolution, proposals, frozen sources and Git snapshots.
-  The full schema set totals 44, including the native version engine, verified memory
+  The full schema set totals 45, including the native version engine, verified memory
   and agent campaign documents.
 - `ace-runner`: import-free WASM execution with fuel and linear-memory limits,
   an independent host Oracle, real measurements, Pareto elites, conservative local

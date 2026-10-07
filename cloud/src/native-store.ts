@@ -58,3 +58,13 @@ export async function readFile(env:Env,name:string,kind:'objects'|'versions',id:
   if(kind==='versions')return json(await loadVersion(env,name,id));
   const object=await env.ARTIFACTS.get(prefix(name)+`objects/${hash.parse(id)}`);if(!object)throw new HttpError(404,'native object not found');const bytes=new Uint8Array(await object.arrayBuffer());if(await sha256(bytes)!==id)throw new HttpError(503,'native object corrupted');return new Response(bytes,{headers:{'content-type':'application/octet-stream'}});
 }
+
+export const refSchema=z.strictObject({schema_version:z.literal(1),sequence:z.number().int().min(1).max(1024),previous:hash.nullable(),branch:storeName,expected:hash.nullable(),target:hash,content_hash:hash});
+export type NativeRef=z.infer<typeof refSchema>;
+export async function readRefs(env:Env,name:string){return json(await coordinate(env,'NATIVE-STORE-'+storeName.parse(name),'native-refs'));}
+export async function appendRef(env:Env,name:string,input:Uint8Array){
+ const ref=refSchema.parse(decode(input));if(await nativeHash([ref.schema_version,ref.sequence,ref.previous,ref.branch,ref.expected,ref.target])!==ref.content_hash)throw new HttpError(409,'native reference hash differs');
+ const log=await coordinate(env,'NATIVE-STORE-'+storeName.parse(name),'native-log') as {entries:NativeEntry[]};const published=new Set(log.entries.map(e=>e.version));if(!published.has(ref.target))throw new HttpError(409,'publish the branch target first');
+ if(ref.expected){const seen=new Set<string>(),next=[ref.target];while(next.length){const id=next.pop()!;if(seen.has(id))continue;if(!published.has(id))throw new HttpError(409,'branch ancestry is unpublished');seen.add(id);const version=await loadVersion(env,name,id);next.push(...version.version.parents);}if(!seen.has(ref.expected))throw new HttpError(409,'branch update is not a fast-forward');}
+ const result=await coordinate(env,'NATIVE-STORE-'+name,'native-ref-append',{ref});await immutablePut(env.ARTIFACTS,prefix(name)+`refs/${String(ref.sequence).padStart(8,'0')}.json`,encoder.encode(JSON.stringify(ref)));return json(result);
+}

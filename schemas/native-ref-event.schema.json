@@ -1,0 +1,63 @@
+{
+  "$defs": {
+    "ContentHash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "ProtocolVersion": {
+      "const": 1,
+      "type": "integer"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Native branch references are an append-only, independently verified CAS log.",
+  "properties": {
+    "branch": {
+      "type": "string"
+    },
+    "content_hash": {
+      "$ref": "#/$defs/ContentHash"
+    },
+    "expected": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ContentHash"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "previous": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ContentHash"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ProtocolVersion"
+    },
+    "sequence": {
+      "format": "uint32",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "target": {
+      "$ref": "#/$defs/ContentHash"
+    }
+  },
+  "required": [
+    "schema_version",
+    "sequence",
+    "branch",
+    "target",
+    "content_hash"
+  ],
+  "title": "RefEvent",
+  "type": "object"
+}

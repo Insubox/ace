@@ -23,6 +23,6 @@ export async function boundedFile(path, limit) {
 }
 export async function api(config, path, init = {}) {
   const response = await fetch(config.origin + path, { ...init, redirect: 'error', headers: { ...(config.project?{'x-ace-project':config.project}:{}), ...init.headers, authorization: `Bearer ${config.token}` } });
-  if (!response.ok) throw new Error(`ACE request failed with HTTP ${response.status}: ${await response.text()}`);
+  if (!response.ok){const error=new Error(`ACE request failed with HTTP ${response.status}: ${await response.text()}`);error.status=response.status;throw error;}
   return response;
 }

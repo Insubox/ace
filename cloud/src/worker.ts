@@ -9,8 +9,10 @@ import dashboard from './dashboard.html';
 import * as accounts from './accounts';
 import * as projects from './projects';
 import {readVerification,requestVerification,readVerifiedRun} from './verification';
+import {requestBackup,listBackups,requestRestore,readDrill,readRestoreReceipt} from './backups';
+export {BackupWorkflow} from './backups';
 export {NativeVerificationWorkflow} from './verification';
-export { ExperimentCoordinator } from './coordinator';
+export { ExperimentCoordinator,RestoreCoordinator } from './coordinator';
 export { EvaluationSandbox } from './sandbox';
 export { ExperimentWorkflow } from './workflow';
 
@@ -110,6 +112,10 @@ export default {
       const recovery=/^\/v1\/users\/([a-z0-9][a-z0-9_-]{2,31})\/recovery$/.exec(url.pathname);
       if(recovery&&request.method==='POST')return await accounts.recoveryTicket(env,current,recovery[1]!);
       if(url.pathname==='/v1/users'&&request.method==='GET')return await accounts.users(env,current);
+      if(url.pathname==='/v1/backups'&&request.method==='GET')return await listBackups(env,current);
+      if(url.pathname==='/v1/backups'&&request.method==='POST'){if((await limitedBody(request,1)).length)throw new HttpError(400,'backup takes no payload');return await requestBackup(env,current);}
+      const restoration=/^\/v1\/backups\/(backup-(?:[0-9]{8}|[0-9a-f-]{36}))\/restore(?:\/stores\/([A-Za-z0-9][A-Za-z0-9_-]{0,63})(?:\/(objects|versions)\/([0-9a-f]{64})|\/(refs))?)?$/.exec(url.pathname);
+      if(restoration){if(request.method==='GET'&&!restoration[2])return await readRestoreReceipt(env,current,restoration[1]!);if(request.method==='POST'&&!restoration[2])return await requestRestore(env,current,restoration[1]!);if(request.method==='GET'&&restoration[2])return await readDrill(env,current,restoration[1]!,restoration[2],restoration[3]??restoration[5],restoration[4]);}
       if(url.pathname==='/v1/projects'&&request.method==='GET')return await projects.list(env,current);
       if(url.pathname==='/v1/projects'&&request.method==='POST')return await projects.create(env,current,await limitedBody(request,8192));
       const project=/^\/v1\/projects\/([^/]+)\/(members|audit)(?:\/([a-z0-9][a-z0-9_-]{2,31}))?$/.exec(url.pathname);
@@ -118,6 +124,8 @@ export default {
       if(url.pathname==='/v1/stores'&&request.method==='GET')return await projects.listStores(env,current);
       const check=/^\/v1\/stores\/([A-Za-z0-9][A-Za-z0-9_-]{0,63})\/versions\/([0-9a-f]{64})\/(verification(?:\/run)?|verify)$/.exec(url.pathname);
       if(check){await projects.access(env,current,check[1]!,request.method==='GET'?'read':'write');if(request.method==='GET'&&check[3]==='verification/run')return await readVerifiedRun(env,check[1]!,check[2]!);if(request.method==='GET'&&check[3]==='verification')return await readVerification(env,check[1]!,check[2]!);if(request.method==='POST'&&check[3]==='verify'){if((await limitedBody(request,1)).length)throw new HttpError(400,'verification does not accept caller-supplied results');const result=await requestVerification(env,check[1]!,check[2]!);await projects.audit(env,current,check[1]!,'verification.request',check[2]!);return result;}}
+      const refs=/^\/v1\/stores\/([A-Za-z0-9][A-Za-z0-9_-]{0,63})\/refs$/.exec(url.pathname);
+      if(refs){await projects.access(env,current,refs[1]!,request.method==='GET'?'read':'write');if(request.method==='GET')return await nativeStores.readRefs(env,refs[1]!);if(request.method==='POST'){const response=await nativeStores.appendRef(env,refs[1]!,await limitedBody(request,8192));const value=await response.clone().json() as {ref:{content_hash:string}};await projects.audit(env,current,refs[1]!,'branch.advance',value.ref.content_hash,'reference-'+value.ref.content_hash);return response;}}
       const native=/^\/v1\/stores\/([A-Za-z0-9][A-Za-z0-9_-]{0,63})(?:\/(objects|versions)\/([0-9a-f]{64})|\/(journal))?$/.exec(url.pathname);
       if(native){if(request.method==='PUT')await projects.ensure(env,current,native[1]!);else await projects.access(env,current,native[1]!,request.method==='GET'?'read':'write');const name=native[1]!,kind=native[2] as 'objects'|'versions'|undefined,id=native[3];
         if(request.method==='GET'){if(kind&&id)return await nativeStores.readFile(env,name,kind,id);if(!native[4])return await nativeStores.readStore(env,name);}
@@ -167,6 +175,7 @@ export default {
       return json({ error: 'control plane operation failed; retry the same request' }, 503);
     }
   },
+  async scheduled(event:ScheduledController,env:Env,ctx:ExecutionContext){ctx.waitUntil(requestBackup(env,{username:'operator',kind:'operator',role:'admin'},'backup-'+new Date(event.scheduledTime).toISOString().slice(0,10).replaceAll('-','')));},
   async queue(batch: MessageBatch<unknown>, env: Env): Promise<void> {
     for (const message of batch.messages) {
       try {

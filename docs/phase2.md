@@ -110,7 +110,8 @@ ACE account session. The public dashboard, login and one-time first-account setu
 are described in [native hosting](native-hosting.md). A missing/short token fails
 closed. Use a dedicated random token of at least 32 characters for the deployment.
 The operator token protects one trusted deployment. ACE account roles now
-control its shared workspace; there is no tenant isolation or OAuth server yet. Never expose coordinator or sandbox bindings as
+intersect with explicit project membership on every resource and MCP route.
+Private projects are isolated from unrelated accounts; OAuth/MFA are not implemented. Never expose coordinator or sandbox bindings as
 public execution endpoints.
 
 | Method | Route | Behavior |

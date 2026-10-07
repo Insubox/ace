@@ -226,7 +226,9 @@ fn state(path: &Path) -> Result<State> {
         known.insert(entry.version.clone());
         versions.push((entry, sealed.version));
     }
-    Ok(State { root, versions })
+    let state = State { root, versions };
+    read_refs(&state)?;
+    Ok(state)
 }
 struct Lock(PathBuf);
 impl Drop for Lock {
@@ -465,6 +467,7 @@ pub(crate) fn archived_run(destination: &Path, report: &ContentHash) -> Result<P
 }
 pub(crate) fn status(destination: &Path) -> Result<Value> {
     let state = state(destination)?;
+    let (ref_events, heads) = read_refs(&state)?;
     let mut snapshots = Vec::new();
     let mut faults = Vec::new();
     let mut versions = Vec::new();
@@ -493,7 +496,7 @@ pub(crate) fn status(destination: &Path) -> Result<Value> {
         }
     }
     Ok(
-        value!({"repository":state.root,"backend":"ace-native-v1","verified":true,"versions":versions,"objects":objects.len(),"tip":state.versions.last().map(|(e,_)|&e.content_hash),"snapshots":snapshots,"generator_faults":faults,"remote_push":false}),
+        value!({"repository":state.root,"backend":"ace-native-v1","verified":true,"versions":versions,"objects":objects.len(),"tip":state.versions.last().map(|(e,_)|&e.content_hash),"snapshots":snapshots,"generator_faults":faults,"remote_push":false,"refs":heads,"ref_tip":ref_events.last().map(|e|&e.content_hash)}),
     )
 }
 pub(crate) fn clone_store(source: &Path, destination: &Path) -> Result<Value> {
@@ -534,6 +537,12 @@ pub(crate) fn clone_store(source: &Path, destination: &Path) -> Result<Value> {
             &json(entry)?,
         )?;
     }
+    for event in read_refs(&state)?.0 {
+        create_atomic(
+            &dest.join(format!("refs/{:08}.json", event.sequence)),
+            &json(&event)?,
+        )?;
+    }
     status(destination)
 }
 pub(crate) fn export_git(source: &Path, destination: &Path) -> Result<Value> {
@@ -564,4 +573,544 @@ pub(crate) fn export_git(source: &Path, destination: &Path) -> Result<Value> {
         }
     }
     archive::status(destination)
+}
+
+/// Native branch references are an append-only, independently verified CAS log.
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct RefEvent {
+    pub schema_version: ace_protocol::ProtocolVersion,
+    pub sequence: u32,
+    pub previous: Option<ContentHash>,
+    pub branch: String,
+    pub expected: Option<ContentHash>,
+    pub target: ContentHash,
+    pub content_hash: ContentHash,
+}
+fn branch_name(name: &str) -> Result<()> {
+    if name.is_empty()
+        || name.len() > 64
+        || !name
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b == b'_' || b == b'-')
+        || !name.as_bytes()[0].is_ascii_alphanumeric()
+    {
+        return Err(
+            "branch names use 1–64 portable letters, digits, hyphens or underscores".into(),
+        );
+    }
+    Ok(())
+}
+fn ref_hash(event: &RefEvent) -> Result<ContentHash> {
+    Ok(ContentHash::of_json(&(
+        event.schema_version,
+        event.sequence,
+        &event.previous,
+        &event.branch,
+        &event.expected,
+        &event.target,
+    ))?)
+}
+fn ancestors(state: &State, id: &ContentHash) -> BTreeSet<ContentHash> {
+    let mut known = BTreeSet::new();
+    let mut next = vec![id.clone()];
+    while let Some(id) = next.pop() {
+        if known.insert(id.clone())
+            && let Some((_, version)) = state.versions.iter().find(|(e, _)| e.version == id)
+        {
+            next.extend(version.parents.iter().cloned());
+        }
+    }
+    known
+}
+fn read_refs(state: &State) -> Result<(Vec<RefEvent>, BTreeMap<String, ContentHash>)> {
+    let path = state.root.join("refs");
+    match path.symlink_metadata() {
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+            return Ok((Vec::new(), BTreeMap::new()));
+        }
+        Err(error) => return Err(error.into()),
+        Ok(_) => {}
+    }
+    let mut paths = fs::read_dir(folder(&state.root, "refs")?)?
+        .map(|e| e.map(|e| e.path()))
+        .collect::<std::io::Result<Vec<_>>>()?;
+    paths.sort();
+    if paths.len() > 1024 {
+        return Err("native reference log exceeds 1024 events".into());
+    }
+    let mut events: Vec<RefEvent> = Vec::new();
+    let mut heads = BTreeMap::new();
+    for (index, path) in paths.iter().enumerate() {
+        let event: RefEvent = serde_json::from_value(ace_protocol::parse_json(&bounded_bytes(
+            &regular(&state.root, path)?,
+            8192,
+        )?)?)?;
+        branch_name(&event.branch)?;
+        if path.file_name().and_then(|s| s.to_str()) != Some(&format!("{:08}.json", index + 1))
+            || event.sequence as usize != index + 1
+            || event.previous != events.last().map(|e| e.content_hash.clone())
+            || event.content_hash != ref_hash(&event)?
+            || heads.get(&event.branch) != event.expected.as_ref()
+            || !state
+                .versions
+                .iter()
+                .any(|(e, _)| e.version == event.target)
+            || event
+                .expected
+                .as_ref()
+                .is_some_and(|old| !ancestors(state, &event.target).contains(old))
+        {
+            return Err(
+                "native reference history, target or fast-forward expectation changed".into(),
+            );
+        }
+        heads.insert(event.branch.clone(), event.target.clone());
+        events.push(event);
+    }
+    Ok((events, heads))
+}
+pub(crate) fn refs(destination: &Path) -> Result<Value> {
+    let state = state(destination)?;
+    let (events, heads) = read_refs(&state)?;
+    Ok(
+        value!({"schema_version":1,"heads":heads,"events":events,"tip":events.last().map(|e|&e.content_hash),"verified":true}),
+    )
+}
+pub(crate) fn branch(
+    destination: &Path,
+    name: &str,
+    target: &ContentHash,
+    expected: Option<&ContentHash>,
+) -> Result<Value> {
+    branch_name(name)?;
+    let root = root(destination)?;
+    let _lock = lock(&root)?;
+    let state = state(&root)?;
+    let (events, heads) = read_refs(&state)?;
+    if heads.get(name) != expected {
+        return Err(
+            "branch changed; read its current head and retry with an explicit expectation".into(),
+        );
+    }
+    if !state.versions.iter().any(|(e, _)| &e.version == target)
+        || expected.is_some_and(|old| !ancestors(&state, target).contains(old))
+    {
+        return Err("branch target must exist and extend the previous head".into());
+    }
+    if events.len() >= 1024 {
+        return Err("native reference log reached 1024 events".into());
+    }
+    let mut event = RefEvent {
+        schema_version: ace_protocol::ProtocolVersion,
+        sequence: events.len() as u32 + 1,
+        previous: events.last().map(|e| e.content_hash.clone()),
+        branch: name.into(),
+        expected: expected.cloned(),
+        target: target.clone(),
+        content_hash: ContentHash::of_bytes(b""),
+    };
+    event.content_hash = ref_hash(&event)?;
+    let path = root.join("refs");
+    if path.symlink_metadata().is_err() {
+        fs::create_dir(&path)?;
+    }
+    folder(&root, "refs")?;
+    create_atomic(
+        &path.join(format!("{:08}.json", event.sequence)),
+        &json(&event)?,
+    )?;
+    Ok(value!({"branch":name,"head":target,"event":event,"verified":true}))
+}
+fn selected<'a>(state: &'a State, id: &ContentHash) -> Result<&'a Version> {
+    state
+        .versions
+        .iter()
+        .find(|(e, _)| &e.version == id)
+        .map(|(_, v)| v)
+        .ok_or_else(|| "native version not found".into())
+}
+fn file_bytes(state: &State, hash: &ContentHash) -> Result<Vec<u8>> {
+    let bytes = bounded_bytes(
+        &regular(
+            &state.root,
+            &state.root.join(format!("objects/{}", hash.as_str())),
+        )?,
+        MAX_FILE,
+    )?;
+    if ContentHash::of_bytes(&bytes) != *hash {
+        return Err("native content object changed".into());
+    }
+    Ok(bytes)
+}
+#[derive(Clone, Debug, PartialEq)]
+struct Edit {
+    start: usize,
+    end: usize,
+    lines: Vec<String>,
+}
+fn lines(bytes: &[u8]) -> Option<Vec<String>> {
+    if bytes.len() > 65536 {
+        return None;
+    }
+    let text = std::str::from_utf8(bytes).ok()?;
+    let lines = text
+        .split_inclusive('\n')
+        .map(str::to_owned)
+        .collect::<Vec<_>>();
+    (lines.len() <= 256).then_some(lines)
+}
+fn edits(base: &[String], changed: &[String]) -> Vec<Edit> {
+    let mut lengths = vec![vec![0_u16; changed.len() + 1]; base.len() + 1];
+    for i in (0..base.len()).rev() {
+        for j in (0..changed.len()).rev() {
+            lengths[i][j] = if base[i] == changed[j] {
+                lengths[i + 1][j + 1] + 1
+            } else {
+                lengths[i + 1][j].max(lengths[i][j + 1])
+            };
+        }
+    }
+    let (mut i, mut j) = (0, 0);
+    let mut result = Vec::new();
+    let mut pending: Option<Edit> = None;
+    while i < base.len() || j < changed.len() {
+        if i < base.len() && j < changed.len() && base[i] == changed[j] {
+            if let Some(edit) = pending.take() {
+                result.push(edit);
+            }
+            i += 1;
+            j += 1;
+        } else {
+            let edit = pending.get_or_insert(Edit {
+                start: i,
+                end: i,
+                lines: Vec::new(),
+            });
+            if j < changed.len() && (i == base.len() || lengths[i][j + 1] >= lengths[i + 1][j]) {
+                edit.lines.push(changed[j].clone());
+                j += 1;
+            } else {
+                i += 1;
+                edit.end = i;
+            }
+        }
+    }
+    if let Some(edit) = pending {
+        result.push(edit);
+    }
+    result
+}
+fn merge_text(base: &[u8], ours: &[u8], theirs: &[u8]) -> Option<Vec<u8>> {
+    let (base, ours, theirs) = (lines(base)?, lines(ours)?, lines(theirs)?);
+    let mut left = edits(&base, &ours);
+    let right = edits(&base, &theirs);
+    for incoming in right {
+        if left.iter().any(|e| e == &incoming) {
+            continue;
+        }
+        if left.iter().any(|e| {
+            if e.start == e.end || incoming.start == incoming.end {
+                e.start <= incoming.end && incoming.start <= e.end
+            } else {
+                e.start < incoming.end && incoming.start < e.end
+            }
+        }) {
+            return None;
+        }
+        left.push(incoming);
+    }
+    left.sort_by_key(|e| (e.start, e.end));
+    let mut result = String::new();
+    let mut cursor = 0;
+    for edit in left {
+        for line in &base[cursor..edit.start] {
+            result.push_str(line);
+        }
+        for line in &edit.lines {
+            result.push_str(line);
+        }
+        cursor = edit.end;
+    }
+    for line in &base[cursor..] {
+        result.push_str(line);
+    }
+    Some(result.into_bytes())
+}
+pub(crate) fn diff(destination: &Path, left: &ContentHash, right: &ContentHash) -> Result<Value> {
+    let state = state(destination)?;
+    let (left_version, right_version) = (selected(&state, left)?, selected(&state, right)?);
+    let paths = left_version
+        .files
+        .keys()
+        .chain(right_version.files.keys())
+        .collect::<BTreeSet<_>>();
+    let mut changes = Vec::new();
+    for path in paths {
+        let (before, after) = (left_version.files.get(path), right_version.files.get(path));
+        if before == after {
+            continue;
+        }
+        let text_edits = if changes.len() < 20 {
+            match(before,after){(Some(a),Some(b))=>match(lines(&file_bytes(&state,a)?),lines(&file_bytes(&state,b)?)){(Some(a),Some(b))=>Some(edits(&a,&b).into_iter().map(|e|value!({"start_line":e.start+1,"removed_lines":e.end-e.start,"replacement":e.lines})).collect::<Vec<_>>()),_=>None},_=>None}
+        } else {
+            None
+        };
+        changes.push(value!({"path":path,"change":if before.is_none(){"added"}else if after.is_none(){"removed"}else{"modified"},"before":before,"after":after,"text_edits":text_edits}));
+    }
+    Ok(
+        value!({"left":left,"right":right,"changes":changes,"verified":true,"text_preview_limit":{"files":20,"bytes_per_file":65536,"lines_per_file":256}}),
+    )
+}
+pub(crate) fn merge(
+    destination: &Path,
+    ours: &ContentHash,
+    theirs: &ContentHash,
+    base: Option<&ContentHash>,
+    output: &Path,
+    message: Text,
+) -> Result<Value> {
+    let state = state(destination)?;
+    let (ours_version, theirs_version) = (selected(&state, ours)?, selected(&state, theirs)?);
+    let common = ancestors(&state, ours)
+        .intersection(&ancestors(&state, theirs))
+        .cloned()
+        .collect::<BTreeSet<_>>();
+    let base = if let Some(id) = base {
+        if !common.contains(id) {
+            return Err("explicit merge base must be an ancestor of both versions".into());
+        }
+        id.clone()
+    } else {
+        let lowest = common
+            .iter()
+            .filter(|id| {
+                !common
+                    .iter()
+                    .any(|other| other != *id && ancestors(&state, other).contains(*id))
+            })
+            .collect::<Vec<_>>();
+        if lowest.len() != 1 {
+            return Err("merge needs one unambiguous common ancestor or an explicit --base".into());
+        }
+        lowest[0].clone()
+    };
+    let base_version = selected(&state, &base)?;
+    let paths = base_version
+        .files
+        .keys()
+        .chain(ours_version.files.keys())
+        .chain(theirs_version.files.keys())
+        .cloned()
+        .collect::<BTreeSet<_>>();
+    let mut merged = BTreeMap::new();
+    let mut conflicts = Vec::new();
+    let mut conflict_bytes = Vec::new();
+    for path in paths {
+        let (b, o, t) = (
+            base_version.files.get(&path),
+            ours_version.files.get(&path),
+            theirs_version.files.get(&path),
+        );
+        let chosen = if o == t {
+            Some(o)
+        } else if o == b {
+            Some(t)
+        } else if t == b {
+            Some(o)
+        } else {
+            None
+        };
+        if let Some(chosen) = chosen {
+            if let Some(hash) = chosen {
+                merged.insert(path, file_bytes(&state, hash)?);
+            }
+            continue;
+        }
+        let (bb, ob, tb) = (
+            b.map(|h| file_bytes(&state, h)).transpose()?,
+            o.map(|h| file_bytes(&state, h)).transpose()?,
+            t.map(|h| file_bytes(&state, h)).transpose()?,
+        );
+        if let (Some(bb), Some(ob), Some(tb)) = (&bb, &ob, &tb)
+            && let Some(bytes) = merge_text(bb, ob, tb)
+        {
+            merged.insert(path, bytes);
+            continue;
+        }
+        let index = conflicts.len();
+        conflicts.push(value!({"path":path,"base":b,"ours":o,"theirs":t,"preserved_under":format!("conflicts/{index:04}")}));
+        conflict_bytes.push((index, bb, ob, tb));
+    }
+    let hashes = merged
+        .iter()
+        .map(|(p, b)| (p.clone(), ContentHash::of_bytes(b)))
+        .collect();
+    let structural = validate_tree(&hashes).err().map(|e| e.to_string());
+    if output.symlink_metadata().is_ok() {
+        return Err("merge output already exists; choose a fresh directory".into());
+    }
+    fs::create_dir_all(output)?;
+    if structural.is_none() {
+        fs::create_dir(output.join("merged"))?;
+        for (path, bytes) in &merged {
+            create_atomic(&output.join("merged").join(path), bytes)?;
+        }
+    }
+    for (index, base, ours, theirs) in conflict_bytes {
+        for (label, bytes) in [("base", base), ("ours", ours), ("theirs", theirs)] {
+            if let Some(bytes) = bytes {
+                create_atomic(
+                    &output.join(format!("conflicts/{index:04}/{label}")),
+                    &bytes,
+                )?;
+            }
+        }
+    }
+    if structural.is_some() {
+        for (label, version) in [
+            ("base", base_version),
+            ("ours", ours_version),
+            ("theirs", theirs_version),
+        ] {
+            restore(&state.root, version, &output.join("inputs").join(label))?;
+        }
+    }
+    let clean = conflicts.is_empty() && structural.is_none();
+    let version = if clean {
+        Some(commit(
+            destination,
+            Kind::Source,
+            merged,
+            message,
+            Some(BTreeSet::from([ours.clone(), theirs.clone()])),
+        )?)
+    } else {
+        None
+    };
+    let report = value!({"status":if clean{"merged"}else{"conflicted"},"base":base,"ours":ours,"theirs":theirs,"version":version,"conflicts":conflicts,"structural_conflict":structural,"output":output,"source_versions_unchanged":true,"evaluation_required":true});
+    create_atomic(&output.join("merge.json"), &json(&report)?)?;
+    Ok(report)
+}
+
+/// Import verified immutable DAG nodes while preserving their version identities.
+/// Publication order is local to a store; it is not the identity of a version.
+pub(crate) fn fetch(source: &Path, destination: &Path) -> Result<Value> {
+    status(source)?;
+    let incoming = state(source)?;
+    init(destination)?;
+    let root = root(destination)?;
+    if root == incoming.root {
+        return Ok(value!({"imported":0,"incoming_refs":read_refs(&incoming)?.1,"verified":true}));
+    }
+    let guard = lock(&root)?;
+    let mut current = state(&root)?;
+    let mut known = current
+        .versions
+        .iter()
+        .map(|(e, _)| e.version.clone())
+        .collect::<BTreeSet<_>>();
+    let missing = incoming
+        .versions
+        .iter()
+        .filter(|(e, _)| !known.contains(&e.version))
+        .count();
+    if known.len() + missing > MAX_VERSIONS {
+        return Err("combined history exceeds the native 256-version limit".into());
+    }
+    for (original, version) in &incoming.versions {
+        if known.contains(&original.version) {
+            continue;
+        }
+        if !version.parents.is_subset(&known) {
+            return Err("imported ancestry is incomplete".into());
+        }
+        for hash in version.files.values() {
+            let path = root.join(format!("objects/{}", hash.as_str()));
+            let bytes = file_bytes(&incoming, hash)?;
+            if path.symlink_metadata().is_ok() {
+                if bounded_bytes(&regular(&root, &path)?, MAX_FILE)? != bytes {
+                    return Err("existing imported object differs".into());
+                }
+            } else {
+                create_atomic(&path, &bytes)?;
+            }
+        }
+        let sealed = json(&SealedVersion {
+            version: version.clone(),
+            content_hash: original.version.clone(),
+        })?;
+        let path = root.join(format!("versions/{}.json", original.version.as_str()));
+        if path.symlink_metadata().is_ok() {
+            let retained: SealedVersion = serde_json::from_value(ace_protocol::parse_json(
+                &bounded_bytes(&regular(&root, &path)?, 1048576)?,
+            )?)?;
+            if retained.content_hash != original.version || retained.version != *version {
+                return Err("existing imported version differs".into());
+            }
+        } else {
+            create_atomic(&path, &sealed)?;
+        }
+        let mut entry = Entry {
+            schema_version: ace_protocol::ProtocolVersion,
+            sequence: current.versions.len() as u32 + 1,
+            previous: current.versions.last().map(|(e, _)| e.content_hash.clone()),
+            version: original.version.clone(),
+            content_hash: ContentHash::of_bytes(b""),
+        };
+        entry.content_hash = entry_hash(&entry)?;
+        create_atomic(
+            &root.join(format!("journal/{:08}.json", entry.sequence)),
+            &json(&entry)?,
+        )?;
+        known.insert(entry.version.clone());
+        current.versions.push((entry, version.clone()));
+    }
+    let (events, heads) = read_refs(&incoming)?;
+    if read_refs(&current)?.0.is_empty() {
+        for event in events {
+            create_atomic(
+                &root.join(format!("refs/{:08}.json", event.sequence)),
+                &json(&event)?,
+            )?;
+        }
+    }
+    drop(guard);
+    status(destination)?;
+    Ok(
+        value!({"imported":missing,"incoming_refs":heads,"destination":destination,"verified":true,"version_identities_preserved":true}),
+    )
+}
+
+#[cfg(test)]
+mod collaboration_tests {
+    use super::*;
+    #[test]
+    fn line_merge_preserves_crlf_and_rejects_overlapping_edits() {
+        assert_eq!(
+            merge_text(
+                b"one\r\ntwo\r\nthree\r\n",
+                b"ONE\r\ntwo\r\nthree\r\n",
+                b"one\r\ntwo\r\nTHREE\r\n"
+            ),
+            Some(b"ONE\r\ntwo\r\nTHREE\r\n".to_vec())
+        );
+        assert_eq!(
+            merge_text(b"a\nb\nc\n", b"a\nLEFT\nc\n", b"a\nRIGHT\nc\n"),
+            None
+        );
+        assert_eq!(
+            merge_text(b"a\nb\n", b"a\n", b"A\nb\n"),
+            Some(b"A\n".to_vec())
+        );
+        assert_eq!(
+            merge_text(b"a\nb\n", b"a\nleft\nb\n", b"a\nright\nb\n"),
+            None
+        );
+        assert_eq!(
+            merge_text(b"a\nb\n", b"a\nSAME\nb\n", b"a\nSAME\nb\n"),
+            Some(b"a\nSAME\nb\n".to_vec())
+        );
+        assert_eq!(merge_text(&[0xff], b"a", b"b"), None);
+    }
 }

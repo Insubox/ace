@@ -1,6 +1,6 @@
 import { DurableObject } from 'cloudflare:workers';
 import { type Env, type ExperimentState, type Task, HttpError, json } from './contracts';
-import { entrySchema, type NativeEntry } from './native-store';
+import { entrySchema,refSchema,type NativeRef, type NativeEntry } from './native-store';
 
 export class ExperimentCoordinator extends DurableObject<Env> {
   async fetch(request: Request): Promise<Response> {
@@ -16,6 +16,17 @@ export class ExperimentCoordinator extends DurableObject<Env> {
           if(!ticket||ticket.used||ticket.expires<=Date.now()||ticket.hash!==body.hash)throw new HttpError(401,'setup link expired or was already used');
           await tx.put('account-setup',{...ticket,used:true});return{claimed:true};
         }
+        if(op==='backup-budget'){const used=await tx.get<number>('backup-used')??0;if(used>=4)return{allowed:false};await tx.put('backup-used',used+1);return{allowed:true};}
+        if(op==='experiment-restore'){
+          const state=body.state as ExperimentState;const existing=await tx.get<ExperimentState>('state');if(existing&&JSON.stringify(existing)!==JSON.stringify(state))throw new HttpError(409,'restored state differs');await tx.put('state',state);return{restored:true};
+        }
+        if(op==='native-restore'){
+          const entry=entrySchema.parse(body.entry),parents=body.parents as string[],entries=await tx.get<NativeEntry[]>('native-entries')??[],publishers=await tx.get<Record<string,unknown>>('native-publishers')??{};
+          const existing=entries[entry.sequence-1];if(existing){if(existing.content_hash!==entry.content_hash)throw new HttpError(409,'restored journal differs');return{restored:true};}
+          if(entry.sequence!==entries.length+1||entry.previous!==(entries.at(-1)?.content_hash??null)||parents.some(p=>!entries.some(e=>e.version===p)))throw new HttpError(409,'restored ancestry differs');
+          if(body.publisher)publishers[entry.version]=body.publisher;
+          await tx.put('native-publishers',publishers);await tx.put('native-entries',[...entries,entry]);return{restored:true};
+        }
         if(op==='native-verify-budget'){
           const used=await tx.get<number>('native-verifications-used')??0;
           if(used>=8)return{allowed:false};await tx.put('native-verifications-used',used+1);return{allowed:true};
@@ -25,10 +36,17 @@ export class ExperimentCoordinator extends DurableObject<Env> {
           if(!budget||budget.until<=Date.now())budget={count:0,until:Date.now()+600000};
           if(budget.count>=20)return{allowed:false};budget.count++;await tx.put('auth-budget',budget);return{allowed:true};
         }
-        if(op==='native-log'){
+        if(op==='native-refs'){const events=await tx.get<NativeRef[]>('native-ref-events')??[],heads=await tx.get<Record<string,string>>('native-ref-heads')??{};return{schema_version:1,events,heads,tip:events.at(-1)?.content_hash??null};}
+        if(op==='native-ref-append'){
+          const ref=refSchema.parse(body.ref),events=await tx.get<NativeRef[]>('native-ref-events')??[],heads=await tx.get<Record<string,string>>('native-ref-heads')??{},entries=await tx.get<NativeEntry[]>('native-entries')??[];
+          const existing=events[ref.sequence-1];if(existing){if(existing.content_hash!==ref.content_hash)throw new HttpError(409,'native reference history diverges');return{ref:existing,retained:true};}
+          if(events.length>=1024||ref.sequence!==events.length+1||ref.previous!==(events.at(-1)?.content_hash??null)||ref.expected!==(Object.hasOwn(heads,ref.branch)?heads[ref.branch]:null)||!entries.some(e=>e.version===ref.target))throw new HttpError(409,'branch expectation or reference history changed');
+          heads[ref.branch]=ref.target;await tx.put('native-ref-events',[...events,ref]);await tx.put('native-ref-heads',heads);return{ref,retained:true};
+        }
+        if(op==='native-log'||op==='native-backup-authority'){
           const entries=await tx.get<NativeEntry[]>('native-entries')??[];
           const publishers=await tx.get<Record<string,{username:string;published_at:number}>>('native-publishers')??{};
-          return {schema_version:1,backend:'ace-native-v1',entries,publishers,tip:entries.at(-1)?.content_hash??null,qualification:'caller_asserted_requires_ACE_verification'};
+          return {schema_version:1,backend:'ace-native-v1',entries,publishers,tip:entries.at(-1)?.content_hash??null,qualification:'caller_asserted_requires_ACE_verification',...(op==='native-backup-authority'?{refs:{schema_version:1,events:await tx.get<NativeRef[]>('native-ref-events')??[],heads:await tx.get<Record<string,string>>('native-ref-heads')??{},tip:(await tx.get<NativeRef[]>('native-ref-events'))?.at(-1)?.content_hash??null}}:{})};
         }
         if(op==='native-append'){
           const entry=entrySchema.parse(body.entry),parents=body.parents as string[];
@@ -115,3 +133,7 @@ export class ExperimentCoordinator extends DurableObject<Env> {
     } catch (e) { return json({ error: e instanceof Error ? e.message : 'coordinator error' }, e instanceof HttpError ? e.status : 500); }
   }
 }
+
+// Independent namespace prevents customer-chosen experiment IDs from colliding
+// with disaster drills. No public route can write this namespace.
+export class RestoreCoordinator extends ExperimentCoordinator {}

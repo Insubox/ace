@@ -378,3 +378,357 @@ fn native_store_and_source_symlinks_cannot_escape_the_selected_root() {
     symlink(&outside, store.join("objects")).unwrap();
     assert!(!ace(&["store", "log", p(&store)], false).status.success());
 }
+
+#[test]
+fn native_branches_merge_and_fetch_preserve_dag_source_and_compare_and_swap() {
+    let temp = tempfile::tempdir().unwrap();
+    let r = temp.path();
+    let source = r.join("source");
+    fs::create_dir(&source).unwrap();
+    let files = r.join("files.json");
+    write(&files, &json!(["code.txt"]));
+    let store = r.join("history");
+    let commit = |store: &Path, text: &[u8], message: &str, parent: Option<&str>| {
+        fs::write(source.join("code.txt"), text).unwrap();
+        let mut args = vec![
+            "store",
+            "commit",
+            p(&source),
+            "--store",
+            p(store),
+            "--files",
+            p(&files),
+            "--message",
+            message,
+        ];
+        if let Some(parent) = parent {
+            args.extend(["--parent", parent]);
+        }
+        ok(&args)["version"].as_str().unwrap().to_owned()
+    };
+    let base = commit(&store, b"one\r\ntwo\r\nthree\r\n", "base", None);
+    ok(&["store", "branch", p(&store), "main", &base]);
+    let theirs_store = r.join("other");
+    ok(&["store", "clone", p(&store), p(&theirs_store)]);
+    let ours = commit(&store, b"ONE\r\ntwo\r\nthree\r\n", "ours", Some(&base));
+    let theirs = commit(
+        &theirs_store,
+        b"one\r\ntwo\r\nTHREE\r\n",
+        "theirs",
+        Some(&base),
+    );
+    ok(&[
+        "store",
+        "branch",
+        p(&store),
+        "main",
+        &ours,
+        "--expect",
+        &base,
+    ]);
+    assert!(
+        !ace(
+            &[
+                "store",
+                "branch",
+                p(&store),
+                "main",
+                &base,
+                "--expect",
+                &ours
+            ],
+            false
+        )
+        .status
+        .success()
+    );
+    let imported = ok(&["store", "fetch", p(&theirs_store), p(&store)]);
+    assert_eq!(imported["imported"], 1);
+    assert_eq!(imported["incoming_refs"]["main"], base);
+    assert_eq!(
+        ok(&["store", "fetch", p(&theirs_store), p(&store)])["imported"],
+        0
+    );
+    let difference = ok(&["store", "diff", &ours, &theirs, "--store", p(&store)]);
+    assert_eq!(difference["changes"][0]["path"], "code.txt");
+    assert_eq!(
+        difference["changes"][0]["text_edits"]
+            .as_array()
+            .unwrap()
+            .len(),
+        2
+    );
+    let output = r.join("merged");
+    let merged = ok(&[
+        "store",
+        "merge",
+        &ours,
+        &theirs,
+        "--store",
+        p(&store),
+        "--output",
+        p(&output),
+        "--message",
+        "merge both",
+    ]);
+    assert_eq!(merged["status"], "merged");
+    assert_eq!(
+        fs::read(output.join("merged/code.txt")).unwrap(),
+        b"ONE\r\ntwo\r\nTHREE\r\n"
+    );
+    let id = merged["version"].as_str().unwrap();
+    let version: Value =
+        serde_json::from_slice(&fs::read(store.join(format!("versions/{id}.json"))).unwrap())
+            .unwrap();
+    assert_eq!(version["version"]["parents"].as_array().unwrap().len(), 2);
+    assert_eq!(version["version"]["kind"]["kind"], "source");
+    ok(&["store", "branch", p(&store), "main", id, "--expect", &ours]);
+    assert!(
+        !ace(
+            &["store", "branch", p(&store), "main", id, "--expect", &ours],
+            false
+        )
+        .status
+        .success()
+    );
+    let cloned = r.join("cloned");
+    ok(&["store", "clone", p(&store), p(&cloned)]);
+    assert_eq!(ok(&["store", "refs", p(&cloned)])["heads"]["main"], id);
+    let event = store.join("refs/00000002.json");
+    let mut changed: Value = serde_json::from_slice(&fs::read(&event).unwrap()).unwrap();
+    changed["target"] = json!(theirs);
+    write(&event, &changed);
+    assert!(!ace(&["store", "log", p(&store)], false).status.success());
+}
+#[test]
+fn merge_conflicts_preserve_both_sources_without_publishing_a_version() {
+    let temp = tempfile::tempdir().unwrap();
+    let r = temp.path();
+    let source = r.join("source");
+    fs::create_dir(&source).unwrap();
+    let files = r.join("files.json");
+    write(&files, &json!(["code.txt"]));
+    let store = r.join("history");
+    fs::write(source.join("code.txt"), "base\n").unwrap();
+    let base = ok(&[
+        "store",
+        "commit",
+        p(&source),
+        "--store",
+        p(&store),
+        "--files",
+        p(&files),
+        "--message",
+        "base",
+    ])["version"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    fs::write(source.join("code.txt"), "left\n").unwrap();
+    let ours = ok(&[
+        "store",
+        "commit",
+        p(&source),
+        "--store",
+        p(&store),
+        "--files",
+        p(&files),
+        "--message",
+        "left",
+        "--parent",
+        &base,
+    ])["version"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    fs::write(source.join("code.txt"), "right\n").unwrap();
+    let theirs = ok(&[
+        "store",
+        "commit",
+        p(&source),
+        "--store",
+        p(&store),
+        "--files",
+        p(&files),
+        "--message",
+        "right",
+        "--parent",
+        &base,
+    ])["version"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    let output = r.join("conflict");
+    let report = ok(&[
+        "store",
+        "merge",
+        &ours,
+        &theirs,
+        "--store",
+        p(&store),
+        "--output",
+        p(&output),
+        "--message",
+        "pending merge",
+    ]);
+    assert_eq!(report["status"], "conflicted");
+    assert!(report["version"].is_null());
+    assert_eq!(report["conflicts"].as_array().unwrap().len(), 1);
+    assert_eq!(
+        fs::read(output.join("conflicts/0000/base")).unwrap(),
+        b"base\n"
+    );
+    assert_eq!(
+        fs::read(output.join("conflicts/0000/ours")).unwrap(),
+        b"left\n"
+    );
+    assert_eq!(
+        fs::read(output.join("conflicts/0000/theirs")).unwrap(),
+        b"right\n"
+    );
+    assert_eq!(
+        ok(&["store", "log", p(&store)])["versions"]
+            .as_array()
+            .unwrap()
+            .len(),
+        3
+    );
+}
+
+#[test]
+fn ambiguous_merge_bases_and_structural_aliases_require_explicit_resolution() {
+    let temp = tempfile::tempdir().unwrap();
+    let r = temp.path();
+    let source = r.join("source");
+    fs::create_dir(&source).unwrap();
+    let files = r.join("files.json");
+    write(&files, &json!(["code.txt"]));
+    let store = r.join("history");
+    let commit = |text: &str, parents: &[&str]| {
+        fs::write(source.join("code.txt"), text).unwrap();
+        let mut args = vec![
+            "store",
+            "commit",
+            p(&source),
+            "--store",
+            p(&store),
+            "--files",
+            p(&files),
+            "--message",
+            text,
+        ];
+        for parent in parents {
+            args.extend(["--parent", *parent]);
+        }
+        ok(&args)["version"].as_str().unwrap().to_owned()
+    };
+    let base = commit("base", &[]);
+    let a = commit("A", &[&base]);
+    let b = commit("B", &[&base]);
+    let c = commit("C", &[&a, &b]);
+    let d = commit("D", &[&a, &b]);
+    let output = r.join("ambiguous");
+    let failed = ace(
+        &[
+            "store",
+            "merge",
+            &c,
+            &d,
+            "--store",
+            p(&store),
+            "--output",
+            p(&output),
+            "--message",
+            "ambiguous",
+        ],
+        false,
+    );
+    assert!(!failed.status.success());
+    assert!(String::from_utf8_lossy(&failed.stderr).contains("unambiguous"));
+    assert!(!output.exists());
+    let explicit = ok(&[
+        "store",
+        "merge",
+        &c,
+        &d,
+        "--base",
+        &a,
+        "--store",
+        p(&store),
+        "--output",
+        p(&output),
+        "--message",
+        "explicit base",
+    ]);
+    assert_eq!(explicit["base"], a);
+    assert_eq!(explicit["status"], "conflicted");
+    let left_source = r.join("left-source");
+    let right_source = r.join("right-source");
+    fs::create_dir(&left_source).unwrap();
+    fs::create_dir(&right_source).unwrap();
+    for path in [&left_source, &right_source] {
+        fs::write(path.join("code.txt"), "base").unwrap();
+    }
+    fs::write(left_source.join("Readme.md"), "left").unwrap();
+    fs::write(right_source.join("readme.md"), "right").unwrap();
+    let left_files = r.join("left.json");
+    let right_files = r.join("right.json");
+    write(&left_files, &json!(["code.txt", "Readme.md"]));
+    write(&right_files, &json!(["code.txt", "readme.md"]));
+    let left = ok(&[
+        "store",
+        "commit",
+        p(&left_source),
+        "--store",
+        p(&store),
+        "--files",
+        p(&left_files),
+        "--message",
+        "left alias",
+        "--parent",
+        &base,
+    ])["version"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    let right = ok(&[
+        "store",
+        "commit",
+        p(&right_source),
+        "--store",
+        p(&store),
+        "--files",
+        p(&right_files),
+        "--message",
+        "right alias",
+        "--parent",
+        &base,
+    ])["version"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    let preview = r.join("structural");
+    let report = ok(&[
+        "store",
+        "merge",
+        &left,
+        &right,
+        "--store",
+        p(&store),
+        "--output",
+        p(&preview),
+        "--message",
+        "path conflict",
+    ]);
+    assert_eq!(report["status"], "conflicted");
+    assert!(report["version"].is_null());
+    assert!(report["structural_conflict"].is_string());
+    assert_eq!(
+        fs::read(preview.join("inputs/ours/Readme.md")).unwrap(),
+        b"left"
+    );
+    assert_eq!(
+        fs::read(preview.join("inputs/theirs/readme.md")).unwrap(),
+        b"right"
+    );
+}

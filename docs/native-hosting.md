@@ -102,11 +102,12 @@ integrations may instead use securely configured `ACE_API_URL`/`ACE_API_TOKEN`.
 
 Push invokes local Rust verification, checks object hashes and publishes the
 journal after objects/versions. Identical retries cannot replace immutable entries.
-Newer/divergent remote histories are rejected: pull into a fresh folder or choose
-a new remote name. Pull requires a fresh directory, checks every object hash and
-invokes ACE verification on the complete history. There is no force push or
-automatic history merge. Publication retries repair interrupted remote indexing;
-partial local pulls need inspection and a fresh destination.
+Missing remote DAG nodes require `fetch` into the local store; source merges preserve
+version identities while reconciling publication order. Branch updates use explicit
+previous-head expectations. See the [native collaboration workflow](native-collaboration.md)
+for verified diff, merge, conflict preservation and concurrent writers. Pull still
+requires a fresh directory and verifies the complete native history, including refs.
+Partial local pulls need inspection and a fresh destination.
 
 Hosting preserves uploaded evaluation records as declared. The optional
 [server verification workflow](server-verification.md) independently checks native
@@ -117,8 +118,8 @@ Publisher metadata identifies who first published an entry, not its author.
 
 Native limits are 256 versions/store, 4,096 files/version, 8 MiB/file and
 128 MiB/version. One pull also limits distinct objects to 512 MiB. Hashes detect
-changes but are not signed checkpoints. Named branches, automatic merges,
-review/issues, composition/promotion and production-scale hosting remain future work.
+changes but are not signed checkpoints. Named branches and bounded native diffs/merges are implemented; review/issues,
+composition/promotion, full hosted merge UI and production-scale hosting remain further work.
 
 ## Verification
 

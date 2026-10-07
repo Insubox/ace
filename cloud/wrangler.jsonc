@@ -7,20 +7,24 @@
   "rules": [{"type":"Text","globs":["**/*.html"],"fallthrough":true}],
   "ai": { "binding": "AI" },
   "durable_objects": { "bindings": [
+    {"name":"RESTORE_COORDINATORS","class_name":"RestoreCoordinator"},
     { "name": "COORDINATORS", "class_name": "ExperimentCoordinator" },
     { "name": "SANDBOXES", "class_name": "EvaluationSandbox" }
   ] },
   "exports": {
+    "RestoreCoordinator":{"type":"durable-object","storage":"sqlite"},
     "ExperimentCoordinator": { "type": "durable-object", "storage": "sqlite" },
     "EvaluationSandbox": { "type": "durable-object", "storage": "sqlite" }
   },
   "containers": [{ "class_name": "EvaluationSandbox", "scheduling_policy": "durable_object",
     "images": { "ace": { "dockerfile": "./Dockerfile", "build_context": ".." } }
   }],
-  "workflows": [{"binding":"NATIVE_VERIFICATIONS","name":"ace-native-verifications","class_name":"NativeVerificationWorkflow"}, { "binding": "EXPERIMENTS", "name": "ace-experiments", "class_name": "ExperimentWorkflow" }],
-  "d1_databases": [{ "binding": "DB", "database_name": "ace-metadata",
+  "limits":{"subrequests":10000},
+  "triggers":{"crons":["0 8 * * *"]},
+  "workflows": [{"binding":"BACKUP_WORKFLOW","name":"ace-backups","class_name":"BackupWorkflow"},{"binding":"NATIVE_VERIFICATIONS","name":"ace-native-verifications","class_name":"NativeVerificationWorkflow"}, { "binding": "EXPERIMENTS", "name": "ace-experiments", "class_name": "ExperimentWorkflow" }],
+  "d1_databases": [{"binding":"RESTORE_DB","database_name":"ace-restore-drill","database_id":"11111111-1111-1111-1111-111111111111"},{ "binding": "DB", "database_name": "ace-metadata",
     "database_id": "00000000-0000-0000-0000-000000000000", "migrations_dir": "migrations" }],
-  "r2_buckets": [{ "binding": "ARTIFACTS", "bucket_name": "ace-artifacts" }],
+  "r2_buckets": [{"binding":"BACKUPS","bucket_name":"ace-backups"},{"binding":"RESTORE_STORAGE","bucket_name":"ace-restore-drill"},{ "binding": "ARTIFACTS", "bucket_name": "ace-artifacts" }],
   "queues": {
     "producers": [{ "binding": "EVALUATIONS", "queue": "ace-evaluations" }, { "binding": "FINALIZATIONS", "queue": "ace-finalizations" }],
     "consumers": [

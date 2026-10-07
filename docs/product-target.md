@@ -20,8 +20,10 @@ The current implementation delivers a bounded native object store, source file
 trees, version parents, hash journal, exact restoration, clone and evaluated
 history. Campaigns and memory can run without Git. Replacing a hosted platform
 now includes a private browser workspace, native push/pull and ACE accounts
-with administrator, writer and reader roles. Per-repository permissions,
-collaboration/review, named branch heads, automatic merging and other developer
+with administrator, writer and reader roles, explicit project permissions,
+account recovery, audit and automated private backups with isolated restore drills.
+Native branch heads, bounded diffs/merges and divergent DAG synchronization are
+implemented. Collaboration/review, full hosted merge execution and other developer
 workflows remain unfinished. ACE is a working native technical preview; these
 remaining capabilities must be implemented and verified before describing it as
 a complete GitHub replacement.

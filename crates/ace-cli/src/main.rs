@@ -248,6 +248,46 @@ enum StoreCommand {
         #[arg(long, value_parser = parse_content_hash)]
         parent: Vec<ContentHash>,
     },
+    /// Import another verified store without rewriting immutable version identities.
+    Fetch {
+        source: PathBuf,
+        destination: PathBuf,
+    },
+    /// List verified native branch heads and their compare-and-swap history.
+    Refs { store: PathBuf },
+    /// Create or advance a branch with an explicit previous-head expectation.
+    Branch {
+        store: PathBuf,
+        name: String,
+        #[arg(value_parser=parse_content_hash)]
+        target: ContentHash,
+        #[arg(long,value_parser=parse_content_hash)]
+        expect: Option<ContentHash>,
+    },
+    /// Compare exact files and bounded line edits between two native versions.
+    Diff {
+        #[arg(value_parser=parse_content_hash)]
+        left: ContentHash,
+        #[arg(value_parser=parse_content_hash)]
+        right: ContentHash,
+        #[arg(long)]
+        store: PathBuf,
+    },
+    /// Three-way merge source into a fresh preview; preserve conflicts explicitly.
+    Merge {
+        #[arg(value_parser=parse_content_hash)]
+        ours: ContentHash,
+        #[arg(value_parser=parse_content_hash)]
+        theirs: ContentHash,
+        #[arg(long)]
+        store: PathBuf,
+        #[arg(long,value_parser=parse_content_hash)]
+        base: Option<ContentHash>,
+        #[arg(long)]
+        output: PathBuf,
+        #[arg(long)]
+        message: String,
+    },
     /// Verify native objects, version ancestry, journal, winner source and learning.
     Log { store: PathBuf },
     /// Restore an exact native version into a fresh directory.
@@ -403,6 +443,42 @@ fn run(cli: Cli) -> Result<()> {
                 run,
                 store: destination,
             } => print(&store::save(&run, &destination)?)?,
+            StoreCommand::Fetch {
+                source,
+                destination,
+            } => print(&store::fetch(&source, &destination)?)?,
+            StoreCommand::Refs { store: destination } => print(&store::refs(&destination)?)?,
+            StoreCommand::Branch {
+                store: destination,
+                name,
+                target,
+                expect,
+            } => print(&store::branch(
+                &destination,
+                &name,
+                &target,
+                expect.as_ref(),
+            )?)?,
+            StoreCommand::Diff {
+                left,
+                right,
+                store: destination,
+            } => print(&store::diff(&destination, &left, &right)?)?,
+            StoreCommand::Merge {
+                ours,
+                theirs,
+                store: destination,
+                base,
+                output,
+                message,
+            } => print(&store::merge(
+                &destination,
+                &ours,
+                &theirs,
+                base.as_ref(),
+                &output,
+                Text::new(message)?,
+            )?)?,
             StoreCommand::Log { store: destination } => print(&store::status(&destination)?)?,
             StoreCommand::Checkout {
                 version,
@@ -721,6 +797,10 @@ fn run(cli: Cli) -> Result<()> {
             schemas.insert(
                 "native-journal-entry.schema.json".into(),
                 serde_json::to_value(schemars::schema_for!(store::Entry))?,
+            );
+            schemas.insert(
+                "native-ref-event.schema.json".into(),
+                serde_json::to_value(schemars::schema_for!(store::RefEvent))?,
             );
             schemas.insert(
                 "memory.schema.json".into(),

@@ -1,7 +1,7 @@
 import {it,expect} from 'vitest';
 import {env,SELF} from 'cloudflare:test';
 import {coordinate,sha256} from '../src/contracts';
-import {access,ensure,claim,resource,grant,revoke,reserveModel} from '../src/projects';
+import {access,ensure,claim,resource,grant,revoke,reserveModel,audit} from '../src/projects';
 import type {Identity} from '../src/accounts';
 const operator='local-tests-only-0123456789abcdef0123456789abcdef',password='isolated-project-test-password';
 async function account(role:'admin'|'writer'|'reader'='writer'){
@@ -69,4 +69,10 @@ it('cached model outputs cannot be claimed from legacy or another private projec
  await expect(reserveModel(env,a.actor,'generation',id,p)).rejects.toThrow('legacy resource');
  await claim(env,a.actor,'generation',id,p);
  await expect(reserveModel(env,b.actor,'generation',id,q)).rejects.toThrow('different project');
+});
+
+it('identical immutable publication IDs are audited independently in separate projects',async()=>{
+ const a=await account(),p=name(),q=name();await ensure(env,a.actor,p);await ensure(env,a.actor,q);const id='publication-'+'d'.repeat(64);
+ await audit(env,a.actor,p,'version.publish','same-version',id);await audit(env,a.actor,q,'version.publish','same-version',id);await audit(env,a.actor,p,'version.publish','same-version',id);
+ for(const project of[p,q])expect((await env.DB.prepare("SELECT COUNT(*) AS n FROM project_audit WHERE project = ? AND action = 'version.publish'").bind(project).first<{n:number}>())?.n).toBe(1);
 });

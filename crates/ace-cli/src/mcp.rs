@@ -76,6 +76,16 @@ struct History {
 #[derive(Deserialize)]
 #[serde(tag = "name", content = "arguments", deny_unknown_fields)]
 enum Call {
+    #[serde(rename = "ace_store_refs")]
+    StoreRefs(ReadStore),
+    #[serde(rename = "ace_store_branch")]
+    StoreBranch(StoreBranch),
+    #[serde(rename = "ace_store_diff")]
+    StoreDiff(StoreDiff),
+    #[serde(rename = "ace_store_merge")]
+    StoreMerge(StoreMerge),
+    #[serde(rename = "ace_store_fetch")]
+    StoreFetch(StoreFetch),
     #[serde(rename = "ace_store_save")]
     StoreSave(StoreSave),
     #[serde(rename = "ace_store_log")]
@@ -128,6 +138,37 @@ enum Call {
     History(History),
 }
 
+#[derive(Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+struct StoreBranch {
+    store: CheckName,
+    name: CheckName,
+    target: ContentHash,
+    expected: Option<ContentHash>,
+}
+#[derive(Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+struct StoreDiff {
+    store: CheckName,
+    left: ContentHash,
+    right: ContentHash,
+}
+#[derive(Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+struct StoreMerge {
+    store: CheckName,
+    ours: ContentHash,
+    theirs: ContentHash,
+    base: Option<ContentHash>,
+    output: CheckName,
+    message: Text,
+}
+#[derive(Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+struct StoreFetch {
+    source: CheckName,
+    destination: CheckName,
+}
 #[derive(Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 struct StoreSave {
@@ -293,6 +334,11 @@ fn tool<T: JsonSchema>(name: &str, description: &str, readonly: bool) -> Value {
 
 fn tools() -> Value {
     json!({"tools":[
+        tool::<ReadStore>("ace_store_refs","Verify and list native branch heads and their append-only expectation log.",true),
+        tool::<StoreBranch>("ace_store_branch","Create or advance a published native branch using an explicit previous-head expectation. Rewinds and stale expectations fail.",false),
+        tool::<StoreDiff>("ace_store_diff","Compare exact native file identities and bounded UTF-8 line edits; does not execute source.",true),
+        tool::<StoreMerge>("ace_store_merge","Merge native source ancestry into fresh merges/<output>. Preserve every conflict's base/ours/theirs bytes; conflicts publish no version. Merged source needs fresh evaluation.",false),
+        tool::<StoreFetch>("ace_store_fetch","Import verified immutable DAG nodes between existing stores while preserving version IDs. Existing branch heads remain intact.",false),
         tool::<StoreSave>("ace_store_save", "Save verified winner source, every evaluated version and evidence-backed learning in ACE's native version engine under stores/<store>. No Git or account required.", false),
         tool::<ReadStore>("ace_store_log", "Verify native content objects, version parents and the ordered hash journal. Return source versions, evaluated winners/losers and generator faults.", true),
         tool::<StoreCheckout>("ace_store_checkout", "Restore exact bytes from a native version into a fresh checkouts/<output> folder. Never runs source or replaces existing files.", false),
@@ -323,6 +369,30 @@ fn tools() -> Value {
 
 fn execute(root: &Path, call: Call) -> Result<Value> {
     Ok(match call {
+        Call::StoreRefs(args) => crate::store::refs(&path(root, "stores", &args.store, true)?)?,
+        Call::StoreBranch(args) => crate::store::branch(
+            &path(root, "stores", &args.store, true)?,
+            args.name.as_str(),
+            &args.target,
+            args.expected.as_ref(),
+        )?,
+        Call::StoreDiff(args) => crate::store::diff(
+            &path(root, "stores", &args.store, true)?,
+            &args.left,
+            &args.right,
+        )?,
+        Call::StoreMerge(args) => crate::store::merge(
+            &path(root, "stores", &args.store, true)?,
+            &args.ours,
+            &args.theirs,
+            args.base.as_ref(),
+            &path(root, "merges", &args.output, false)?,
+            args.message,
+        )?,
+        Call::StoreFetch(args) => crate::store::fetch(
+            &path(root, "stores", &args.source, true)?,
+            &path(root, "stores", &args.destination, true)?,
+        )?,
         Call::StoreSave(args) => crate::store::save(
             &path(root, "runs", &args.run, true)?,
             &history_path(root, None, Some(&args.store), true)?,

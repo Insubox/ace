@@ -268,7 +268,7 @@ fn local_agents_generate_evaluate_and_inspect_real_evidence_over_stdio() {
     assert_eq!(responses[0]["id"], "hello");
     assert_eq!(
         responses[1]["result"]["tools"].as_array().unwrap().len(),
-        25
+        30
     );
     value(&responses[2]);
     let report = value(&responses[3]);
@@ -380,4 +380,111 @@ fn symlinked_categories_and_runs_cannot_escape_the_operator_workspace() {
         &[call(1, "ace_status", json!({"run":"outside"}))],
     );
     assert_eq!(responses[0]["result"]["isError"], true);
+}
+
+#[test]
+fn agents_merge_native_branches_with_explicit_expectations_inside_the_workspace() {
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path();
+    let source = root.join("sources/source");
+    fs::create_dir_all(&source).unwrap();
+    fs::write(source.join("code.txt"), "one\ntwo\nthree\n").unwrap();
+    let first = rpc(
+        root,
+        &[call(
+            1,
+            "ace_store_commit",
+            json!({"store":"a","source":"source","files":["code.txt"],"message":"base"}),
+        )],
+    );
+    let base = value(&first[0])["version"].as_str().unwrap().to_owned();
+    rpc(
+        root,
+        &[
+            call(
+                2,
+                "ace_store_branch",
+                json!({"store":"a","name":"main","target":base}),
+            ),
+            call(3, "ace_store_clone", json!({"store":"a","destination":"b"})),
+        ],
+    );
+    fs::write(source.join("code.txt"), "ONE\ntwo\nthree\n").unwrap();
+    let ours=value(&rpc(root,&[call(4,"ace_store_commit",json!({"store":"a","source":"source","files":["code.txt"],"message":"first line","parents":[base]}))])[0])["version"].as_str().unwrap().to_owned();
+    fs::write(source.join("code.txt"), "one\ntwo\nTHREE\n").unwrap();
+    let theirs=value(&rpc(root,&[call(5,"ace_store_commit",json!({"store":"b","source":"source","files":["code.txt"],"message":"third line","parents":[base]}))])[0])["version"].as_str().unwrap().to_owned();
+    let replies = rpc(
+        root,
+        &[
+            call(
+                6,
+                "ace_store_branch",
+                json!({"store":"a","name":"main","target":ours,"expected":base}),
+            ),
+            call(
+                7,
+                "ace_store_branch",
+                json!({"store":"b","name":"main","target":theirs,"expected":base}),
+            ),
+            call(
+                8,
+                "ace_store_fetch",
+                json!({"source":"a","destination":"b"}),
+            ),
+            call(
+                9,
+                "ace_store_diff",
+                json!({"store":"b","left":ours,"right":theirs}),
+            ),
+            call(
+                10,
+                "ace_store_merge",
+                json!({"store":"b","ours":theirs,"theirs":ours,"output":"merged","message":"combine"}),
+            ),
+        ],
+    );
+    assert_eq!(value(&replies[2])["imported"], 1);
+    assert_eq!(value(&replies[3])["changes"][0]["path"], "code.txt");
+    let merged = value(&replies[4]);
+    assert_eq!(merged["status"], "merged");
+    assert_eq!(merged["evaluation_required"], true);
+    assert_eq!(
+        fs::read(root.join("merges/merged/merged/code.txt")).unwrap(),
+        b"ONE\ntwo\nTHREE\n"
+    );
+    let id = merged["version"].as_str().unwrap();
+    let replies = rpc(
+        root,
+        &[
+            call(
+                11,
+                "ace_store_branch",
+                json!({"store":"b","name":"main","target":id,"expected":theirs}),
+            ),
+            call(
+                12,
+                "ace_store_branch",
+                json!({"store":"b","name":"main","target":id,"expected":theirs}),
+            ),
+            call(13, "ace_store_refs", json!({"store":"b"})),
+        ],
+    );
+    assert_eq!(replies[1]["result"]["isError"], true);
+    assert_eq!(value(&replies[2])["heads"]["main"], id);
+    #[cfg(unix)]
+    {
+        let outside = tempfile::tempdir().unwrap();
+        fs::rename(root.join("merges"), root.join("previous-merges")).unwrap();
+        std::os::unix::fs::symlink(outside.path(), root.join("merges")).unwrap();
+        let rejected = rpc(
+            root,
+            &[call(
+                14,
+                "ace_store_merge",
+                json!({"store":"b","ours":theirs,"theirs":ours,"output":"escape","message":"rejected"}),
+            )],
+        );
+        assert_eq!(rejected[0]["result"]["isError"], true);
+        assert!(!outside.path().join("escape").exists());
+    }
 }

@@ -2,7 +2,7 @@ import { env, SELF } from 'cloudflare:test';
 import { beforeAll, expect, it } from 'vitest';
 import migration from '../migrations/0003_native_stores.sql?raw';
 import { type Env, sha256, coordinate } from '../src/contracts';
-import { nativeHash, putObject, putVersion, appendEntry, readFile, readStore, type NativeEntry, versionSchema } from '../src/native-store';
+import { nativeHash, putObject, putVersion, appendEntry, readFile, readStore, type NativeEntry, versionSchema,appendRef,readRefs,type NativeRef } from '../src/native-store';
 const encode=(v:unknown)=>new TextEncoder().encode(JSON.stringify(v));
 beforeAll(async()=>{await env.DB.batch(migration.split(';').map(s=>s.trim()).filter(Boolean).map(s=>env.DB.prepare(s)));});
 async function fixture(parents:string[]=[],message='source snapshot'){
@@ -52,4 +52,20 @@ it('detects corrupted downloaded objects and hashes Unicode keys in Rust scalar 
   const n=name(),f=await fixture();await putObject(env,n,f.object,f.bytes);await env.ARTIFACTS.put(`native-stores/${n}/objects/${f.object}`,new Uint8Array([1]));await expect(readFile(env,n,'objects',f.object)).rejects.toThrow('corrupted');
   const a={'\u{10000}':1,'\ue000':2},b={'\ue000':2,'\u{10000}':1};expect(await nativeHash(a)).toBe(await nativeHash(b));
   expect(await nativeHash(a)).toBe(await sha256(new TextEncoder().encode('ace:canonical-json:v1\0{"\ue000":2,"\u{10000}":1}')));
+});
+
+async function reference(target:string,sequence=1,previous:string|null=null,expected:string|null=null):Promise<NativeRef>{return{schema_version:1,sequence,previous,branch:'main',expected,target,content_hash:await nativeHash([1,sequence,previous,'main',expected,target])};}
+it('serializes branch compare-and-swap and rejects rewinds without changing either native version',async()=>{
+ const n=name(),root=await fixture(),left=await fixture([root.id],'left'),right=await fixture([root.id],'right');await putObject(env,n,root.object,root.bytes);let tip:string|null=null;
+ for(const [i,f]of[root,left,right].entries()){await putVersion(env,n,f.id,encode(f.sealed));const e=await entry(f.id,i+1,tip);await appendEntry(env,n,encode(e));tip=e.content_hash;}
+ const initial=await reference(root.id);await appendRef(env,n,encode(initial));await appendRef(env,n,encode(initial));
+ const a=await reference(left.id,2,initial.content_hash,root.id),b=await reference(right.id,2,initial.content_hash,root.id);const replies=await Promise.allSettled([appendRef(env,n,encode(a)),appendRef(env,n,encode(b))]);expect(replies.filter(r=>r.status==='fulfilled')).toHaveLength(1);
+ const current=await(await readRefs(env,n)).json() as {heads:Record<string,string>;events:NativeRef[]};expect(current.events).toHaveLength(2);
+ const head=current.heads.main!,event=current.events[1]!;await expect(appendRef(env,n,encode(await reference(root.id,3,event.content_hash,head)))).rejects.toThrow('fast-forward');
+ expect((await(await readRefs(env,n)).json() as {heads:Record<string,string>}).heads.main).toBe(head);
+});
+it('branch publication requires a published target and rejects a modified reference seal',async()=>{
+ const n=name(),f=await fixture();await putObject(env,n,f.object,f.bytes);await putVersion(env,n,f.id,encode(f.sealed));const ref=await reference(f.id);
+ await expect(appendRef(env,n,encode(ref))).rejects.toThrow('target first');
+ await appendEntry(env,n,encode(await entry(f.id)));await expect(appendRef(env,n,encode({...ref,content_hash:'0'.repeat(64)}))).rejects.toThrow('hash differs');
 });
