@@ -57,7 +57,7 @@ The Worker invoked Qwen `@cf/qwen/qwen2.5-coder-32b-instruct` and Llama
 attempt bytes and hashes in R2. Local ACE checked these before accepting WAT.
 The current adapter is `wat-generator-v4`. The final deployed Worker version
 is `9098b856-ca26-4580-8195-3d9f48abd810` on 2026-10-07.
-The static Linux package is checked separately before tagging the release.
+The static Linux package check is recorded below.
 
 Early trials produced one assembled candidate, which failed independent
 correctness checks. Others failed WAT parsing (unknown labels/missing parentheses).
@@ -89,3 +89,21 @@ hashes are not signed authorization proofs.
 GitHub Actions, published release assets and native macOS/Windows binaries have
 not been inspected or executed here. GitHub distributes ACE's source/packages;
 it is not ACE's native product storage engine.
+
+## Packaged Linux executable
+
+The static `x86_64-unknown-linux-musl` ACE 0.3.0 executable was packaged from
+source commit `709e860851374c4ec18147a997e7b07c95a1441d` and checked after extraction.
+Its archive SHA-256 is
+`08321a64801ae2b7d80efee2bf8b21b60ce3f52976464a0ff7e8857957916ad4`.
+
+With credentials absent and PATH empty, the package ran the complete demo
+(13 programs, ten qualified, three diagnostic failures), replay, three grammar
+generations, two agent rounds, a generator fault, four native versions, verified
+memory, native clone/checkout, offline HTML export and 25-tool MCP flow. Separate
+compatibility checks enabled installed Git, saved three Git snapshots and verified
+a real Git clone. No provider token was needed for either local workflow.
+
+The release workflow packages the same flows for Linux, both macOS architectures
+and Windows. Local validation does not establish that those remote jobs or release
+assets have completed. Source publication and the `v0.3.0` tag trigger that workflow.
