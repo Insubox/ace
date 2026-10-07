@@ -53,7 +53,7 @@ evaluations and retains separate server evidence. [Private project permissions](
 and account recovery protect hosted access. [Automated backups](docs/backups.md)
 restore into isolated resources for verification. Local experiments remain account-free.
 
-The [0.3.0 delivery record](docs/local-delivery-0.3.md) distinguishes tested behavior
+The [0.4.0 delivery record](docs/local-delivery-0.4.md) distinguishes tested behavior
 from the remaining architecture and remote platform checks.
 
 This repository implements **Phase 0: the domain kernel** and **Phase 1: a local

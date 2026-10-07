@@ -13,6 +13,7 @@ import * as projects from './projects';
 import {readVerification,requestVerification,readVerifiedRun} from './verification';
 import {requestBackup,listBackups,requestRestore,readDrill,readRestoreReceipt} from './backups';
 import {requestTrial,listTrials,readTrial,readProposal,retryTrial} from './observatory';
+import {operations} from './operations';
 export {ObservatoryWorkflow} from './observatory';
 export {BackupWorkflow} from './backups';
 export {NativeVerificationWorkflow} from './verification';
@@ -63,7 +64,7 @@ async function mcp(request: Request, env: Env, actor:accounts.Identity): Promise
     return new Response(null, { status: 202 });
   }
   const reply = (result: unknown) => json({ jsonrpc: '2.0', id: body.id, result });
-  if (body.method === 'initialize') return reply({ protocolVersion: '2025-03-26', capabilities: { tools: {} }, serverInfo: { name: 'ace', version: '0.3.0' } });
+  if (body.method === 'initialize') return reply({ protocolVersion: '2025-03-26', capabilities: { tools: {} }, serverInfo: { name: 'ace', version: '0.4.0' } });
   if (body.method === 'ping') return reply({});
   if (body.method === 'tools/list') return reply({ tools });
   if (body.method === 'tools/call') {
@@ -88,6 +89,7 @@ export default {
       if(url.pathname==='/v1/auth/login'&&request.method==='POST')return await accounts.login(request,env,await limitedBody(request,16384));
       if(url.pathname==='/v1/auth/recover'&&request.method==='POST')return await accounts.recover(request,env,await limitedBody(request,16384));
       const current=await accounts.identity(request,env);accounts.authorize(request,current);
+      if(url.pathname==='/v1/operations'&&request.method==='GET')return await operations(env,current);
       if(url.pathname==='/v1/auth/me'&&request.method==='GET')return json(current);
       if(url.pathname==='/v1/auth/setup-ticket'&&request.method==='POST')return await accounts.setupTicket(env,current);
       if(url.pathname==='/v1/auth/logout'&&request.method==='POST')return await accounts.logout(request,env,current);

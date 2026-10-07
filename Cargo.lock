@@ -4,7 +4,7 @@ version = 4
 
 [[package]]
 name = "ace-cli"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "ace-core",
  "ace-eval",
@@ -21,7 +21,7 @@ dependencies = [
 
 [[package]]
 name = "ace-core"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "schemars",
  "serde",
@@ -32,7 +32,7 @@ dependencies = [
 
 [[package]]
 name = "ace-eval"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "ace-core",
  "ace-protocol",
@@ -43,7 +43,7 @@ dependencies = [
 
 [[package]]
 name = "ace-policy"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "ace-core",
  "schemars",
@@ -53,7 +53,7 @@ dependencies = [
 
 [[package]]
 name = "ace-protocol"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "ace-core",
  "ace-policy",
@@ -66,7 +66,7 @@ dependencies = [
 
 [[package]]
 name = "ace-runner"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "ace-core",
  "ace-policy",

@@ -8,6 +8,10 @@ export class ExperimentCoordinator extends DurableObject<Env> {
       const op = new URL(request.url).pathname.slice(1);
       const body = await request.json() as Record<string, unknown>;
       const result = await this.ctx.storage.transaction(async tx => {
+        if(op==='operational-budgets')return{
+          trials_used:await tx.get<number>('observatory-registered')??0,trials_limit:8,
+          containers_used:await tx.get<number>('observatory-containers')??0,containers_limit:16
+        };
         if(op==='setup-issue'){
           await tx.put('account-setup',{hash:body.hash,expires:body.expires,used:false});return{issued:true};
         }

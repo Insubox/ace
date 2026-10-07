@@ -44,7 +44,8 @@ def main():
                     "target": args.target, "binary_sha256": hashlib.sha256(executable.read_bytes()).hexdigest(),
                     "offline_demo": True, "candidate_generator": "gcd-grammar-v1",
                     "agent_wat_proposals": True, "local_git_history": True,
-                    "bounded_agent_campaigns": True, "verified_memory": True, "native_version_engine": "ace-native-v1"}
+                    "bounded_agent_campaigns": True, "verified_memory": True, "native_version_engine": "ace-native-v1", "cells": ["Gcd", "MaxU32", "MinU32"],
+                    "bounded_regular_file_inputs": True, "native_branch_merge": True}
         (package / "BUILD.json").write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf-8")
         # Build privately, then publish complete files without replacing an output.
         staged = Path(temporary) / archive_name

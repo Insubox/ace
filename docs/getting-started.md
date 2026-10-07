@@ -1,6 +1,8 @@
 # Run your first ACE experiment
 
-ACE currently experiments with the pure function `gcd(u32, u32) -> u32`.
+ACE evaluates the pure unsigned functions Gcd, MaxU32 and MinU32.
+The built-in offline demo generates Gcd proposals; manual WAT and agent
+proposals can also use `max_u32` and `min_u32`.
 It generates bounded WASM variants, executes them with resource limits,
 checks their answers with an independent Oracle, saves immutable evidence,
 and chooses a qualified Champion. Multiple generations can reuse the previous
@@ -30,12 +32,12 @@ Git is needed only for the optional compatibility archive/export commands.
 
 ```sh
 # Linux
-sha256sum -c ace-0.3.0-x86_64-unknown-linux-musl.tar.gz.sha256
+sha256sum -c ace-0.4.0-x86_64-unknown-linux-musl.tar.gz.sha256
 # macOS (use your downloaded filename)
-shasum -a 256 -c ace-0.3.0-aarch64-apple-darwin.tar.gz.sha256
+shasum -a 256 -c ace-0.4.0-aarch64-apple-darwin.tar.gz.sha256
 ```
 
-On Windows, run `Get-FileHash .\ace-0.3.0-x86_64-pc-windows-msvc.zip -Algorithm SHA256`
+On Windows, run `Get-FileHash .\ace-0.4.0-x86_64-pc-windows-msvc.zip -Algorithm SHA256`
 in PowerShell and compare it with the text in the downloaded `.sha256` file.
 These hashes detect changed downloads; they are not a code-signing certificate.
 

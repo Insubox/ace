@@ -151,11 +151,32 @@ def main():
                                 cwd=root, env=environment, input=stream, text=True,
                                 capture_output=True, check=True, timeout=120)
         responses = [json.loads(line) for line in output.stdout.splitlines()]
-        if len(responses) != 8 or len(responses[1]["result"]["tools"]) != 25 or any(response["result"]["isError"] for response in responses[2:]):
+        if len(responses) != 8 or len(responses[1]["result"]["tools"]) != 30 or any(response["result"]["isError"] for response in responses[2:]):
             raise ValueError("packaged local MCP agent experience did not verify")
         agent_run = responses[7]["result"]["structuredContent"]
         if agent_run["champion"] != "C-agent-recursive" or not any(c["id"] == "C-agent-add" and c["outcome"] == "failed_correctness" for c in agent_run["candidates"]):
             raise ValueError("packaged agent proposals did not receive real correctness evaluation")
+        required = {"ace_store_refs", "ace_store_branch", "ace_store_diff", "ace_store_merge", "ace_store_fetch"}
+        if not required.issubset({tool["name"] for tool in responses[1]["result"]["tools"]}):
+            raise ValueError("packaged native collaboration tools are missing")
+        for cell, entry, compare in [("MaxU32", "max_u32", "gt"), ("MinU32", "min_u32", "lt")]:
+            file = root / f"{cell}.json"
+            candidates = [{"id": "C-unsigned" if suffix == "u" else "C-signed",
+                           "wat": f'(module (func (export "{entry}") (param $a i32) (param $b i32) (result i32) local.get $a local.get $b local.get $a local.get $b i32.{compare}_{suffix} select))',
+                           "strategy": suffix, "generator": {"provider": "manual", "model": "package-test"}}
+                          for suffix in ["u", "s"]]
+            file.write_text(json.dumps({"schema_version": 1, "cell": cell, "candidates": candidates}), encoding="utf-8")
+            run("propose", str(file), "--output", cell)
+            summary = json.loads(run("run", cell, "--output", cell + "-run"))
+            outcomes = {candidate["id"]: candidate["outcome"] for candidate in summary["candidates"]}
+            if outcomes.get("C-unsigned") != "qualified" or outcomes.get("C-signed") != "failed_correctness":
+                raise ValueError("packaged unsigned Cell gates did not reproduce")
+            run("store", "save", cell + "-run", "--store", cell + "-store")
+            native = json.loads(run("store", "log", cell + "-store"))
+            version = native["versions"][0]["version"]
+            snapshot = f"{cell}-store/views/{version}"
+            if json.loads(run("cloud", "verify-snapshot", snapshot, "--output", cell + "-replayed"))["status"] != "reproduced":
+                raise ValueError("packaged Cell snapshot did not independently reproduce")
         archive_call = {"jsonrpc": "2.0", "id": 9, "method": "tools/call", "params": {"name": "ace_archive", "arguments": {"run": "agents", "repository": "agents"}}}
         output = subprocess.run([str(executable), "mcp", "--workspace", str(root / "mcp-workspace")],
                                 cwd=root, env=git_environment, input=json.dumps(archive_call) + "\n",
@@ -166,7 +187,7 @@ def main():
                       "source_commit": metadata["source_commit"], "target": metadata["target"],
                       "demo_programs": 13, "qualified": 10, "diagnostic_failures": 3,
                       "generations": len(evolution["steps"]), "history_verified": True,
-                      "mcp_tools": 25, "mcp_experiment_verified": True,
+                      "mcp_tools": 30, "unsigned_cells_verified": ["MaxU32", "MinU32"], "mcp_experiment_verified": True,
                       "agent_proposals_verified": True, "offline_inspector_verified": True, "agent_rounds": 2, "native_memory_verified": True, "native_versions": 4, "native_clone_verified": True,
                       "generator_fault_verified": True, "git_snapshots": len(git_history["snapshots"]),
                       "git_clone_verified": True, "git_provider_credentials": "absent",

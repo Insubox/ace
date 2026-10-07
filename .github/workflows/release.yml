@@ -41,7 +41,7 @@ jobs:
       - name: Install Linux static linker
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install --yes musl-tools
-      - run: cargo test --locked -p ace-cli
+      - run: cargo test --workspace --locked
       - run: cargo build --release --locked -p ace-cli --target ${{ matrix.target }}
       - name: Check published executable, demo and generations
         shell: bash
