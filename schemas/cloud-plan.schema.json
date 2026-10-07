@@ -91,6 +91,10 @@
           "minimum": 0,
           "type": "integer"
         },
+        "oracle": {
+          "$ref": "#/$defs/HostOracle",
+          "description": "Absent in legacy GCD documents, preserving their canonical identities."
+        },
         "oracle_seed": {
           "format": "uint64",
           "minimum": 0,
@@ -122,6 +126,14 @@
         "memory_pages"
       ],
       "type": "object"
+    },
+    "HostOracle": {
+      "enum": [
+        "gcd",
+        "max_u32",
+        "min_u32"
+      ],
+      "type": "string"
     },
     "HypothesisId": {
       "maxLength": 128,

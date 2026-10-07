@@ -1,4 +1,4 @@
-use crate::{Harness, oracle_cases, oracle_gcd};
+use crate::{Harness, oracle_cases};
 use ace_core::*;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -254,7 +254,7 @@ pub(crate) fn evaluate_module(bytes: &[u8], harness: &Harness, deadline: Instant
         outputs.extend_from_slice(&a.to_le_bytes());
         outputs.extend_from_slice(&b.to_le_bytes());
         outputs.extend_from_slice(&output.to_le_bytes());
-        if output != oracle_gcd(a, b) {
+        if output != harness.oracle.evaluate(a, b) {
             result.outcome = CandidateOutcome::FailedCorrectness;
             result.reason = Text::new(format!(
                 "independent oracle rejected output on call {}",

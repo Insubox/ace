@@ -7,6 +7,91 @@ use std::{
 
 const CORRECT: &str = "(module (func $g (export \"gcd\") (param $a i32) (param $b i32) (result i32) local.get $b i32.eqz (if (result i32) (then local.get $a) (else local.get $b local.get $a local.get $b i32.rem_u call $g))))";
 
+#[test]
+fn unsigned_cells_keep_distinct_oracles_winner_sources_and_rejected_signed_code() {
+    let root = tempfile::tempdir().unwrap();
+    for (cell, entry, compare) in [("MaxU32", "max_u32", "gt"), ("MinU32", "min_u32", "lt")] {
+        let file = root.path().join(format!("{cell}.json"));
+        let make = |suffix: &str| {
+            format!(
+                "(module (func (export \"{entry}\") (param $a i32) (param $b i32) (result i32) local.get $a local.get $b local.get $a local.get $b i32.{compare}_{suffix} select))"
+            )
+        };
+        write(
+            &file,
+            &json!({"schema_version":1,"cell":cell,"candidates":[
+                {"id":"C-select","wat":make("u"),"strategy":"unsigned-select","generator":{"provider":"manual","model":"fixture"}},
+                {"id":"C-signed","wat":make("s"),"strategy":"incorrect-signed-comparison","generator":{"provider":"manual","model":"fixture"}}
+            ]}),
+        );
+        let input = root.path().join(format!("input-{cell}"));
+        ok(&["propose", p(&file), "--output", p(&input)]);
+        let run = root.path().join(format!("run-{cell}"));
+        let result = ok(&["run", p(&input), "--output", p(&run)]);
+        assert_eq!(result["candidates"][1]["outcome"], "qualified");
+        assert_eq!(result["candidates"][2]["outcome"], "failed_correctness");
+        let native = root.path().join(format!("native-{cell}"));
+        ok(&["store", "save", p(&run), "--store", p(&native)]);
+        let status = ok(&["store", "log", p(&native)]);
+        assert_eq!(status["verified"], true);
+        let id = status["versions"][0]["version"].as_str().unwrap();
+        let snapshot = native.join("views").join(id);
+        assert_eq!(
+            ok(&[
+                "cloud",
+                "verify-snapshot",
+                p(&snapshot),
+                "--output",
+                p(&root.path().join(format!("replay-{cell}")))
+            ])["status"],
+            "reproduced"
+        );
+        let learning: Value =
+            serde_json::from_slice(&fs::read(snapshot.join("learning.json")).unwrap()).unwrap();
+        assert!(learning["scope"].as_str().unwrap().contains(cell));
+        let campaign = root.path().join(format!("campaign-{cell}"));
+        ok(&[
+            "agent-start",
+            p(&campaign),
+            "--campaign",
+            cell,
+            "--baseline-run",
+            p(&run),
+            "--store",
+            p(&native),
+            "--jobs",
+            "1",
+        ]);
+        let task = ok(&["agent-next", p(&campaign)]);
+        assert_eq!(task["task"]["context"]["contract"]["cell"], cell);
+        assert!(
+            task["task"]["context"]["contract"]["abi"]
+                .as_str()
+                .unwrap()
+                .contains(entry)
+        );
+        assert_eq!(task["task"]["context"]["memory"]["excluded_runs"], 0);
+        let foreign = root.path().join(format!("foreign-{cell}"));
+        let mut other = batch();
+        other["cell"] = json!(if cell == "MaxU32" { "MinU32" } else { "MaxU32" });
+        let otherfile = root.path().join(format!("other-{cell}.json"));
+        write(&otherfile, &other);
+        assert!(
+            !ace(&[
+                "propose",
+                p(&otherfile),
+                "--baseline-run",
+                p(&run),
+                "--output",
+                p(&foreign)
+            ])
+            .status
+            .success()
+        );
+        assert!(!foreign.exists());
+    }
+}
+
 fn batch() -> Value {
     json!({"schema_version":1, "cell":"Gcd", "candidates":[
         {"id":"C-agent-recursive","wat":CORRECT,"strategy":"recursive-euclid","generator":{"provider":"manual-fixture-a","model":"recursive-v1"}},

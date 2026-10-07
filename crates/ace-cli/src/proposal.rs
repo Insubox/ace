@@ -68,9 +68,30 @@ fn read(path: &Path, limit: u64) -> Result<Vec<u8>> {
     Ok(ace_runner::files::read_regular(path, limit)?)
 }
 
+pub(crate) fn reference(cell: &str) -> Result<String> {
+    match cell {
+        "Gcd" => Ok(generate::baseline()),
+        "MaxU32" | "MinU32" => {
+            let entry = if cell == "MaxU32" {
+                "max_u32"
+            } else {
+                "min_u32"
+            };
+            let cmp = if cell == "MaxU32" { "gt_u" } else { "lt_u" };
+            Ok(format!(
+                "(module (func (export \"{entry}\") (param $a i32) (param $b i32) (result i32) local.get $a local.get $b i32.{cmp} (if (result i32) (then local.get $a) (else local.get $b))))"
+            ))
+        }
+        _ => Err("unsupported Cell".into()),
+    }
+}
+
 fn validate(batch: &Batch) -> Result<()> {
-    if batch.cell.as_str() != "Gcd" || batch.candidates.is_empty() || batch.candidates.len() > 100 {
-        return Err("register 1–100 proposals for the Gcd Cell".into());
+    if !["Gcd", "MaxU32", "MinU32"].contains(&batch.cell.as_str())
+        || batch.candidates.is_empty()
+        || batch.candidates.len() > 100
+    {
+        return Err("register 1–100 proposals for Gcd, MaxU32 or MinU32".into());
     }
     if json(batch)?.len() > 3_145_728 {
         return Err("proposal batch exceeds 3 MiB".into());
@@ -117,7 +138,7 @@ pub(crate) fn register_scoped(
     let (base_bytes, base_source, base_generator, base_strategy, parent, profile) =
         if let Some(run) = baseline_run {
             let report = ace_runner::load_report(run)?;
-            if report.config.cell.as_str() != "Gcd" {
+            if report.config.cell != batch.cell {
                 return Err("baseline Champion belongs to another Cell".into());
             }
             let champion = report
@@ -169,16 +190,24 @@ pub(crate) fn register_scoped(
                 Some(report.config),
             )
         } else {
-            let source = generate::baseline();
+            let source = reference(batch.cell.as_str())?;
             (
                 wat::parse_str(&source)?,
                 Some(source),
                 Generator {
                     provider: Text::new("ace-local")?,
-                    model: Text::new("gcd-reference-v1")?,
+                    model: Text::new(if batch.cell.as_str() == "Gcd" {
+                        "gcd-reference-v1".to_owned()
+                    } else {
+                        format!("{}-reference-v1", batch.cell.as_str())
+                    })?,
                     revision: Some(Text::new(env!("CARGO_PKG_VERSION"))?),
                 },
-                Text::new("bounded-divisor-scan")?,
+                Text::new(if batch.cell.as_str() == "Gcd" {
+                    "bounded-divisor-scan"
+                } else {
+                    "unsigned-branch-reference"
+                })?,
                 None,
                 None,
             )
@@ -233,8 +262,28 @@ pub(crate) fn register_scoped(
         });
     }
     let mut config = generate::config(baseline, modules)?;
-    config.project = ProjectId::new("PRJ-agent-gcd")?;
-    config.experiment = ExperimentId::new("EXP-agent-gcd")?;
+    config.cell = batch.cell.clone();
+    config.harness.oracle = match batch.cell.as_str() {
+        "Gcd" => ace_runner::HostOracle::Gcd,
+        "MaxU32" => ace_runner::HostOracle::MaxU32,
+        "MinU32" => ace_runner::HostOracle::MinU32,
+        _ => unreachable!(),
+    };
+    config.harness.entrypoint = CheckName::new(config.harness.oracle.entrypoint())?;
+    if !config.harness.oracle.is_gcd() {
+        config.intent = IntentId::new(format!("INT-reduce-{}-work", batch.cell))?;
+    }
+
+    config.project = ProjectId::new(if batch.cell.as_str() == "Gcd" {
+        "PRJ-agent-gcd".to_owned()
+    } else {
+        format!("PRJ-agent-{}", batch.cell)
+    })?;
+    config.experiment = ExperimentId::new(if batch.cell.as_str() == "Gcd" {
+        "EXP-agent-gcd".to_owned()
+    } else {
+        format!("EXP-agent-{}", batch.cell)
+    })?;
     config.hypothesis = HypothesisId::new("H-agent-proposals")?;
     if let Some(profile) = profile {
         config.project = profile.project;
@@ -281,7 +330,7 @@ pub(crate) fn verify(directory: &Path) -> Result<Registration> {
     )?)?;
     validate(&batch)?;
     let config = ace_runner::load_config(directory)?;
-    if config.cell.as_str() != "Gcd"
+    if config.cell != batch.cell
         || config.baseline.id.as_str() != "C-baseline"
         || record.assembler != "wat-embedded-v1"
         || !record.provenance_caller_asserted

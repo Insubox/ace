@@ -20,6 +20,9 @@ pub struct ModuleSpec {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct Harness {
+    /// Absent in legacy GCD documents, preserving their canonical identities.
+    #[serde(default, skip_serializing_if = "HostOracle::is_gcd")]
+    pub oracle: HostOracle,
     /// WASM ABI: (i32, i32) -> i32, interpreted as unsigned 32-bit values.
     pub entrypoint: CheckName,
     pub public_cases: Vec<[u32; 2]>,
@@ -30,6 +33,51 @@ pub struct Harness {
     pub benchmark_rounds: u32,
     pub fuel_per_call: u64,
     pub memory_pages: u32,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum HostOracle {
+    #[default]
+    Gcd,
+    MaxU32,
+    MinU32,
+}
+impl HostOracle {
+    pub fn display(&self) -> &'static str {
+        if self.is_gcd() { "GCD" } else { self.cell() }
+    }
+    pub fn is_gcd(&self) -> bool {
+        *self == Self::Gcd
+    }
+    pub fn cell(&self) -> &'static str {
+        match self {
+            Self::Gcd => "Gcd",
+            Self::MaxU32 => "MaxU32",
+            Self::MinU32 => "MinU32",
+        }
+    }
+    pub fn entrypoint(&self) -> &'static str {
+        match self {
+            Self::Gcd => "gcd",
+            Self::MaxU32 => "max_u32",
+            Self::MinU32 => "min_u32",
+        }
+    }
+    pub fn label(&self) -> &'static str {
+        match self {
+            Self::Gcd => "gcd",
+            Self::MaxU32 => "max-u32",
+            Self::MinU32 => "min-u32",
+        }
+    }
+    pub fn evaluate(&self, a: u32, b: u32) -> u32 {
+        match self {
+            Self::Gcd => oracle_gcd(a, b),
+            Self::MaxU32 => a.max(b),
+            Self::MinU32 => a.min(b),
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
@@ -63,6 +111,9 @@ impl Validate for RunConfig {
             }
         }
         let h = &self.harness;
+        if self.cell.as_str() != h.oracle.cell() || h.entrypoint.as_str() != h.oracle.entrypoint() {
+            return reject("Cell, entrypoint and independent host oracle must agree");
+        }
         if h.public_cases.is_empty() || h.public_cases.len() > 128 {
             return reject("public workload must contain 1–128 cases");
         }

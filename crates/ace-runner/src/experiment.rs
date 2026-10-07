@@ -72,7 +72,8 @@ fn artifact(hash: ContentHash) -> ArtifactRef {
 pub(crate) fn evalspec(config: &RunConfig) -> EvalSpec {
     EvalSpec {
         id: EvalSpecId::new(format!(
-            "ES-local-gcd-{}",
+            "ES-local-{}-{}",
+            config.harness.oracle.label(),
             ContentHash::of_json(&config.harness)
                 .expect("serializable harness")
                 .as_str()
@@ -80,7 +81,7 @@ pub(crate) fn evalspec(config: &RunConfig) -> EvalSpec {
         .unwrap(),
         version: one(),
         oracle: VersionedOracle {
-            id: OracleId::new("OR-gcd-v1").unwrap(),
+            id: OracleId::new(format!("OR-{}-v1", config.harness.oracle.label())).unwrap(),
             version: one(),
         },
         required_checks: ["contract", "isolation"]
@@ -584,7 +585,7 @@ pub(crate) fn finish_report(context: ReportContext, output: &Path) -> Result<Run
             status: if passed { ClaimStatus::Proven } else if unrun { ClaimStatus::Open } else { ClaimStatus::Rejected },
             supporting_evidence: if passed { BTreeSet::from([result.evidence.evidence().id.clone()]) } else { BTreeSet::new() },
             contradicting_evidence: if !passed && !unrun { BTreeSet::from([result.evidence.evidence().id.clone()]) } else { BTreeSet::new() },
-            scope: text("Only this recorded GCD workload and WASMI environment; not proof over every input"),
+            scope: text(format!("Only this recorded {} workload and WASMI environment; not proof over every input",config.harness.oracle.display())),
             confidence: Probability::new(if unrun { 0.0 } else { 1.0 })?, environment_hash: env_hash.clone(),
             created_at: now(), superseded_by: None,
         })
@@ -610,9 +611,14 @@ pub(crate) fn finish_report(context: ReportContext, output: &Path) -> Result<Run
     let intent = Intent {
         id: config.intent.clone(),
         cell: config.cell.clone(),
-        objective: text(
-            "Minimize measured WASMI instruction fuel while preserving mathematical GCD outputs",
-        ),
+        objective: text(format!(
+            "Minimize measured WASMI instruction fuel while preserving mathematical {} outputs",
+            if config.harness.oracle.is_gcd() {
+                "GCD"
+            } else {
+                config.harness.oracle.cell()
+            }
+        )),
         evalspec: spec,
         budget: Budget {
             max_candidates: NonZeroU32::new(config.candidates.len() as u32).unwrap(),

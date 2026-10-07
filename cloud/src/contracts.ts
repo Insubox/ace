@@ -11,12 +11,14 @@ export const planSchema = z.strictObject({
   config: z.strictObject({
     schema_version: z.literal(1), project: identifier, experiment: identifier, cell: identifier, intent: identifier, hypothesis: identifier,
     baseline: moduleSpec, candidates: z.array(moduleSpec).min(1).max(100),
-    harness: z.strictObject({ entrypoint: identifier, public_cases: z.array(z.tuple([uint(0, 4294967295), uint(0, 4294967295)])).min(1).max(128),
+    harness: z.strictObject({ oracle:z.enum(['gcd','max_u32','min_u32']).optional(),entrypoint: identifier, public_cases: z.array(z.tuple([uint(0, 4294967295), uint(0, 4294967295)])).min(1).max(128),
       oracle_seed: uint(0, Number.MAX_SAFE_INTEGER), hidden_cases: uint(1, 1024), hidden_max_input: uint(1, 65535),
       benchmark_samples: uint(1, 31), benchmark_rounds: uint(1, 32), fuel_per_call: uint(1, 1_000_000), memory_pages: uint(1, 64) }),
     min_relative_improvement: z.number().min(0).lt(1), max_wall_clock_seconds: uint(1, 300)
   }), module_hashes: z.array(hash).min(2).max(101)
 }).superRefine((p, ctx) => {
+  const profile=({Gcd:['gcd','gcd'],MaxU32:['max_u32','max_u32'],MinU32:['min_u32','min_u32']} as Record<string,string[]>)[p.config.cell];
+  if(!profile||(p.config.harness.oracle??'gcd')!==profile[0]||p.config.harness.entrypoint!==profile[1])ctx.addIssue({code:'custom',message:'Cell, entrypoint and independent host oracle must agree'});
   const ids = [p.config.baseline.id, ...p.config.candidates.map(c => c.id)];
   if (new Set(ids).size !== ids.length || p.module_hashes.length !== ids.length)
     ctx.addIssue({ code: 'custom', message: 'duplicate candidate or mismatched module population' });

@@ -1,12 +1,15 @@
 # Run a proposal from the Observatory
 
 Sign in, choose **new project**, and give your private project a portable name.
-Open **Trials**, describe the hypothesis, and paste WAT source. **Use Euclidean
-example** supplies a real GCD implementation you can inspect and change. Nothing
+Open **Trials**, describe the hypothesis, and paste WAT source. The example button supplies a real implementation you can inspect and change.
+Select Gcd, MaxU32 or MinU32 before entering the proposal. Nothing
 runs until you select **Run on server**.
 
-ACE currently compares one manual proposal with its GCD reference. The proposal
-must export `gcd(i32, i32) -> i32`, treating the inputs as unsigned integers. A
+ACE compares one manual proposal with a reference for its selected Cell. Export
+`gcd`, `max_u32` or `min_u32`, respectively, with ABI `(i32, i32) -> i32` and
+unsigned 32-bit inputs and results. Each Cell has its own independent oracle.
+Signed maximum/minimum implementations fail checks containing inputs above
+`i32::MAX`; a matching export name alone does not qualify code. A
 trusted embedded assembler compiles WAT as data. Fresh containers have no network
 access and run as an unprivileged user. The Wasmi evaluator rejects host imports
 and checks public and deterministic hidden cases against an independent host
@@ -44,7 +47,7 @@ API routes:
 | Route | Operation |
 | --- | --- |
 | `GET /v1/projects/:project/trials` | Latest 100 trials and declared limits |
-| `POST /v1/projects/:project/trials` | `{request_id: UUID, wat, strategy}` |
+| `POST /v1/projects/:project/trials` | `{request_id: UUID, wat, strategy, cell?: Gcd|MaxU32|MinU32}` |
 | `GET /v1/projects/:project/trials/:id` | Status, evaluation progress and native version |
 | `GET /v1/projects/:project/trials/:id/proposal` | Exact retained original source |
 | `POST /v1/projects/:project/trials/:id/retry` | Repair a failed workflow, empty body |
@@ -81,6 +84,30 @@ one bounded trial. Add `--output` with a fresh directory and `--ace` pointing to
 the current CLI to download and replay it. `--kind addition` checks losing-code
 retention. Use `--id` and `--wait` to inspect an existing pending request.
 
-Current limits: one Cell, one manual proposal per trial, a fixed reference rather
+Current limits: three bounded mathematical Cells, one manual proposal per trial, a fixed reference rather
 than automatic inheritance of the previous Champion, no hosted general-language
 builds and no automatic production rollout.
+
+The request defaults to Gcd for compatibility. Selecting another Cell changes
+the ABI, oracle, intent and learning context together. Legacy Gcd configuration
+serialization and native version identities are preserved. Cross-Cell Champion
+inheritance and incompatible retrieved memory are rejected. Automatic grammar
+generation remains Gcd-only; manual proposals and agent tasks support all three.
+
+To validate a selected unsigned Cell with one deliberately requested trial:
+
+```sh
+node scripts/check-observatory.mjs --request --cell MaxU32 --output fresh-max --ace target/debug/ace
+```
+
+For MaxU32/MinU32, `--kind addition` instead tests an incorrect signed comparison;
+it does not implement addition. The checker asserts rejection and retained
+source before independent replay.
+
+The deployed evaluator with binary SHA-256
+`6e0bfca4c74284f3dfac890a40a9ca013b152845c0c7797267203e7930fa6ffa`
+completed two additional real trials on 2026-10-07: MaxU32 unsigned selection
+qualified with mean fuel 7, tied its reference, and retained the reference as
+Champion; MinU32 signed comparison failed correctness and retained its source
+and negative observations. Both native versions downloaded and reproduced in
+independent Rust replay. A correct proposal is not necessarily an improvement.

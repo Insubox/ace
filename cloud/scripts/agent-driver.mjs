@@ -57,7 +57,7 @@ export async function providerAttempt(config, task, selector, directory, request
   const attempt = JSON.parse(documents.attempt);
   if (attempt.schema_version !== 1 || attempt.context_hash !== task.context_hash || attempt.fault !== manifest.fault
       || (attempt.fault !== null && attempt.result !== null)) throw new Error('Generation attempt differs from its manifest');
-  if (attempt.result && (attempt.result.cell !== 'Gcd' || attempt.result.schema_version !== 1
+  if (attempt.result && (attempt.result.cell !== task.context.contract.cell || attempt.result.schema_version !== 1
       || !Array.isArray(attempt.result.candidates) || attempt.result.candidates.length < 1
       || attempt.result.candidates.length > task.context.max_candidates
       || attempt.result.candidates.some(c => c.generator?.provider !== manifest.provider || c.generator?.model !== manifest.model))) {

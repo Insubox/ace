@@ -119,7 +119,7 @@ pub(crate) fn query(repository: &Path, baseline: &RunReport, limit: usize) -> Re
                 checked_calls: result.evaluation.checked_calls,
                 evidence: result.evidence.evidence().id.clone(), evidence_hash: result.evidence.content_hash().clone(),
                 knowledge: report.knowledge.id.clone(), is_champion,
-                scope: "Only this evaluated GCD workload and recorded environment; unresolved evaluation is not a candidate failure".into(),
+                scope: format!("Only this evaluated {} workload and recorded environment; unresolved evaluation is not a candidate failure",report.config.harness.oracle.display()),
                 commit: commit.clone(),
             });
             if is_champion {

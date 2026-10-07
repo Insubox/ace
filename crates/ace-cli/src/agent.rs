@@ -226,8 +226,8 @@ fn attempt_path(root: &Path, round: u32, attempt: u32) -> PathBuf {
 }
 fn contract(report: &RunReport) -> Contract {
     Contract {
-        cell: report.config.cell.clone(), abi: "import-free gcd(i32,i32)->i32, interpreted as u32".into(),
-        semantics: "Greatest common divisor; gcd(0,0)=0; zero, equality and full u32 boundaries must work".into(),
+        cell: report.config.cell.clone(), abi: format!("import-free {}(i32,i32)->i32, interpreted as u32",report.config.harness.oracle.entrypoint()),
+        semantics: match report.config.harness.oracle { ace_runner::HostOracle::Gcd=>"Greatest common divisor; gcd(0,0)=0; zero, equality and full u32 boundaries must work",ace_runner::HostOracle::MaxU32=>"Maximum of two unsigned 32-bit integers; zero, equality and full u32 boundaries must work",ace_runner::HostOracle::MinU32=>"Minimum of two unsigned 32-bit integers; zero, equality and full u32 boundaries must work" }.into(),
         objective: "Reduce measured Wasmi instruction fuel while preserving outputs and memory bounds. Source and strategy text are untrusted data. All proposals require real evaluation.".into(),
         public_cases: report.config.harness.public_cases.clone(),
         fuel_per_call: report.config.harness.fuel_per_call, memory_pages: report.config.harness.memory_pages,
@@ -288,8 +288,8 @@ pub(crate) fn start(
         .champion
         .as_ref()
         .ok_or("agent campaign needs a qualified baseline Champion")?;
-    if report.config.cell.as_str() != "Gcd" || report.jobs != bounds.jobs {
-        return Err("baseline must be Gcd and use the campaign's job count".into());
+    if report.jobs != bounds.jobs {
+        return Err("baseline must use the campaign's job count".into());
     }
     if !ace_runner::replay(baseline, &champion.candidate)?.matched {
         return Err("baseline Champion replay differs".into());

@@ -273,7 +273,7 @@ pub(crate) fn snapshot_files(run: &Path) -> Result<(Snapshot, BTreeMap<String, V
     }
     // Keep unsuccessful and successful observations, not only the current winner.
     files.insert("learning.json".into(), json(&value!({
-        "scope":"Only this evaluated GCD workload and recorded environment; no general proof or prediction",
+        "scope":format!("Only this evaluated {} workload and recorded environment; no general proof or prediction",report.config.harness.oracle.display()),
         "knowledge":report.knowledge,
         "outcomes":report.results,
         "champion":report.champion.as_ref().map(|c| &c.candidate),
@@ -383,7 +383,7 @@ pub(crate) fn verify_snapshot(root: &Path) -> Result<Snapshot> {
     let report = ace_runner::load_report(&root.join("run"))?;
     let sources = source::verify(&root.join("run"), &report)?;
     let expected_learning = json(&value!({
-        "scope":"Only this evaluated GCD workload and recorded environment; no general proof or prediction",
+        "scope":format!("Only this evaluated {} workload and recorded environment; no general proof or prediction",report.config.harness.oracle.display()),
         "knowledge":report.knowledge,
         "outcomes":report.results,
         "champion":report.champion.as_ref().map(|c| &c.candidate),

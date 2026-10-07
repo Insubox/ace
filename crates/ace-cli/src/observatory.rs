@@ -9,10 +9,16 @@ use std::{fs, path::Path};
 #[derive(Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 struct Request {
+    #[serde(default = "default_cell")]
+    cell: CellId,
     project: ProjectId,
     experiment: ExperimentId,
     wat: String,
     strategy: Text,
+}
+
+fn default_cell() -> CellId {
+    CellId::new("Gcd").expect("valid default Cell")
 }
 
 pub(crate) fn prepare(request: &Path, output: &Path) -> Result<CloudPlan> {
@@ -27,7 +33,7 @@ pub(crate) fn prepare(request: &Path, output: &Path) -> Result<CloudPlan> {
     }
     let batch = proposal::Batch {
         schema_version: ace_protocol::ProtocolVersion,
-        cell: CellId::new("Gcd")?,
+        cell: request.cell,
         candidates: vec![proposal::Proposal {
             id: CandidateId::new("C-proposal")?,
             wat: request.wat,
@@ -99,7 +105,8 @@ mod tests {
     fn server_trial_retains_a_losing_proposal_and_rejects_changed_source() -> Result<()> {
         let root = tempfile::tempdir()?;
         let request = root.path().join("request.json");
-        create_atomic(&request, &json(&Request { project: ProjectId::new("private-project")?,
+        create_atomic(&request, &json(&Request { cell: default_cell(),
+                project: ProjectId::new("private-project")?,
             experiment: ExperimentId::new("EXP-OBS-test")?,
             wat: "(module (func (export \"gcd\") (param i32 i32) (result i32) local.get 0 local.get 1 i32.add))".into(),
             strategy: Text::new("test addition against the independent GCD oracle")? })?)?;

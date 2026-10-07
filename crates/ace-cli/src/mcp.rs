@@ -354,7 +354,7 @@ fn tools() -> Value {
         tool::<AgentFault>("ace_agent_fault", "Record an unavailable, timed-out or malformed generation attempt without assigning a candidate correctness label. Faults consume the bounded retry allowance.", false),
         tool::<Archive>("ace_archive", "Commit a verified run, winning WAT source and learning from every candidate to a dedicated local Git repository under archives/<repository>. Requires Git on PATH. Preserves existing commits; no remote push or application repository modification.", false),
         tool::<ReadArchive>("ace_archive_status", "Verify committed local Git snapshots, archived evidence and source-to-WASM identity. Requires Git on PATH.", true),
-        tool::<Propose>("ace_propose", "Register agent-authored WAT programs for import-free gcd(u32,u32)->u32; gcd(0,0)=0. Default trusted reference, or a verified local Champion selected with baseline_run. 1–100 candidates, at most 32 KiB source each; entire MCP frame remains limited to 64 KiB. Provenance is caller asserted. Registration never qualifies; call ace_run next.", false),
+        tool::<Propose>("ace_propose", "Register agent-authored WAT programs for import-free Gcd, MaxU32 or MinU32 Cells with ABI (i32,i32)->i32 interpreted as u32. Default trusted reference, or a verified local Champion selected with baseline_run. 1–100 candidates, at most 32 KiB source each; entire MCP frame remains limited to 64 KiB. Provenance is caller asserted. Registration never qualifies; call ace_run next.", false),
         tool::<ReadProposals>("ace_proposal_status", "Verify the frozen proposal batch, source-to-WASM hashes, registered generator metadata and baseline identity before evaluation.", true),
         tool::<Generate>("ace_generate", "Create a fresh bounded GCD population, including three diagnostic controls. Defaults: seed 42, 12 candidates; maximum 100.", false),
         tool::<Run>("ace_run", "Execute a registered population with independent correctness checks and fuel/memory limits. Inputs are experiments/<experiment>; fresh outputs are runs/<run>. Defaults: 2 jobs; maximum 8.", false),
@@ -570,7 +570,7 @@ fn reply(root: &Path, request: &Value) -> Value {
             } else {
                 "2025-06-18"
             };
-            json!({"protocolVersion":version,"capabilities":{"tools":{}},"serverInfo":{"name":"ace-local","version":env!("CARGO_PKG_VERSION")},"instructions":"Local GCD experiments only. All generated candidates need real evaluation. Tools preserve existing outputs and use the operator-selected workspace. Knowledge and Champion advice never deploy software."})
+            json!({"protocolVersion":version,"capabilities":{"tools":{}},"serverInfo":{"name":"ace-local","version":env!("CARGO_PKG_VERSION")},"instructions":"Local import-free Gcd, MaxU32 and MinU32 WASM experiments. All generated candidates need real evaluation. Tools preserve existing outputs and use the operator-selected workspace. Knowledge and Champion advice never deploy software."})
         }
         Some("ping") => json!({}),
         Some("tools/list") => tools(),

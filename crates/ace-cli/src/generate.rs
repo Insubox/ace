@@ -280,6 +280,7 @@ pub(crate) fn config(baseline: ModuleSpec, candidates: Vec<ModuleSpec>) -> Resul
         baseline,
         candidates,
         harness: Harness {
+            oracle: ace_runner::HostOracle::Gcd,
             entrypoint: CheckName::new("gcd")?,
             public_cases: vec![
                 [0, 0],

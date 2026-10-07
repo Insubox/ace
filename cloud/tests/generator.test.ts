@@ -19,6 +19,14 @@ async function task(): Promise<Task> {
 const raw = () => ({ response: JSON.stringify({ candidates: [{ id: 'C-new', wat: source, strategy: 'fixture' }] }), usage: { prompt_tokens: 100, completion_tokens: 50 } });
 
 describe('agent code generation', () => {
+  it('keeps unsigned Cell generation and retrieved memory in the selected contract',async()=>{
+    for(const cell of ['MaxU32','MinU32'] as const){const t=await task();t.context.contract.cell=cell;t.context.memory.cell=cell;
+      expect(taskSchema.parse(t)).toEqual(t);expect(normalizeGeneration(raw(),t,MODELS.qwen).cell).toBe(cell);
+      const request=generationRequest(t);expect(request.messages[0]!.content).toContain(cell==='MaxU32'?'max_u32':'min_u32');
+      expect(request.messages[0]!.content).not.toContain('recursive Euclidean');
+      t.context.memory.cell='Gcd';expect(()=>taskSchema.parse(t)).toThrow();
+    }
+  });
   it('bounds the public contract and normalizes source without treating generation as qualification', async () => {
     const context = await task();
     expect(taskSchema.parse(context)).toEqual(context);
