@@ -32,6 +32,8 @@ local technical preview of ACE; development continues toward the architecture.
 The same executable exposes eight [local MCP tools](docs/getting-started.md#connect-a-development-agent-through-mcp)
 so development agents can generate populations, run experiments and inspect
 verified evidence inside an explicitly selected workspace.
+The [local delivery record](docs/local-delivery.md) distinguishes tested behavior
+from the remaining architecture and remote platform checks.
 
 This repository implements **Phase 0: the domain kernel** and **Phase 1: a local
 WASM experiment runner**, plus the **Phase 2 Cloudflare control plane implementation**
