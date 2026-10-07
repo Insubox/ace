@@ -27,6 +27,7 @@ async function localFile(root,path,limit){const file=join(root,path);if(!(await 
 export async function pushStore({directory,name,config,binary='ace',request=api,run=command}){
   names(name);const root=await realpath(resolve(directory));const local=run(binary,['store','log',root]);
   if(local.backend!=='ace-native-v1'||local.verified!==true)throw new Error('Only verified native ACE stores can be published');
+  if(config.token?.startsWith('ace_session_'))await publish(request,config,'/v1/projects',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({name}),signal:fetchOptions.signal()});
   const current=await remote(config,name,request);
   if(current.entries.length>local.versions.length)throw new Error('Remote history has newer versions; pull it into a fresh store');
   const entries=[];for(const v of local.versions){const e=JSON.parse(await localFile(root,`journal/${String(v.sequence).padStart(8,'0')}.json`,8192));if(e.version!==v.version||e.content_hash!==v.journal_hash)throw new Error('Native journal changed after local verification');entries.push(e);}
