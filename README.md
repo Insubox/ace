@@ -35,7 +35,7 @@ verified evidence inside an explicitly selected workspace. Agents can submit the
 WAT through `ace_propose`; the declared provider metadata remains caller asserted.
 ACE can commit verified winner source and learning from all evaluated versions
 to a dedicated Git repository. See [agent proposals and Git history](docs/agents-and-git.md).
-The [local delivery record](docs/local-delivery.md) distinguishes tested behavior
+The [0.2.0 local delivery record](docs/local-delivery-0.2.md) distinguishes tested behavior
 from the remaining architecture and remote platform checks.
 
 This repository implements **Phase 0: the domain kernel** and **Phase 1: a local
