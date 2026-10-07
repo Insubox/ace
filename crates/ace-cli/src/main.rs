@@ -416,7 +416,7 @@ fn main() {
 }
 
 fn read_document(path: &Path) -> Result<Envelope> {
-    Ok(ace_protocol::decode(&fs::read(path)?)?)
+    Ok(ace_protocol::decode(&bounded_bytes(path, 8_388_608)?)?)
 }
 fn json(value: &impl serde::Serialize) -> Result<Vec<u8>> {
     let mut bytes = serde_json::to_vec_pretty(value)?;
@@ -723,11 +723,7 @@ fn run(cli: Cli) -> Result<()> {
                 output,
             } => {
                 let plan = ace_runner::read_cloud_json(&plan)?;
-                use std::io::Read;
-                let mut bytes = Vec::new();
-                fs::File::open(module)?
-                    .take(1_048_577)
-                    .read_to_end(&mut bytes)?;
+                let bytes = bounded_bytes(&module, 1_048_576)?;
                 create_atomic(
                     &output,
                     &json(&ace_runner::evaluate_cloud(&plan, index, &bytes)?)?,
@@ -875,7 +871,7 @@ fn run(cli: Cli) -> Result<()> {
                 let path = out.join(name);
                 let expected = json(&schema)?;
                 if check {
-                    if fs::read(&path)? != expected {
+                    if bounded_bytes(&path, 1_048_576)? != expected {
                         return Err(format!("schema differs: {}", path.display()).into());
                     }
                 } else {
@@ -896,8 +892,9 @@ fn run(cli: Cli) -> Result<()> {
         }
         Command::Evidence { command } => match command {
             EvidenceCommand::Seal { file } => {
-                let evidence: Evidence =
-                    serde_json::from_value(ace_protocol::parse_json(&fs::read(file)?)?)?;
+                let evidence: Evidence = serde_json::from_value(ace_protocol::parse_json(
+                    &bounded_bytes(&file, 1_048_576)?,
+                )?)?;
                 print(&Envelope::new(Document::Evidence(
                     SealedEvidence::new(evidence)?.into(),
                 )))?;
@@ -937,15 +934,7 @@ fn run(cli: Cli) -> Result<()> {
 }
 
 fn bounded_bytes(path: &Path, limit: u64) -> Result<Vec<u8>> {
-    use std::io::Read;
-    let mut bytes = Vec::new();
-    fs::File::open(path)?
-        .take(limit + 1)
-        .read_to_end(&mut bytes)?;
-    if bytes.len() as u64 > limit {
-        return Err("judge JSON exceeds byte budget".into());
-    }
-    Ok(bytes)
+    Ok(ace_runner::files::read_regular(path, limit)?)
 }
 
 fn read_judge_json<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T> {

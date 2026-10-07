@@ -1,10 +1,9 @@
-use crate::{Result, RunnerError};
+use crate::Result;
 use ace_core::*;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::BTreeSet,
-    fs,
     path::{Path, PathBuf},
 };
 
@@ -94,32 +93,14 @@ impl Validate for RunConfig {
 }
 
 pub fn load_config(directory: &Path) -> Result<RunConfig> {
-    let data = fs::read(directory.join("experiment.json"))?;
+    let data = crate::files::read_beneath(directory, Path::new("experiment.json"), 1_048_576)?;
     let config: RunConfig = serde_json::from_value(ace_protocol::parse_json(&data)?)?;
     config.validate()?;
     Ok(config)
 }
 
 pub(crate) fn read_module(directory: &Path, path: &Path) -> Result<Vec<u8>> {
-    let root = directory.canonicalize()?;
-    let full = root.join(path).canonicalize()?;
-    if !full.starts_with(&root) {
-        return Err(RunnerError::Setup(
-            "module path escapes the experiment directory".into(),
-        ));
-    }
-    let file = fs::File::open(full)?;
-    // Limit both the metadata size and actual read, including races with a growing file.
-    if file.metadata()?.len() > 1_048_576 {
-        return Err(RunnerError::Setup("WASM artifact exceeds 1 MiB".into()));
-    }
-    use std::io::Read;
-    let mut bytes = Vec::new();
-    file.take(1_048_577).read_to_end(&mut bytes)?;
-    if bytes.len() > 1_048_576 {
-        return Err(RunnerError::Setup("WASM artifact exceeds 1 MiB".into()));
-    }
-    Ok(bytes)
+    Ok(crate::files::read_beneath(directory, path, 1_048_576)?)
 }
 
 /// Independent host-side oracle: mathematical Euclidean GCD, never a candidate export.

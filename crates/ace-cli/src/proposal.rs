@@ -9,7 +9,6 @@ use serde::{Deserialize, Serialize};
 use std::{
     collections::{BTreeMap, BTreeSet},
     fs,
-    io::Read,
     path::Path,
 };
 
@@ -66,14 +65,7 @@ pub(crate) struct Registration {
 }
 
 fn read(path: &Path, limit: u64) -> Result<Vec<u8>> {
-    let mut bytes = Vec::new();
-    fs::File::open(path)?
-        .take(limit + 1)
-        .read_to_end(&mut bytes)?;
-    if bytes.len() as u64 > limit {
-        return Err("proposal file exceeds its size limit".into());
-    }
-    Ok(bytes)
+    Ok(ace_runner::files::read_regular(path, limit)?)
 }
 
 fn validate(batch: &Batch) -> Result<()> {
@@ -156,7 +148,11 @@ pub(crate) fn register_scoped(
             };
             let source_path = run.join(format!("sources/{}.wat", champion.candidate));
             let source = if source_path.try_exists()? {
-                let source = read(&source_path, 32768)?;
+                let source = ace_runner::files::read_beneath(
+                    run,
+                    Path::new(&format!("sources/{}.wat", champion.candidate)),
+                    32768,
+                )?;
                 if wat::parse_bytes(&source)?.as_ref() != bytes {
                     return Err("parent Champion source differs from artifact".into());
                 }
@@ -276,14 +272,13 @@ pub(crate) fn register_scoped(
 }
 
 pub(crate) fn verify(directory: &Path) -> Result<Registration> {
-    let record: Registration = serde_json::from_value(ace_protocol::parse_json(&read(
-        &directory.join("registration.json"),
-        131072,
-    )?)?)?;
-    let batch: Batch = serde_json::from_value(ace_protocol::parse_json(&read(
-        &directory.join("proposals.json"),
-        3_145_728,
-    )?)?)?;
+    let reader = ace_runner::files::ReadDirectory::open(directory)?;
+    let record: Registration = serde_json::from_value(ace_protocol::parse_json(
+        &reader.read(Path::new("registration.json"), 131072)?,
+    )?)?;
+    let batch: Batch = serde_json::from_value(ace_protocol::parse_json(
+        &reader.read(Path::new("proposals.json"), 3_145_728)?,
+    )?)?;
     validate(&batch)?;
     let config = ace_runner::load_config(directory)?;
     if config.cell.as_str() != "Gcd"
@@ -298,7 +293,6 @@ pub(crate) fn verify(directory: &Path) -> Result<Registration> {
     {
         return Err("registered proposal identity changed".into());
     }
-    let root = directory.canonicalize()?;
     let mut ids = BTreeSet::new();
     let mut hashes = BTreeSet::new();
     for (index, (source, spec)) in record
@@ -313,22 +307,12 @@ pub(crate) fn verify(directory: &Path) -> Result<Registration> {
         {
             return Err("registered proposal population changed".into());
         }
-        let path = directory.join(&spec.module).canonicalize()?;
-        if !path.starts_with(&root) {
-            return Err("registered artifact escapes input directory".into());
-        }
-        let module = read(&path, 1_048_576)?;
+        let module = reader.read(&spec.module, 1_048_576)?;
         if source.artifact_hash != ContentHash::of_bytes(&module) {
             return Err("registered WASM artifact changed".into());
         }
         if let Some(expected) = &source.source_hash {
-            let path = directory
-                .join(format!("sources/{}.wat", spec.id))
-                .canonicalize()?;
-            if !path.starts_with(&root) {
-                return Err("registered source escapes input directory".into());
-            }
-            let wat = read(&path, 32768)?;
+            let wat = reader.read(Path::new(&format!("sources/{}.wat", spec.id)), 32768)?;
             if &ContentHash::of_bytes(&wat) != expected
                 || wat::parse_bytes(&wat)?.as_ref() != module
             {

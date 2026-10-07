@@ -2,6 +2,7 @@
 //! untrusted native source. Candidate memory has no reference to host oracle state.
 mod config;
 mod distributed;
+pub mod files;
 pub use distributed::*;
 mod experiment;
 mod sandbox;

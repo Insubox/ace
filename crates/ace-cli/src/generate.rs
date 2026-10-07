@@ -6,12 +6,7 @@ use ace_core::*;
 use ace_runner::{Harness, ModuleSpec, RunConfig, RunReport};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use std::{
-    collections::BTreeSet,
-    fs,
-    io::{Read, Write},
-    path::Path,
-};
+use std::{collections::BTreeSet, fs, io::Write, path::Path};
 
 const VERSION: &str = "gcd-grammar-v1";
 const STEP: &str = "local.get $a local.get $b i32.rem_u local.set $r local.get $b local.set $a local.get $r local.set $b";
@@ -395,14 +390,17 @@ pub(crate) fn verify_controls(report: &RunReport) -> Result<()> {
 
 pub(crate) fn verify_sources(directory: &Path, generation: &Generation) -> Result<()> {
     for artifact in &generation.artifacts {
-        let mut source = Vec::new();
-        fs::File::open(directory.join(format!("sources/{}.wat", artifact.candidate)))?
-            .take(8193)
-            .read_to_end(&mut source)?;
-        let mut module = Vec::new();
-        fs::File::open(directory.join(format!("artifacts/{}.wasm", artifact.candidate)))?
-            .take(1_048_577)
-            .read_to_end(&mut module)?;
+        crate::mcp::portable_name(artifact.candidate.as_str())?;
+        let source = ace_runner::files::read_beneath(
+            directory,
+            Path::new(&format!("sources/{}.wat", artifact.candidate)),
+            8192,
+        )?;
+        let module = ace_runner::files::read_beneath(
+            directory,
+            Path::new(&format!("artifacts/{}.wasm", artifact.candidate)),
+            1_048_576,
+        )?;
         if source.len() > 8192
             || module.len() > 1_048_576
             || ContentHash::of_bytes(&source) != artifact.source_hash

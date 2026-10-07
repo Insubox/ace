@@ -4,7 +4,7 @@ use ace_core::*;
 use ace_runner::RunReport;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use std::{fs, io::Read, path::Path};
+use std::path::Path;
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
@@ -22,17 +22,8 @@ pub(crate) struct Sources {
     pub metadata: std::collections::BTreeMap<String, ContentHash>,
 }
 
-fn read(path: &Path) -> Result<Vec<u8>> {
-    let mut bytes = Vec::new();
-    fs::File::open(path)?.take(32769).read_to_end(&mut bytes)?;
-    if bytes.len() > 32768 {
-        return Err("WAT source exceeds 32 KiB".into());
-    }
-    Ok(bytes)
-}
-
 pub(crate) fn freeze(input: &Path, run: &Path, report: &RunReport) -> Result<Sources> {
-    let root = input.canonicalize()?;
+    let reader = ace_runner::files::ReadDirectory::open(input)?;
     let mut sources = Vec::new();
     let mut files = Vec::new();
     for result in &report.results {
@@ -42,11 +33,7 @@ pub(crate) fn freeze(input: &Path, run: &Path, report: &RunReport) -> Result<Sou
         if !path.try_exists()? {
             continue; // Legacy precompiled-only experiments have no source claim.
         }
-        let path = path.canonicalize()?;
-        if !path.starts_with(&root) {
-            return Err("source escapes experiment directory".into());
-        }
-        let bytes = read(&path)?;
+        let bytes = reader.read(Path::new(&name), 32768)?;
         if ContentHash::of_bytes(&wat::parse_bytes(&bytes)?) != result.candidate.patch.hash {
             return Err("source does not assemble to the evaluated artifact".into());
         }
@@ -67,11 +54,7 @@ pub(crate) fn freeze(input: &Path, run: &Path, report: &RunReport) -> Result<Sou
     ] {
         let path = input.join(input_name);
         if path.try_exists()? {
-            let path = path.canonicalize()?;
-            if !path.starts_with(&root) {
-                return Err("source metadata escapes input directory".into());
-            }
-            let bytes = crate::bounded_bytes(&path, 3_145_728)?;
+            let bytes = reader.read(Path::new(input_name), 3_145_728)?;
             ace_protocol::parse_json(&bytes)?;
             metadata.insert(saved_name.to_owned(), ContentHash::of_bytes(&bytes));
             files.push((saved_name.to_owned(), bytes));
@@ -91,14 +74,14 @@ pub(crate) fn freeze(input: &Path, run: &Path, report: &RunReport) -> Result<Sou
 }
 
 pub(crate) fn verify(run: &Path, report: &RunReport) -> Result<Sources> {
+    let reader = ace_runner::files::ReadDirectory::open(run)?;
     let record: Sources = serde_json::from_value(ace_protocol::parse_json(
-        &crate::bounded_bytes(&run.join("sources.json"), 131072)?,
+        &reader.read(Path::new("sources.json"), 131072)?,
     )?)?;
     if record.report_hash != ContentHash::of_json(report)? {
         return Err("sources belong to another run report".into());
     }
     let mut ids = std::collections::BTreeSet::new();
-    let root = run.canonicalize()?;
     for (name, hash) in &record.metadata {
         if ![
             "proposal-registration.json",
@@ -111,10 +94,7 @@ pub(crate) fn verify(run: &Path, report: &RunReport) -> Result<Sources> {
         {
             return Err("unexpected source metadata file".into());
         }
-        let path = run.join(name).canonicalize()?;
-        if !path.starts_with(&root)
-            || ContentHash::of_bytes(&crate::bounded_bytes(&path, 3_145_728)?) != *hash
-        {
+        if ContentHash::of_bytes(&reader.read(Path::new(name), 3_145_728)?) != *hash {
             return Err("frozen source metadata changed".into());
         }
     }
@@ -125,13 +105,10 @@ pub(crate) fn verify(run: &Path, report: &RunReport) -> Result<Sources> {
             .iter()
             .find(|r| r.candidate.id == source.candidate)
             .ok_or("source candidate absent from run")?;
-        let path = run
-            .join(format!("sources/{}.wat", source.candidate))
-            .canonicalize()?;
-        if !path.starts_with(&root) {
-            return Err("frozen source escapes run directory".into());
-        }
-        let bytes = read(&path)?;
+        let bytes = reader.read(
+            Path::new(&format!("sources/{}.wat", source.candidate)),
+            32768,
+        )?;
         if !ids.insert(source.candidate.clone())
             || source.source_hash != ContentHash::of_bytes(&bytes)
             || source.artifact_hash != result.candidate.patch.hash

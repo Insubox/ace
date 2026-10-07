@@ -4,12 +4,7 @@ use ace_protocol::{Document, Envelope};
 use ace_runner::RunReport;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use std::{
-    collections::BTreeSet,
-    fs,
-    io::{Read, Write},
-    path::Path,
-};
+use std::{collections::BTreeSet, fs, io::Write, path::Path};
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
@@ -50,14 +45,7 @@ pub(crate) enum StopReason {
 }
 
 fn bytes(path: &Path) -> Result<Vec<u8>> {
-    let mut bytes = Vec::new();
-    fs::File::open(path)?
-        .take(1_048_577)
-        .read_to_end(&mut bytes)?;
-    if bytes.len() > 1_048_576 {
-        return Err("campaign document exceeds 1 MiB".into());
-    }
-    Ok(bytes)
+    Ok(ace_runner::files::read_regular(path, 1_048_576)?)
 }
 
 fn proposal_seed(seed: u64, generation: u32) -> u64 {
@@ -244,6 +232,11 @@ pub(crate) fn load(root: &Path) -> Result<Campaign> {
 }
 
 fn load_inner(root: &Path, require_artifact: bool) -> Result<Campaign> {
+    let reader = ace_runner::files::ReadDirectory::open(root)?;
+    let bytes = |path: &Path| -> Result<Vec<u8>> {
+        let relative = path.strip_prefix(root)?;
+        Ok(reader.read(relative, 1_048_576)?)
+    };
     let campaign: Campaign = serde_json::from_value(ace_protocol::parse_json(&bytes(
         &root.join("evolution.json"),
     )?)?)?;

@@ -6,7 +6,6 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::{
     fs,
-    io::Read,
     path::Path,
     time::{SystemTime, UNIX_EPOCH},
 };
@@ -54,13 +53,7 @@ pub struct SealedObservation {
 }
 
 pub fn read_cloud_json<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T> {
-    let mut bytes = Vec::new();
-    fs::File::open(path)?
-        .take(3_145_729)
-        .read_to_end(&mut bytes)?;
-    if bytes.len() > 3_145_728 {
-        return Err(RunnerError::Setup("cloud document exceeds 3 MiB".into()));
-    }
+    let bytes = crate::files::read_regular(path, 3_145_728)?;
     Ok(serde_json::from_value(ace_protocol::parse_json(&bytes)?)?)
 }
 

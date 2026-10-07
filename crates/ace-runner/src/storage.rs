@@ -5,7 +5,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::{
     fs,
-    io::{Read, Write},
+    io::Write,
     path::{Path, PathBuf},
 };
 
@@ -50,16 +50,6 @@ fn candidate_path(root: &Path, id: &CandidateId, name: &str) -> PathBuf {
     root.join("candidates")
         .join(id.as_str())
         .join(format!("{name}.json"))
-}
-fn bytes(path: &Path) -> Result<Vec<u8>> {
-    let mut data = Vec::new();
-    fs::File::open(path)?
-        .take(8_388_609)
-        .read_to_end(&mut data)?;
-    if data.len() > 8_388_608 {
-        return Err(RunnerError::Setup("run document exceeds 8 MiB".into()));
-    }
-    Ok(data)
 }
 
 pub(crate) fn persist(root: &Path, report: &RunReport, modules: &[Vec<u8>]) -> Result<()> {
@@ -144,8 +134,8 @@ pub(crate) fn persist(root: &Path, report: &RunReport, modules: &[Vec<u8>]) -> R
     Ok(())
 }
 
-fn verify_doc(root: &Path, path: &Path, expected: Document) -> Result<()> {
-    let actual = ace_protocol::decode(&bytes(&root.join(path))?)?;
+fn verify_doc(root: &crate::files::ReadDirectory, path: &Path, expected: Document) -> Result<()> {
+    let actual = ace_protocol::decode(&root.read(path, 8_388_608)?)?;
     if actual != Envelope::new(expected) {
         return Err(RunnerError::Setup(format!(
             "run document differs: {}",
@@ -156,8 +146,10 @@ fn verify_doc(root: &Path, path: &Path, expected: Document) -> Result<()> {
 }
 
 pub fn load_report(root: &Path) -> Result<RunReport> {
-    let manifest: PersistedRun =
-        serde_json::from_value(ace_protocol::parse_json(&bytes(&root.join("run.json"))?)?)?;
+    let root = &crate::files::ReadDirectory::open(root)?;
+    let manifest: PersistedRun = serde_json::from_value(ace_protocol::parse_json(
+        &root.read(Path::new("run.json"), 8_388_608)?,
+    )?)?;
     if manifest.content_hash != ContentHash::of_json(&manifest.report)? {
         return Err(RunnerError::Setup(
             "run manifest content hash mismatch".into(),
@@ -189,8 +181,8 @@ pub fn load_report(root: &Path) -> Result<RunReport> {
         }
         result.candidate.validate()?;
         result.evidence.validate()?;
-        let evaluation_path = candidate_path(root, &result.candidate.id, "evaluation");
-        let evaluation_bytes = bytes(&evaluation_path)?;
+        let evaluation_path = candidate_path(Path::new(""), &result.candidate.id, "evaluation");
+        let evaluation_bytes = root.read(&evaluation_path, 8_388_608)?;
         let evaluation_artifact = result
             .evidence
             .evidence()
@@ -207,7 +199,10 @@ pub fn load_report(root: &Path) -> Result<RunReport> {
                 "evaluator observation artifact hash mismatch".into(),
             ));
         }
-        let module = read_module(root, Path::new(result.candidate.patch.location.as_str()))?;
+        let module = root.read(
+            Path::new(result.candidate.patch.location.as_str()),
+            1_048_576,
+        )?;
         let hash = ContentHash::of_bytes(&module);
         if hash != result.candidate.patch.hash {
             return Err(RunnerError::Setup(
@@ -284,7 +279,7 @@ pub fn load_report(root: &Path) -> Result<RunReport> {
             Path::new("champion.json"),
             Document::Champion(champion.clone()),
         )?;
-        if ContentHash::of_bytes(&read_module(root, Path::new("champion.wasm"))?)
+        if ContentHash::of_bytes(&root.read(Path::new("champion.wasm"), 1_048_576)?)
             != champion.artifact.hash
         {
             return Err(RunnerError::Setup(

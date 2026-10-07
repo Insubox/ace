@@ -310,7 +310,9 @@ pub(crate) fn save(run: &Path, destination: &Path) -> Result<Value> {
             return Err("archive snapshot escapes repository".into());
         }
         verify_snapshot(&output)?;
-        let old: Snapshot = serde_json::from_slice(&fs::read(output.join("manifest.json"))?)?;
+        let old: Snapshot = serde_json::from_value(ace_protocol::parse_json(
+            &ace_runner::files::read_beneath(&output, Path::new("manifest.json"), 262144)?,
+        )?)?;
         if old != snapshot {
             return Err("experiment already archived with different content".into());
         }
