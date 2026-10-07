@@ -137,6 +137,8 @@ one baseline. `generation.json` records the generator, seed, provenance and hash
 All parameters affect actual program execution; duplicate WASM hashes
 are rejected. Identical seeds and settings reproduce the input population.
 Run IDs, timestamps and native timings vary. Evaluation supports 1–8 local jobs.
+Seeds in saved JSON and MCP arguments use decimal strings, preserving all
+64 bits in JavaScript and other clients. CLI `--seed` accepts ordinary digits.
 The current grammar explores remainder unrolling, equality checks, subtraction
 tails, symmetric remainder and binary shifts. It is bounded to these algorithms.
 
@@ -144,3 +146,56 @@ To use the optional distributed control plane or paid judge, follow the
 repository's [Cloudflare guide](https://github.com/Insubox/ace/blob/main/docs/phase2.md)
 and [judge guide](https://github.com/Insubox/ace/blob/main/docs/phase3.md).
 Those services use your own infrastructure and credentials.
+
+## Connect a development agent through MCP
+
+The same executable provides a local MCP stdio server. In an MCP client that
+uses JSON server configuration:
+
+```json
+{
+  "mcpServers": {
+    "ace": {
+      "command": "/absolute/path/to/ace",
+      "args": ["mcp", "--workspace", "/absolute/path/to/ace-workspace"]
+    }
+  }
+}
+```
+
+For Codex, use its TOML MCP configuration:
+
+```toml
+[mcp_servers.ace]
+command = "/absolute/path/to/ace"
+args = ["mcp", "--workspace", "/absolute/path/to/ace-workspace"]
+```
+
+On Windows use the absolute path to `ace.exe` and escape backslashes in JSON.
+The client starts ACE, performs the MCP handshake and discovers eight tools:
+
+| Tool | Purpose |
+| --- | --- |
+| `ace_generate` | Create a fresh local population under `experiments/<name>` |
+| `ace_run` | Evaluate a registered population and save evidence under `runs/<name>` |
+| `ace_status` | Verify and summarize a run |
+| `ace_champion` | Retrieve its qualified Champion |
+| `ace_knowledge` | Retrieve structured, evidence-backed Knowledge |
+| `ace_explain` | Explain one candidate's evaluation and deterministic decision |
+| `ace_evolve` | Run bounded generations under `campaigns/<name>` |
+| `ace_history` | Verify the complete campaign lineage |
+
+A first agent sequence is `ace_generate` with `{"experiment":"first"}`, then
+`ace_run` with `{"experiment":"first","run":"first"}`, then `ace_knowledge`
+with `{"run":"first"}`. The tool schema describes optional parameters; seed
+values use strings such as `"42"`. All local names use letters, digits, hyphens
+and underscores. Existing outputs are preserved and tool paths are checked
+against the selected workspace, including existing symlinks.
+
+Agents can prepare other import-free GCD WASM populations in that workspace
+using the `experiment.json` runner contract and then call `ace_run`. Every
+candidate must pass the independent Oracle and resource gates. MCP does not
+expose a shell or a native compiler, and it does not deploy the Champion.
+The server is a local process controlled by your MCP client, not an HTTP service.
+Your chosen agent may have its own account requirements; ACE's local tools have
+none. Vendor API adapters and an IDE extension remain separate unfinished work.

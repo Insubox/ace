@@ -15,7 +15,7 @@ use std::{
 #[serde(deny_unknown_fields)]
 pub(crate) struct Step {
     pub generation: u32,
-    pub seed: u64,
+    pub seed: generate::Seed,
     pub experiment: ExperimentId,
     pub run_hash: ContentHash,
     pub generation_manifest_hash: ContentHash,
@@ -33,7 +33,7 @@ pub(crate) struct Step {
 pub(crate) struct Campaign {
     pub schema_version: ace_protocol::ProtocolVersion,
     pub generator_version: String,
-    pub seed: u64,
+    pub seed: generate::Seed,
     pub candidates: u32,
     pub max_generations: u32,
     pub jobs: u32,
@@ -108,7 +108,7 @@ fn step(
     Ok((
         Step {
             generation,
-            seed,
+            seed: seed.into(),
             experiment: report.experiment.id.clone(),
             run_hash: ContentHash::of_bytes(&bytes(&root.join("run/run.json"))?),
             generation_manifest_hash: ContentHash::of_bytes(&bytes(&root.join("generation.json"))?),
@@ -149,7 +149,7 @@ pub(crate) fn run(
     let mut campaign = Campaign {
         schema_version: ace_protocol::ProtocolVersion,
         generator_version: "gcd-grammar-v1".into(),
-        seed,
+        seed: seed.into(),
         candidates,
         max_generations,
         jobs,
@@ -247,7 +247,7 @@ fn load_inner(root: &Path, require_artifact: bool) -> Result<Campaign> {
         {
             return Err("generation population or evaluation environment changed".into());
         }
-        let seed = proposal_seed(campaign.seed, generation);
+        let seed = proposal_seed(campaign.seed.get(), generation);
         let (expected, node) = step(
             &directory,
             generation,

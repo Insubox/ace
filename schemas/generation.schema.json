@@ -47,6 +47,11 @@
     "ProtocolVersion": {
       "const": 1,
       "type": "integer"
+    },
+    "Seed": {
+      "description": "Unsigned 64-bit decimal seed; encoded as text to preserve precision in all clients.",
+      "pattern": "^(0|[1-9][0-9]{0,19})$",
+      "type": "string"
     }
   },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -93,9 +98,7 @@
       "$ref": "#/$defs/ProtocolVersion"
     },
     "seed": {
-      "format": "uint64",
-      "minimum": 0,
-      "type": "integer"
+      "$ref": "#/$defs/Seed"
     }
   },
   "required": [

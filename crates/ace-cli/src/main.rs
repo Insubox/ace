@@ -13,6 +13,7 @@ type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
 mod evolve;
 mod generate;
+mod mcp;
 
 #[derive(Parser)]
 #[command(
@@ -27,6 +28,11 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Command {
+    /// Serve local ACE tools over MCP stdio inside an explicit workspace.
+    Mcp {
+        #[arg(long)]
+        workspace: PathBuf,
+    },
     /// Run successive offline generations, carrying verified Champions and Knowledge.
     Evolve {
         #[arg(default_value = "ace-evolution")]
@@ -251,6 +257,7 @@ fn evidence_path(project: &Path, id: &EvidenceId) -> PathBuf {
 
 fn run(cli: Cli) -> Result<()> {
     match cli.command {
+        Command::Mcp { workspace } => mcp::serve(&workspace)?,
         Command::Evolve {
             directory,
             seed,
@@ -587,7 +594,11 @@ fn verify_calibration_labels(
 }
 
 fn print_summary(path: &Path, report: &ace_runner::RunReport) -> Result<()> {
-    print(&serde_json::json!({
+    print(&summary(path, report))
+}
+
+fn summary(path: &Path, report: &ace_runner::RunReport) -> serde_json::Value {
+    serde_json::json!({
         "run": path,
         "experiment": report.experiment.id,
         "requested_experiment": report.requested_experiment,
@@ -599,5 +610,5 @@ fn print_summary(path: &Path, report: &ace_runner::RunReport) -> Result<()> {
             "outcome": r.evaluation.outcome, "reason": r.evaluation.reason,
             "mean_fuel": r.evaluation.mean_fuel, "median_call_ns": r.evaluation.median_call_ns,
         })).collect::<Vec<_>>()
-    }))
+    })
 }

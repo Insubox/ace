@@ -20,6 +20,40 @@ const REMAINDER: &str =
 const ZERO_GUARDS: &str = "local.get $a i32.eqz (if (then local.get $b return)) local.get $b i32.eqz (if (then local.get $a return))";
 const SUBTRACT: &str = "(block $done (loop $subtract local.get $a local.get $b i32.eq br_if $done local.get $a local.get $b i32.gt_u (if (then local.get $a local.get $b i32.sub local.set $a) (else local.get $b local.get $a i32.sub local.set $b)) br $subtract)) local.get $a";
 
+// Decimal strings retain all 64 seed bits in JavaScript/MCP clients.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(try_from = "String", into = "String")]
+pub(crate) struct Seed(u64);
+impl From<u64> for Seed {
+    fn from(value: u64) -> Self {
+        Self(value)
+    }
+}
+impl From<Seed> for String {
+    fn from(value: Seed) -> Self {
+        value.0.to_string()
+    }
+}
+impl TryFrom<String> for Seed {
+    type Error = std::num::ParseIntError;
+    fn try_from(value: String) -> std::result::Result<Self, Self::Error> {
+        Ok(Self(value.parse()?))
+    }
+}
+impl Seed {
+    pub(crate) fn get(self) -> u64 {
+        self.0
+    }
+}
+impl JsonSchema for Seed {
+    fn schema_name() -> std::borrow::Cow<'static, str> {
+        "Seed".into()
+    }
+    fn json_schema(_: &mut schemars::SchemaGenerator) -> schemars::Schema {
+        schemars::json_schema!({"type":"string","pattern":"^(0|[1-9][0-9]{0,19})$","description":"Unsigned 64-bit decimal seed; encoded as text to preserve precision in all clients."})
+    }
+}
+
 #[derive(Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub(crate) struct GeneratedArtifact {
@@ -35,7 +69,7 @@ pub(crate) struct GeneratedArtifact {
 pub(crate) struct Generation {
     schema_version: ace_protocol::ProtocolVersion,
     generator_version: String,
-    seed: u64,
+    seed: Seed,
     requested_candidates: u32,
     config_hash: ContentHash,
     artifacts: Vec<GeneratedArtifact>,
@@ -255,7 +289,7 @@ pub(crate) fn population_with_base(
     let generation = Generation {
         schema_version: ace_protocol::ProtocolVersion,
         generator_version: VERSION.into(),
-        seed,
+        seed: seed.into(),
         requested_candidates: candidates,
         config_hash: ContentHash::of_json(&config)?,
         artifacts,

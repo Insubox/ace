@@ -65,10 +65,25 @@ def main():
         evolution = json.loads(run("evolve", "evolution", "--generations", "3", "--json"))
         if json.loads(run("history", "evolution")) != evolution:
             raise ValueError("packaged evolution history did not verify")
+        requests = [
+            {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"protocolVersion": "2025-06-18"}},
+            {"jsonrpc": "2.0", "id": 2, "method": "tools/list"},
+            {"jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": {"name": "ace_generate", "arguments": {"experiment": "first"}}},
+            {"jsonrpc": "2.0", "id": 4, "method": "tools/call", "params": {"name": "ace_run", "arguments": {"experiment": "first", "run": "first"}}},
+            {"jsonrpc": "2.0", "id": 5, "method": "tools/call", "params": {"name": "ace_knowledge", "arguments": {"run": "first"}}},
+        ]
+        stream = "".join(json.dumps(request) + "\n" for request in requests)
+        output = subprocess.run([str(executable), "mcp", "--workspace", str(root / "mcp-workspace")],
+                                cwd=root, env=environment, input=stream, text=True,
+                                capture_output=True, check=True, timeout=120)
+        responses = [json.loads(line) for line in output.stdout.splitlines()]
+        if len(responses) != 5 or len(responses[1]["result"]["tools"]) != 8 or any(response["result"]["isError"] for response in responses[2:]):
+            raise ValueError("packaged local MCP agent experience did not verify")
     print(json.dumps({"archive": str(args.archive), "sha256": digest,
                       "source_commit": metadata["source_commit"], "target": metadata["target"],
                       "demo_programs": 13, "qualified": 10, "diagnostic_failures": 3,
                       "generations": len(evolution["steps"]), "history_verified": True,
+                      "mcp_tools": 8, "mcp_experiment_verified": True,
                       "external_tool_path": "empty", "provider_credentials": "absent"}))
 
 
