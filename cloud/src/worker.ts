@@ -91,7 +91,7 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     try {
       if(request.method==='GET'&&['/','/setup'].includes(new URL(request.url).pathname))return new Response(dashboard,{headers:{'content-type':'text/html; charset=utf-8',
-        'content-security-policy':"default-src 'none'; script-src 'nonce-ace-native-dashboard-v1'; style-src 'nonce-ace-native-dashboard-v1'; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+        'content-security-policy':"default-src 'none'; script-src 'nonce-ace-native-dashboard-v1'; style-src 'nonce-ace-native-dashboard-v1'; font-src data:; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
         'cache-control':'no-store','x-content-type-options':'nosniff','referrer-policy':'no-referrer'}});
       const url = new URL(request.url);
       if(url.pathname==='/v1/auth/setup'&&request.method==='POST')return await accounts.setup(env,await limitedBody(request,16384));

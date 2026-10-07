@@ -3,7 +3,9 @@
 ACE hosts its native objects and versions in R2, with a serialized Durable Object
 journal and a D1 index. Local and hosted versions retain the same ACE IDs; Git is
 not the storage or synchronization engine. The browser displays source trees,
-parents, messages, publication identity and hash-checked files.
+parents, messages, publication identity and hash-checked files. The main
+[Observatory interface](observatory.md) adds Home, Trials and Learning views for
+retained evaluation records, winner/failed source and scoped claims.
 
 The deployed technical preview is [ACE](https://ace-control-plane.nex-insure.workers.dev/).
 Its data is private; the public page contains only login. For your own deployment,

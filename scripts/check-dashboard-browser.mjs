@@ -2,24 +2,27 @@
 // in Node; browser account mutations use an isolated transport fixture only.
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
-import { writeFile } from 'node:fs/promises';
+import { writeFile,readFile } from 'node:fs/promises';
 import { settings,api } from '../cloud/scripts/client.mjs';
 
 const config=settings(),name=process.argv[2]??'native-platform-v030';
 assert(/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/.test(name));
 const deployed=await fetch(config.origin,{redirect:'error'});
 assert.equal(deployed.status,200);
-const html=await deployed.text();
+const html=process.env.ACE_DASHBOARD_HTML?await readFile(process.env.ACE_DASHBOARD_HTML,'utf8'):await deployed.text();
+const deployedCsp=deployed.headers.get('content-security-policy');
+const csp=process.env.ACE_DASHBOARD_HTML?deployedCsp.replace(/(?:font-src data:; )?connect-src/,"font-src data:; connect-src"):deployedCsp;
+assert.match(csp,/font-src data:/);
 const fixtureToken='browser-fixture-not-a-production-credential';
 const setupCode='0'.repeat(64),password='isolated-browser-test-password';
-let setupCalls=0,createCalls=0,role='admin',liveReads=0;
+let setupCalls=0,createCalls=0,role='admin',liveReads=0,corruptObjects=false;
 const server=createServer(async(req,res)=>{
   try{
     const url=new URL(req.url,'http://localhost');
     const send=(status,value)=>{res.writeHead(status,{'content-type':'application/json'});res.end(JSON.stringify(value));};
     if(req.method==='GET'&&['/','/setup'].includes(url.pathname)){
       res.writeHead(200,{'content-type':'text/html',
-        'content-security-policy':deployed.headers.get('content-security-policy'),'cache-control':'no-store'});
+        'content-security-policy':csp,'cache-control':'no-store'});
       return res.end(html);
     }
     let input='';for await(const chunk of req){input+=chunk;if(input.length>16384)throw new Error('Fixture input limit');}
@@ -41,7 +44,7 @@ const server=createServer(async(req,res)=>{
     // Only read deployed store data. No production account or source is mutated.
     if(req.method==='GET'&&(url.pathname==='/v1/stores'||url.pathname.startsWith(`/v1/stores/${name}`))){
       liveReads++;const response=await api(config,url.pathname,{signal:AbortSignal.timeout(30000)});
-      res.writeHead(200,{'content-type':response.headers.get('content-type')});return res.end(Buffer.from(await response.arrayBuffer()));
+      res.writeHead(200,{'content-type':response.headers.get('content-type')});return res.end(corruptObjects&&url.pathname.includes('/objects/')?Buffer.from('corrupted fixture bytes'):Buffer.from(await response.arrayBuffer()));
     }
     send(404,{error:'fixture route not found'});
   }catch{res.writeHead(500);res.end('Fixture failed');}
@@ -52,15 +55,15 @@ const targets=await(await fetch(`http://127.0.0.1:${process.argv[3]??9222}/json/
 const target=targets.find(t=>t.type==='page');assert(target);
 const socket=new WebSocket(target.webSocketDebuggerUrl);
 await new Promise((done,reject)=>{socket.onopen=done;socket.onerror=reject;});
-let next=0;const pending=new Map(),exceptions=[];
-socket.onmessage=event=>{const m=JSON.parse(event.data);if(m.id){const p=pending.get(m.id);pending.delete(m.id);if(m.error)p.reject(new Error(m.error.message));else p.resolve(m.result);}if(m.method==='Runtime.exceptionThrown')exceptions.push(m.params.exceptionDetails);};
+let next=0;const pending=new Map(),exceptions=[],violations=[];
+socket.onmessage=event=>{const m=JSON.parse(event.data);if(m.id){const p=pending.get(m.id);pending.delete(m.id);if(m.error)p.reject(new Error(m.error.message));else p.resolve(m.result);}if(m.method==='Runtime.exceptionThrown')exceptions.push(m.params.exceptionDetails);if(m.method==='Log.entryAdded'&&m.params.entry.source==='security')violations.push(m.params.entry.text);};
 const call=(method,params={})=>new Promise((resolve,reject)=>{const id=++next,timer=setTimeout(()=>{pending.delete(id);reject(new Error(`CDP timeout ${method}`));},10000);pending.set(id,{resolve:r=>{clearTimeout(timer);resolve(r);},reject:e=>{clearTimeout(timer);reject(e);}});socket.send(JSON.stringify({id,method,params}));});
 const evaluate=async expression=>{const r=await call('Runtime.evaluate',{expression,returnByValue:true});assert(!r.exceptionDetails);return r.result.value;};
 const until=async expression=>{for(let i=0;i<120;i++){if(await evaluate(expression))return;await new Promise(r=>setTimeout(r,250));}throw new Error(`UI wait failed: ${expression}`);};
 const fill=async values=>evaluate(Object.entries(values).map(([id,value])=>`document.getElementById(${JSON.stringify(id)}).value=${JSON.stringify(value)}`).join(';'));
 const submit=id=>evaluate(`document.getElementById(${JSON.stringify(id)}).requestSubmit()`);
 try{
-  await call('Runtime.enable');await call('Page.enable');
+  await call('Runtime.enable');await call('Page.enable');await call('Log.enable');
   await call('Emulation.setDeviceMetricsOverride',{width:1366,height:1050,deviceScaleFactor:1,mobile:false});
   await call('Page.navigate',{url:`${origin}/setup#setup=${setupCode}`});
   await until("document.getElementById('bootstrap')&&!document.getElementById('bootstrap').hidden");
@@ -77,8 +80,35 @@ try{
   await fill({'new-user':'fixture-reader','new-password':password,'new-confirm':password});
   await evaluate("document.getElementById('new-role').value='reader'");await submit('create-user');
   await until("document.getElementById('account-result').textContent.includes('created with reader')");assert.equal(createCalls,1);
-  await evaluate(`[...document.querySelectorAll('.store')].find(n=>n.textContent.startsWith(${JSON.stringify(name+' ·')})).click()`);
-  await until("document.getElementById('versions').children.length===6&&document.getElementById('status').textContent.startsWith('Verified object')");
+  await until("document.getElementById('versions').children.length===6&&document.getElementById('status').textContent.includes('native versions loaded')");
+  assert.equal(await evaluate("document.getElementById('stat-versions').textContent"),'6');
+  assert.equal(await evaluate("document.getElementById('stat-candidates').textContent"),'18');
+  assert.equal(await evaluate("document.getElementById('stat-faults').textContent"),'1');
+  await evaluate("document.querySelector('#account-admin details').open=false");
+  if(process.argv[4])await writeFile(process.argv[4],Buffer.from((await call('Page.captureScreenshot',{format:'png'})).data,'base64'));
+  await evaluate("document.getElementById('nav-learning').click()");
+  assert.match(await evaluate("document.getElementById('learning-claims').textContent"),/Rejected strategies/);
+  await evaluate("document.getElementById('nav-trials').click();document.querySelector('#objectives [data-version=\"92c2a874f9264edfd80f44b9fd48b82e89c6b416b9b9ed05dfd03267ff991025\"]').click()");
+  await evaluate("document.querySelector('button[data-candidate=\"C-agent-recursive\"]').click()");
+  await until("document.getElementById('candidate-heading').textContent==='C-agent-recursive'&&!document.getElementById('candidate-download').hidden");
+  assert.match(await evaluate("document.getElementById('candidate-detail').textContent"),/module/);
+  assert.equal(await evaluate("document.getElementById('candidate-outcome').textContent"),'QUALIFIED');
+  await evaluate("document.querySelector('button[data-candidate=\"C-agent-add\"]').click()");
+  await until("!document.getElementById('candidate-download').hidden");
+  assert.match(await evaluate("document.getElementById('candidate-detail').textContent"),/module/);
+  assert.equal(await evaluate("document.getElementById('candidate-outcome').textContent"),'FAILED CORRECTNESS');
+  await evaluate("document.querySelector('[data-detail=\"evaluation\"]').click()");
+  assert.match(await evaluate("document.getElementById('candidate-detail').textContent"),/failed_correctness/);
+  await evaluate("document.querySelector('[data-detail=\"evidence\"]').click()");
+  assert.match(await evaluate("document.getElementById('candidate-detail').textContent"),/content_hash/);
+  if(process.argv[4])await writeFile(process.argv[4].replace(/\.png$/, '-trials.png'),Buffer.from((await call('Page.captureScreenshot',{format:'png'})).data,'base64'));
+  await call('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
+  for(const tab of ['home','trials','learning','versions']){
+    await evaluate(`document.getElementById('nav-${tab}').click()`);
+    assert.equal(await evaluate('document.documentElement.scrollWidth<=innerWidth'),true,`Mobile overflow in ${tab}`);
+  }
+  await call('Emulation.setDeviceMetricsOverride',{width:1366,height:1050,deviceScaleFactor:1,mobile:false});
+  await evaluate("document.getElementById('nav-versions').click()");
   assert.match(await evaluate("document.getElementById('version-count').textContent"),/6 of 6/);
   const sourceVersion='330e16358a8b4299e5b9b8f1ba5ed170813e07c24e9a0de879b4665a9226886f';
   await evaluate(`[...document.querySelectorAll('#versions button')].find(n=>n.textContent===${JSON.stringify(sourceVersion.slice(0,12))}).click()`);
@@ -89,10 +119,20 @@ try{
   assert.equal(await evaluate('globalThis.INJECTED??false'),false);
   assert.equal(await evaluate("document.getElementById('download').hidden"),false);
   await evaluate("document.querySelector('#account-admin details').open=false");
-  if(process.argv[4])await writeFile(process.argv[4],Buffer.from((await call('Page.captureScreenshot',{format:'png'})).data,'base64'));
   await evaluate("document.getElementById('logout').click()");await until("document.getElementById('workspace').hidden");
   await fill({username:'fixture-reader',password});await submit('account-login');await until("!document.getElementById('workspace').hidden");
   assert.equal(await evaluate("document.getElementById('account-admin').hidden"),true);
-  assert.deepEqual(exceptions,[]);
-  console.log(JSON.stringify({browser:'Chromium',deployed_html:true,deployed_native_versions:6,deployed_read_requests:liveReads,source_hash_verified:true,inert_source:true,setup_fragment_removed:true,account_forms:'isolated_fixture_only',password_confirmation:true,admin_and_reader_views:true,production_mutations:0}));
+  await until("document.getElementById('status').textContent.includes('native versions loaded')");
+  await evaluate("document.getElementById('logout').click()");await until("document.getElementById('workspace').hidden");
+  assert.equal(await evaluate("document.getElementById('candidate-detail').textContent"),'');
+  assert.equal(await evaluate("document.getElementById('source').textContent"),'');
+  corruptObjects=true;
+  await fill({username:'fixture-reader',password});await submit('account-login');
+  await until("document.getElementById('status').textContent.includes('evaluation record(s) unavailable')");
+  assert.equal(await evaluate("document.getElementById('stat-candidates').textContent"),'0');
+  assert.equal(await evaluate("document.getElementById('download').hidden"),true);
+  assert.equal(await evaluate("document.getElementById('candidate-download').hidden"),true);
+  assert.equal(await evaluate("document.getElementById('source').textContent"),'File could not be verified.');
+  assert.deepEqual(exceptions,[]);assert.deepEqual(violations,[]);
+  console.log(JSON.stringify({browser:'Chromium',deployed_html:!process.env.ACE_DASHBOARD_HTML,observatory_main_views:4,mobile_layout:true,loaded_observations:18,winning_and_failed_source:true,csp_violations:0,corrupt_objects_refused:true,logout_clears_private_views:true,deployed_native_versions:6,deployed_read_requests:liveReads,source_hash_verified:true,inert_source:true,setup_fragment_removed:true,account_forms:'isolated_fixture_only',password_confirmation:true,admin_and_reader_views:true,production_mutations:0}));
 }finally{socket.close();server.closeAllConnections();await new Promise(done=>server.close(done));}

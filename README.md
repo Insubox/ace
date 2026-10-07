@@ -44,7 +44,9 @@ and expose CLI/MCP control plus an optional paid model bridge.
 The [native hosting guide](docs/native-hosting.md) covers account login, private
 source browsing and remote push/pull with ACE version identities.
 The deployed private preview is at [ACE](https://ace-control-plane.nex-insure.workers.dev/);
-its data requires an ACE account. Local experiments remain account-free.
+its data requires an ACE account. The [Observatory](docs/observatory.md) is the main
+interface for native versions, completed trials and learning from winners and losers.
+Local experiments remain account-free.
 
 The [0.3.0 delivery record](docs/local-delivery-0.3.md) distinguishes tested behavior
 from the remaining architecture and remote platform checks.
