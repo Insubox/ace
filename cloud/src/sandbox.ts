@@ -1,10 +1,52 @@
 import {loadVersion} from './native-store';
 import { DurableObject } from 'cloudflare:workers';
 import { Files } from '@cloudflare/sandbox';
-import { type Env, type Job, type FinalizeJob, type CloudPlan, sha256 } from './contracts';
+import { type Env, type Job, type FinalizeJob, type CloudPlan, type ExperimentState,sha256,coordinate,immutablePut } from './contracts';
+import type {TrialJob,NativeBundle} from './observatory';
 
 export type RunFile = { path: string; content: string };
 export class EvaluationSandbox extends DurableObject<Env> {
+  private async writePrepared(files:Files,job:TrialJob,signal:AbortSignal){
+    const prefix=`observatory/${job.id}/prepared/`;
+    const planObject=await this.env.ARTIFACTS.get(prefix+'plan.json');if(!planObject)throw new Error('trusted prepared plan missing');const plan=await planObject.json<CloudPlan>();
+    const names=['plan.json','experiment.json','registration.json','proposals.json',...['C-baseline','C-proposal'].map(id=>`sources/${id}.wat`)];
+    await files.mkdir('/workspace/prepared',{recursive:true,signal});await files.mkdir('/workspace/prepared/sources',{recursive:true,signal});await files.mkdir('/workspace/prepared/artifacts',{recursive:true,signal});
+    for(const name of names){const object=await this.env.ARTIFACTS.get(prefix+name);if(!object||object.size>131072)throw new Error('trusted prepared metadata missing');await files.writeFile('/workspace/prepared/'+name,object.body,{signal});}
+    for(const hash of new Set(plan.module_hashes)){const object=await this.env.ARTIFACTS.get(`artifacts/${hash}.wasm`);if(!object||object.size>1048576)throw new Error('trusted compiled module missing');const bytes=await object.arrayBuffer();if(await sha256(bytes)!==hash)throw new Error('trusted compiled module corrupted');await files.writeFile(`/workspace/prepared/artifacts/${hash}.wasm`,bytes,{signal});}
+    return plan;
+  }
+  async prepareTrial(job:TrialJob):Promise<{planHash:string}>{
+    const object=await this.env.ARTIFACTS.get(job.requestKey);if(!object||object.size>65536)throw new Error('trial request missing');const request=await object.arrayBuffer();if(await sha256(request)!==job.requestHash)throw new Error('trial request changed');
+    return this.withContainer(async(files,container,signal)=>{
+      await files.writeFile('/workspace/request.json',request,{signal});
+      const process=await container.exec(['/usr/local/bin/ace','cloud','prepare-trial','/workspace/request.json','--output','/workspace/prepared'],{signal});if((await process.output()).exitCode!==0)throw new Error('proposal assembly failed');
+      const planFile=await files.readFile('/workspace/prepared/plan.json',{signal}),planBytes=await planFile.arrayBuffer(),plan=JSON.parse(new TextDecoder().decode(planBytes)) as CloudPlan;
+      const prefix=`observatory/${job.id}/prepared/`;
+      for(const name of ['experiment.json','registration.json','proposals.json','sources/C-baseline.wat','sources/C-proposal.wat']){const file=await files.readFile('/workspace/prepared/'+name,{signal});await immutablePut(this.env.ARTIFACTS,prefix+name,new Uint8Array(await file.arrayBuffer()));}
+      for(const hash of new Set(plan.module_hashes)){const file=await files.readFile(`/workspace/prepared/artifacts/${hash}.wasm`,{signal});const bytes=new Uint8Array(await file.arrayBuffer());if(await sha256(bytes)!==hash)throw new Error('assembled module differs');await immutablePut(this.env.ARTIFACTS,`artifacts/${hash}.wasm`,bytes);}
+      await immutablePut(this.env.ARTIFACTS,prefix+'plan.json',new Uint8Array(planBytes));return{planHash:await sha256(planBytes)};
+    });
+  }
+  async archiveTrial(job:TrialJob):Promise<NativeBundle>{
+    const state=await coordinate(this.env,job.experiment,'status') as ExperimentState;if(state.status!=='completed'||!state.reportKey)throw new Error('trial evaluation not completed');
+    return this.withContainer(async(files,container,signal)=>{
+      const plan=await this.writePrepared(files,job,signal);if(plan.config.experiment!==job.experiment||plan.config.project!==job.project)throw new Error('archive plan scope differs');
+      await files.mkdir('/workspace/run',{recursive:true,signal});await files.mkdir('/workspace/run/artifacts',{recursive:true,signal});
+      // load_report verifies every evaluated artifact before source archival.
+      for(const hash of new Set(plan.module_hashes)){const module=await files.readFile(`/workspace/prepared/artifacts/${hash}.wasm`,{signal});await files.writeFile(`/workspace/run/artifacts/${hash}.wasm`,await module.arrayBuffer(),{signal});}
+      const prefix=state.reportKey!.slice(0,-'run.json'.length);
+      const names=['run.json','environment.json','intent.json','experiment.json','knowledge.json'];
+      const reportObject=await this.env.ARTIFACTS.get(state.reportKey!);if(!reportObject)throw new Error('trusted report missing');const bytes=await reportObject.arrayBuffer();if(await sha256(bytes)!==state.finalizer.resultHash)throw new Error('trusted report corrupted');
+      const report=JSON.parse(new TextDecoder().decode(bytes)) as {report:{champion?:{artifact:{hash:string}};baseline_champion?:unknown}};
+      if(report.report.champion)names.push('champion.json');if(report.report.baseline_champion)names.push('baseline-champion.json');
+      for(const id of [plan.config.baseline.id,...plan.config.candidates.map(c=>c.id)]){await files.mkdir('/workspace/run/candidates/'+id,{recursive:true,signal});for(const type of ['candidate','evaluation','evidence','decision'])names.push(`candidates/${id}/${type}.json`);}
+      for(const name of names){const object=await this.env.ARTIFACTS.get(prefix+name);if(!object||object.size>3145728)throw new Error('trusted run file missing');await files.writeFile('/workspace/run/'+name,object.body,{signal});}
+      if(report.report.champion){const object=await this.env.ARTIFACTS.get(`artifacts/${report.report.champion.artifact.hash}.wasm`);if(!object)throw new Error('champion module missing');await files.writeFile('/workspace/run/champion.wasm',object.body,{signal});}
+      const process=await container.exec(['/usr/local/bin/ace','cloud','archive-trial','/workspace/run','--prepared','/workspace/prepared','--store','/workspace/native'],{signal});if((await process.output()).exitCode!==0)throw new Error('trusted trial source/evidence archival failed');
+      const exported=await container.exec(['python3','/opt/ace/export_native.py'],{signal});if((await exported.output()).exitCode!==0)throw new Error('trusted native export failed');
+      const bundle=await files.readFile('/workspace/native-bundle.json',{signal});return bundle.json<NativeBundle>();
+    });
+  }
   private async withContainer<T>(action: (files: Files, container: Container, signal: AbortSignal) => Promise<T>): Promise<T> {
     // Separate DO name per lease ensures retries never share a candidate instance.
     const container = this.ctx.container;

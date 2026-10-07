@@ -112,6 +112,15 @@ pub(crate) fn register(
     batch: &Batch,
     baseline_run: Option<&Path>,
 ) -> Result<Registration> {
+    register_scoped(directory, batch, baseline_run, None)
+}
+
+pub(crate) fn register_scoped(
+    directory: &Path,
+    batch: &Batch,
+    baseline_run: Option<&Path>,
+    scope: Option<(ProjectId, ExperimentId)>,
+) -> Result<Registration> {
     validate(batch)?;
     let (base_bytes, base_source, base_generator, base_strategy, parent, profile) =
         if let Some(run) = baseline_run {
@@ -237,6 +246,10 @@ pub(crate) fn register(
         config.harness = profile.harness;
         config.min_relative_improvement = profile.min_relative_improvement;
         config.max_wall_clock_seconds = profile.max_wall_clock_seconds;
+    }
+    if let Some((project, experiment)) = scope {
+        config.project = project;
+        config.experiment = experiment;
     }
     config.validate()?;
     let record = Registration {

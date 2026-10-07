@@ -25,8 +25,10 @@ function verifier(env:Env){if(!env.NATIVE_VERIFIER_BINARY_HASH)throw new HttpErr
 async function state(env:Env,job:Pick<VerificationJob,'store'|'version'|'verifier'>){return await env.DB.prepare('SELECT workflow, status, requested_at, completed_at, receipt_key, receipt_hash, error FROM native_verifications WHERE store = ? AND version = ? AND verifier = ?').bind(job.store,job.version,job.verifier).first<State>();}
 export async function readVerification(env:Env,store:string,version:string){
   const job={store:storeName.parse(store),version:hash.parse(version),verifier:verifier(env)};
-  const value=await state(env,job);if(!value)return json({status:'not_requested',verifier:job.verifier});
-  const metadata={status:value.status,verifier:job.verifier,requested_at:value.requested_at,completed_at:value.completed_at,error:value.error};
+  const configured=job.verifier;let value=await state(env,job);
+  if(!value){const previous=await env.DB.prepare("SELECT verifier FROM native_verifications WHERE store = ? AND version = ? AND status = 'completed' ORDER BY completed_at DESC LIMIT 1").bind(job.store,job.version).first<{verifier:string}>();if(previous){job.verifier=previous.verifier;value=await state(env,job);}}
+  if(!value)return json({status:'not_requested',verifier:job.verifier});
+  const metadata={status:value.status,verifier:job.verifier,current_evaluator:job.verifier===configured,requested_at:value.requested_at,completed_at:value.completed_at,error:value.error};
   if(value.status!=='completed')return json(metadata);
   if(!value.receipt_key||!value.receipt_hash)throw new HttpError(503,'verification receipt missing');
   const object=await env.ARTIFACTS.get(value.receipt_key);if(!object)throw new HttpError(503,'verification receipt missing');
@@ -76,9 +78,9 @@ export async function completeVerification(env:Env,job:VerificationJob,raw:strin
     .bind(Date.now(),key,digest,job.store,job.version,job.verifier,job.workflow).run();
 }
 export async function readVerifiedRun(env:Env,store:string,version:string){
-  const response=await readVerification(env,store,version),value=await response.json() as {status:string;receipt?:z.infer<typeof receiptSchema>;files?:Record<string,string>};
+  const response=await readVerification(env,store,version),value=await response.json() as {status:string;verifier:string;receipt?:z.infer<typeof receiptSchema>;files?:Record<string,string>};
   if(value.status!=='completed'||!value.receipt||!value.files?.['run.json'])throw new HttpError(409,'no completed server verification');
-  const job={store,version,verifier:verifier(env)},current=await state(env,job);
+  const job={store,version,verifier:value.verifier},current=await state(env,job);
   const key=current!.receipt_key!.slice(0,-'receipt.json'.length)+'run/run.json';
   const file=await env.ARTIFACTS.get(key);if(!file)throw new HttpError(503,'verified run missing');
   const bytes=await file.arrayBuffer();if(await sha256(bytes)!==value.files['run.json'])throw new HttpError(503,'verified run corrupted');

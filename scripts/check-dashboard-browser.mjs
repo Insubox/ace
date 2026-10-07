@@ -16,6 +16,7 @@ const csp=process.env.ACE_DASHBOARD_HTML?deployedCsp.replace(/(?:font-src data:;
 assert.match(csp,/font-src data:/);
 const fixtureToken='browser-fixture-not-a-production-credential';
 const setupCode='0'.repeat(64),password='isolated-browser-test-password';
+let projectCalls=0,proposalCalls=0,createdProject=false,submittedProposal=null;
 let setupCalls=0,createCalls=0,recoveryCalls=0,memberCalls=0,branchCalls=0,branchFixture={schema_version:1,events:[],heads:{},tip:null},role='admin',liveReads=0,corruptObjects=false;
 const server=createServer(async(req,res)=>{
   try{
@@ -45,6 +46,13 @@ const server=createServer(async(req,res)=>{
     }
     if(url.pathname===`/v1/users/fixture-reader/recovery`&&req.method==='POST')return send(200,{path:`/recover#recover=${setupCode}&user=fixture-reader`});
     if(url.pathname==='/v1/auth/audit')return send(200,{events:[{recorded_at:Date.now(),actor:'account:fixture-admin',action:'recovery.issue',username:'fixture-reader'}]});
+    if(url.pathname==='/v1/projects'&&req.method==='POST'){assert.equal(role,'admin');assert.equal(JSON.parse(input).name,'browser-created');createdProject=true;projectCalls++;return send(201,{name:'browser-created'});}
+    if(url.pathname==='/v1/projects'&&req.method==='GET')return send(200,{projects:[{name,role:role==='admin'?'owner':'reader'},...(createdProject?[{name:'browser-created',role:'owner'}]:[])]});
+    if(url.pathname==='/v1/stores/browser-created')return send(200,{schema_version:1,entries:[],publishers:{},tip:null});
+    if(url.pathname==='/v1/stores/browser-created/refs')return send(200,{schema_version:1,events:[],heads:{},tip:null});
+    if(url.pathname==='/v1/projects/browser-created/trials')return send(200,{trials:[]});
+    if(url.pathname===`/v1/projects/${name}/trials`){if(req.method==='POST'){assert.equal(role,'admin');proposalCalls++;const args=JSON.parse(input);assert.match(args.wat,/i32.rem_u/);if(!submittedProposal){submittedProposal=args;return send(503,{error:'simulated accepted request with interrupted HTTP response'});}assert.deepEqual(args,submittedProposal);return send(202,{id:'trial-'+ 'a'.repeat(64),experiment:'EXP-OBS-browser',status:'completed'});}return send(200,{trials:submittedProposal?[{id:'trial-'+ 'a'.repeat(64),experiment:'EXP-OBS-browser',status:'completed',native_version:'92c2a874f9264edfd80f44b9fd48b82e89c6b416b9b9ed05dfd03267ff991025'}]:[]});}
+    if(url.pathname===`/v1/projects/${name}/trials/trial-${'a'.repeat(64)}/proposal`)return send(200,submittedProposal);
     if(url.pathname===`/v1/projects/${name}/audit`)return send(200,{events:[{recorded_at:Date.now(),actor:'account:fixture-admin',action:'member.grant',resource:'fixture-reader:reader'}]});
     if(url.pathname===`/v1/projects/${name}/members`){if(req.method==='POST'){assert.equal(role,'admin');memberCalls++;}return send(200,{members:[{username:'fixture-admin',role:'owner'},{username:'fixture-reader',role:'reader'}]});}
     if(url.pathname===`/v1/stores/${name}/refs`){if(req.method==='POST'){assert.equal(role,'admin');const args=JSON.parse(input);assert.equal(args.branch,'browser-branch');assert.equal(args.expected,null);assert.equal(args.content_hash,nativeHash([1,args.sequence,args.previous,args.branch,args.expected,args.target]));branchCalls++;branchFixture={schema_version:1,events:[args],heads:{[args.branch]:args.target},tip:args.content_hash};}return send(200,branchFixture);}
@@ -132,9 +140,11 @@ try{
   assert.equal(await evaluate('globalThis.INJECTED??false'),false);
   assert.equal(await evaluate("document.getElementById('download').hidden"),false);
   await evaluate("document.querySelector('#account-admin details').open=false");
+  await evaluate("document.getElementById('new-project-toggle').click()");await fill({'new-project-name':'browser-created'});await submit('new-project-form');await until("document.getElementById('project-picker').value==='browser-created'&&!document.getElementById('proposal-form').hidden&&document.getElementById('status').textContent.includes('native versions loaded')");assert.equal(projectCalls,1);assert.equal(await evaluate("document.getElementById('branch-form').hidden"),true);
+  await evaluate(`document.getElementById('project-picker').value=${JSON.stringify(name)};document.getElementById('project-picker').dispatchEvent(new Event('change'))`);await until("document.getElementById('versions').children.length===6&&document.getElementById('status').textContent.includes('native versions loaded')");await evaluate("document.getElementById('nav-trials').click();document.getElementById('proposal-example').click()");await submit('proposal-form');await until("document.getElementById('proposal-result').textContent.includes('safely retry')");await submit('proposal-form');await until("document.getElementById('proposal-result').textContent.includes('accepted')");assert.equal(proposalCalls,2);assert.equal(await evaluate("document.getElementById('proposal-wat').value"),'');
   await evaluate("document.getElementById('logout').click()");await until("document.getElementById('workspace').hidden");
   await fill({username:'fixture-reader',password});await submit('account-login');await until("!document.getElementById('workspace').hidden");
-  assert.equal(await evaluate("document.getElementById('account-admin').hidden"),true);
+  assert.equal(await evaluate("document.getElementById('account-admin').hidden"),true);await until("document.getElementById('status').textContent.includes('native versions loaded')");assert.equal(await evaluate("document.getElementById('proposal-form').hidden"),true);assert.equal(await evaluate("document.getElementById('new-project-toggle').hidden"),true);
   await until("document.getElementById('status').textContent.includes('native versions loaded')");
   await evaluate("document.getElementById('logout').click()");await until("document.getElementById('workspace').hidden");
   assert.equal(await evaluate("document.getElementById('candidate-detail').textContent"),'');
@@ -149,5 +159,5 @@ try{
   await call('Page.navigate',{url:`${origin}/recover#recover=${setupCode}&user=fixture-admin`});await until("document.getElementById('recovery')&&!document.getElementById('recovery').hidden");assert.equal(await evaluate('location.hash'),'');
   await fill({'recover-password':password,'recover-confirm':password});await submit('recover-form');await until("document.getElementById('recover-result').textContent.includes('Password updated')");assert.equal(recoveryCalls,1);assert.equal(await evaluate("document.getElementById('recover-password').value"),'');
   assert.deepEqual(exceptions,[]);assert.deepEqual(violations,[]);
-  console.log(JSON.stringify({browser:'Chromium',deployed_html:!process.env.ACE_DASHBOARD_HTML,observatory_main_views:4,mobile_layout:true,loaded_observations:18,winning_and_failed_source:true,csp_violations:0,corrupt_objects_refused:true,logout_clears_private_views:true,server_verification:process.env.ACE_EXPECT_SERVER_VERIFICATION==='1',deployed_native_versions:6,deployed_read_requests:liveReads,source_hash_verified:true,inert_source:true,setup_fragment_removed:true,account_forms:'isolated_fixture_only',password_confirmation:true,project_team_form:true,native_branch_form:true,recovery_fragment_removed:true,recovery_form:true,admin_and_reader_views:true,production_mutations:0}));
+  console.log(JSON.stringify({browser:'Chromium',deployed_html:!process.env.ACE_DASHBOARD_HTML,observatory_main_views:4,mobile_layout:true,loaded_observations:18,winning_and_failed_source:true,csp_violations:0,corrupt_objects_refused:true,logout_clears_private_views:true,server_verification:process.env.ACE_EXPECT_SERVER_VERIFICATION==='1',deployed_native_versions:6,deployed_read_requests:liveReads,source_hash_verified:true,inert_source:true,setup_fragment_removed:true,account_forms:'isolated_fixture_only',password_confirmation:true,project_team_form:true,native_branch_form:true,private_project_creation:true,proposal_http_retry:true,reader_cannot_run_trial:true,recovery_fragment_removed:true,recovery_form:true,admin_and_reader_views:true,production_mutations:0}));
 }finally{socket.close();server.closeAllConnections();await new Promise(done=>server.close(done));}

@@ -17,6 +17,16 @@ export class ExperimentCoordinator extends DurableObject<Env> {
           await tx.put('account-setup',{...ticket,used:true});return{claimed:true};
         }
         if(op==='backup-budget'){const used=await tx.get<number>('backup-used')??0;if(used>=4)return{allowed:false};await tx.put('backup-used',used+1);return{allowed:true};}
+        if(op==='observatory-register'){
+          const key='observatory-registration:'+String(body.id);
+          if(await tx.get(key))return{allowed:true};
+          const used=await tx.get<number>('observatory-registered')??0;
+          if(used>=8)return{allowed:false};await tx.put('observatory-registered',used+1);await tx.put(key,true);return{allowed:true};
+        }
+        if(op==='observatory-container-budget'){
+          const used=await tx.get<number>('observatory-containers')??0;
+          if(used>=16)return{allowed:false};await tx.put('observatory-containers',used+1);return{allowed:true};
+        }
         if(op==='experiment-restore'){
           const state=body.state as ExperimentState;const existing=await tx.get<ExperimentState>('state');if(existing&&JSON.stringify(existing)!==JSON.stringify(state))throw new HttpError(409,'restored state differs');await tx.put('state',state);return{restored:true};
         }

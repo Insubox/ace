@@ -90,3 +90,11 @@ The real Rust engine verified the recovered native history and independently
 reproduced a retained experiment from restored source. No sessions were restored
 and no live source was overwritten. The snapshot predates named branch creation;
 branch restoration is covered by Worker tests and included in subsequent captures.
+
+The scheduler now starts the restoration drill as a separate Workflow after
+sealing the backup. Copy and restoration have independent invocation budgets;
+30-second durable pauses between groups of 100 objects allow hibernation.
+This replaces the earlier combined workflow, which exhausted the API request
+limit on the second full-size drill. Existing sealed snapshots can be restored
+without creating another backup. Observatory trial metadata and exact proposal
+objects are also retained; active sessions and recovery links remain excluded.

@@ -23,6 +23,7 @@ mod history;
 mod inspect;
 mod mcp;
 mod memory;
+mod observatory;
 mod proposal;
 mod source;
 mod store;
@@ -344,6 +345,20 @@ enum JudgeCommand {
 
 #[derive(Subcommand)]
 enum CloudCommand {
+    /// Assemble one Observatory proposal with a fixed server-selected profile.
+    PrepareTrial {
+        request: PathBuf,
+        #[arg(long)]
+        output: PathBuf,
+    },
+    /// Freeze complete server-produced evidence and source in a native snapshot.
+    ArchiveTrial {
+        run: PathBuf,
+        #[arg(long)]
+        prepared: PathBuf,
+        #[arg(long)]
+        store: PathBuf,
+    },
     /// Validate native source/evidence and reproduce deterministic observations on this host.
     VerifySnapshot {
         snapshot: PathBuf,
@@ -685,6 +700,16 @@ fn run(cli: Cli) -> Result<()> {
             }
         },
         Command::Cloud { command } => match command {
+            CloudCommand::PrepareTrial { request, output } => {
+                print(&observatory::prepare(&request, &output)?)?;
+            }
+            CloudCommand::ArchiveTrial {
+                run,
+                prepared,
+                store,
+            } => {
+                print(&observatory::archive(&run, &prepared, &store)?)?;
+            }
             CloudCommand::VerifySnapshot { snapshot, output } => {
                 print(&verify::snapshot(&snapshot, &output)?)?
             }

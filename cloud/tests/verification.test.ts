@@ -62,6 +62,12 @@ it('requests repair workflow startup without creating duplicate verification row
 
 it('accepts the receipt emitted by the actual isolated Rust evaluator',()=>{expect(receiptSchema.parse(actualRustReceipt)).toEqual(actualRustReceipt);});
 
+it('preserves older completed receipts with their exact evaluator identity after an image upgrade',async()=>{
+ const f=await fixture();await completeVerification(env,f.job,JSON.stringify(f.receipt),f.files);const upgraded={...env,NATIVE_VERIFIER_BINARY_HASH:'d'.repeat(64)};
+ expect(await(await readVerification(upgraded,f.job.store,f.job.version)).json()).toMatchObject({status:'completed',verifier:f.job.verifier,current_evaluator:false});
+ expect(await(await readVerifiedRun(upgraded,f.job.store,f.job.version)).json()).toMatchObject({content_hash:verified});
+});
+
 it('retry uses a new workflow and ignores superseded completion attempts',async()=>{
  const f=await fixture();await env.DB.prepare("UPDATE native_verifications SET status = 'failed' WHERE store = ?").bind(f.job.store).run();
  const fixtureEnv={...env,NATIVE_VERIFICATIONS:{create:async()=>({})}} as unknown as Env;

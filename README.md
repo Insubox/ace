@@ -161,3 +161,7 @@ instructions](docs/phase2.md), and [Phase 3's advisory judge and calibration](do
 Native candidate execution and additional vendor adapters are not implemented yet. Agent-authored WAT proposals are accepted through CLI/MCP.
 The built-in grammar generates bounded
 WASM candidates without compiling or starting generated native code.
+
+The main Observatory also supports [creating private projects and running manual
+proposals on the server](docs/observatory-trials.md), with exact source and native
+retention for both winning and losing results.

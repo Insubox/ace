@@ -1,3 +1,5 @@
+import {submit} from './submission';
+export {submit} from './submission';
 import { z } from 'zod';
 import { type Env, type ExperimentState, type FinalizeJob, HttpError, coordinate, planSchema, identifier, hash,
   strictJson, limitedBody, immutablePut, sha256, json } from './contracts';
@@ -10,6 +12,8 @@ import * as accounts from './accounts';
 import * as projects from './projects';
 import {readVerification,requestVerification,readVerifiedRun} from './verification';
 import {requestBackup,listBackups,requestRestore,readDrill,readRestoreReceipt} from './backups';
+import {requestTrial,listTrials,readTrial,readProposal,retryTrial} from './observatory';
+export {ObservatoryWorkflow} from './observatory';
 export {BackupWorkflow} from './backups';
 export {NativeVerificationWorkflow} from './verification';
 export { ExperimentCoordinator,RestoreCoordinator } from './coordinator';
@@ -31,26 +35,6 @@ async function report(env: Env, id: string): Promise<Record<string, unknown>> {
 function publicStatus(state: ExperimentState): unknown {
   return { experiment: state.experiment, project: state.project, status: state.status, total: state.count,
     completed: state.completed, deadline: state.deadline, error: state.error ?? null };
-}
-export async function submit(env: Env, bytes: Uint8Array): Promise<Response> {
-  const p = planSchema.parse(strictJson(new TextDecoder().decode(bytes)));
-  const experiment = p.config.experiment;
-  const planHash = await sha256(bytes);
-  for (const artifact of new Set(p.module_hashes)) {
-    if (!await env.ARTIFACTS.head(`artifacts/${artifact}.wasm`)) throw new HttpError(409, `module ${artifact} must be uploaded first`);
-  }
-  const state = await coordinate(env, experiment, 'init', { experiment, project: p.config.project, planHash, count: p.module_hashes.length }) as ExperimentState;
-  await immutablePut(env.ARTIFACTS, `experiments/${experiment}/plan.json`, bytes);
-  await env.DB.prepare('INSERT INTO experiments (id, project, plan_hash, status, created_at) VALUES (?, ?, ?, ?, ?) ON CONFLICT(id) DO NOTHING')
-    .bind(experiment, p.config.project, planHash, state.status, Date.now()).run();
-  // An identical HTTP retry repairs interrupted registration/startup.
-  try { await env.EXPERIMENTS.create({ id: experiment, params: { experiment, planHash } }); }
-  catch (e) {
-    const existing = await env.EXPERIMENTS.get(experiment);
-    const observed = await existing.status();
-    if (!observed.status || observed.status === 'unknown') throw e;
-  }
-  return json({ experiment, planHash, status: state.status }, 202);
 }
 async function inspect(env: Env, id: string, kind: string, candidate: string|undefined, actor:accounts.Identity): Promise<unknown> {
   await projects.resource(env,actor,'experiment',id);
@@ -118,6 +102,8 @@ export default {
       if(restoration){if(request.method==='GET'&&!restoration[2])return await readRestoreReceipt(env,current,restoration[1]!);if(request.method==='POST'&&!restoration[2])return await requestRestore(env,current,restoration[1]!);if(request.method==='GET'&&restoration[2])return await readDrill(env,current,restoration[1]!,restoration[2],restoration[3]??restoration[5],restoration[4]);}
       if(url.pathname==='/v1/projects'&&request.method==='GET')return await projects.list(env,current);
       if(url.pathname==='/v1/projects'&&request.method==='POST')return await projects.create(env,current,await limitedBody(request,8192));
+      const trials=/^\/v1\/projects\/([A-Za-z0-9][A-Za-z0-9_-]{0,63})\/trials(?:\/(trial-[0-9a-f]{64})(\/(?:proposal|retry))?)?$/.exec(url.pathname);
+      if(trials){if(request.method==='GET'&&trials[3]!=='/retry')return trials[2]?(trials[3]?await readProposal(env,current,trials[1]!,trials[2]):await readTrial(env,current,trials[1]!,trials[2])):await listTrials(env,current,trials[1]!);if(request.method==='POST'&&!trials[2])return await requestTrial(env,current,trials[1]!,await limitedBody(request,65536));if(request.method==='POST'&&trials[2]&&trials[3]==='/retry'){if((await limitedBody(request,1)).length)throw new HttpError(400,'retry accepts no replacement source');return await retryTrial(env,current,trials[1]!,trials[2]);}}
       const project=/^\/v1\/projects\/([^/]+)\/(members|audit)(?:\/([a-z0-9][a-z0-9_-]{2,31}))?$/.exec(url.pathname);
       if(project){const name=identifier.parse(project[1]);if(project[2]==='audit'&&request.method==='GET')return await projects.history(env,current,name);
         if(project[2]==='members'){if(request.method==='GET')return await projects.members(env,current,name);if(request.method==='POST')return await projects.grant(env,current,name,await limitedBody(request,8192));if(request.method==='DELETE'&&project[3])return await projects.revoke(env,current,name,project[3]);}}
@@ -154,7 +140,7 @@ export default {
         if (!object) throw new HttpError(404, 'artifact not found');
         return new Response(object.body, { headers: { 'content-type': 'application/wasm' } });
       }
-      if (url.pathname === '/v1/experiments' && request.method === 'POST'){const bytes=await limitedBody(request,131072),plan=planSchema.parse(strictJson(new TextDecoder().decode(bytes))),project=projects.selected(request,current,plan.config.project);await projects.claim(env,current,'experiment',plan.config.experiment,project);for(const id of plan.module_hashes)await projects.artifact(env,current,id,project);const result=await submit(env,bytes);await projects.audit(env,current,project,'experiment.submit',plan.config.experiment);return result;}
+      if (url.pathname === '/v1/experiments' && request.method === 'POST'){const bytes=await limitedBody(request,131072),plan=planSchema.parse(strictJson(new TextDecoder().decode(bytes))),project=projects.selected(request,current,plan.config.project);if(plan.config.experiment.startsWith('EXP-OBS-'))throw new HttpError(400,'Observatory experiment identifiers are reserved');await projects.claim(env,current,'experiment',plan.config.experiment,project);for(const id of plan.module_hashes)await projects.artifact(env,current,id,project);const result=await submit(env,bytes);await projects.audit(env,current,project,'experiment.submit',plan.config.experiment);return result;}
       const route = /^\/v1\/experiments\/([^/]+)(?:\/(run|champion|knowledge|explain|evidence)(?:\/([^/]+))?)?$/.exec(url.pathname);
       if (route && request.method === 'GET') return json(await inspect(env, route[1]!, route[2] ?? 'status', route[3],current));
       const file = /^\/v1\/experiments\/([^/]+)\/files\/(.+)$/.exec(url.pathname);

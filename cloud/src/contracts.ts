@@ -43,6 +43,7 @@ export type Env = {
   SANDBOXES: DurableObjectNamespace<import('./sandbox').EvaluationSandbox>;
   EVALUATIONS: Queue<Job>; FINALIZATIONS: Queue<FinalizeJob>;
   EXPERIMENTS: Workflow<FinalizeJob>;
+  OBSERVATORY_TRIALS?:Workflow<import('./observatory').TrialJob>;
 };
 
 export class HttpError extends Error { constructor(public status: number, message: string) { super(message); } }
