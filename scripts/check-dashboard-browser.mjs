@@ -89,6 +89,7 @@ try{
   await evaluate("document.getElementById('nav-learning').click()");
   assert.match(await evaluate("document.getElementById('learning-claims').textContent"),/Rejected strategies/);
   await evaluate("document.getElementById('nav-trials').click();document.querySelector('#objectives [data-version=\"92c2a874f9264edfd80f44b9fd48b82e89c6b416b9b9ed05dfd03267ff991025\"]').click()");
+  if(process.env.ACE_EXPECT_SERVER_VERIFICATION==='1'){await until("document.getElementById('server-verification').textContent.includes('reproduced')");await evaluate("document.getElementById('verified-run').click()");assert.match(await evaluate("document.getElementById('server-receipt').textContent"),/verified_environment_hash/);}
   await evaluate("document.querySelector('button[data-candidate=\"C-agent-recursive\"]').click()");
   await until("document.getElementById('candidate-heading').textContent==='C-agent-recursive'&&!document.getElementById('candidate-download').hidden");
   assert.match(await evaluate("document.getElementById('candidate-detail').textContent"),/module/);
@@ -134,5 +135,5 @@ try{
   assert.equal(await evaluate("document.getElementById('candidate-download').hidden"),true);
   assert.equal(await evaluate("document.getElementById('source').textContent"),'File could not be verified.');
   assert.deepEqual(exceptions,[]);assert.deepEqual(violations,[]);
-  console.log(JSON.stringify({browser:'Chromium',deployed_html:!process.env.ACE_DASHBOARD_HTML,observatory_main_views:4,mobile_layout:true,loaded_observations:18,winning_and_failed_source:true,csp_violations:0,corrupt_objects_refused:true,logout_clears_private_views:true,deployed_native_versions:6,deployed_read_requests:liveReads,source_hash_verified:true,inert_source:true,setup_fragment_removed:true,account_forms:'isolated_fixture_only',password_confirmation:true,admin_and_reader_views:true,production_mutations:0}));
+  console.log(JSON.stringify({browser:'Chromium',deployed_html:!process.env.ACE_DASHBOARD_HTML,observatory_main_views:4,mobile_layout:true,loaded_observations:18,winning_and_failed_source:true,csp_violations:0,corrupt_objects_refused:true,logout_clears_private_views:true,server_verification:process.env.ACE_EXPECT_SERVER_VERIFICATION==='1',deployed_native_versions:6,deployed_read_requests:liveReads,source_hash_verified:true,inert_source:true,setup_fragment_removed:true,account_forms:'isolated_fixture_only',password_confirmation:true,admin_and_reader_views:true,production_mutations:0}));
 }finally{socket.close();server.closeAllConnections();await new Promise(done=>server.close(done));}

@@ -29,6 +29,7 @@ it('reader sessions can inspect history and sign out but cannot upload or create
   const a=await account('reader');expect((await request('/v1/stores','GET',undefined,a.token)).status).toBe(200);
   expect((await request('/v1/stores/test/objects/'+'0'.repeat(64),'PUT','code',a.token)).status).toBe(403);
   expect((await request('/v1/users','POST',{username:'another',password,role:'admin'},a.token)).status).toBe(403);
+  expect((await request('/v1/stores/private/versions/'+'a'.repeat(64)+'/verify','POST',undefined,a.token)).status).toBe(403);
   expect((await request('/v1/auth/logout','POST',undefined,a.token)).status).toBe(200);expect((await request('/v1/auth/me','GET',undefined,a.token)).status).toBe(401);
 });
 it('writers cannot administer users and administrators can create bounded roles',async()=>{

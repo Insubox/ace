@@ -34,7 +34,7 @@ function canonical(value:unknown):string{
 export async function nativeHash(value:unknown){return sha256(encoder.encode('ace:canonical-json:v1\0'+canonical(value)));}
 const prefix=(name:string)=>`native-stores/${storeName.parse(name)}/`;
 const decode=(bytes:Uint8Array)=>strictJson(new TextDecoder('utf-8',{fatal:true,ignoreBOM:true}).decode(bytes));
-async function version(env:Env,name:string,id:string){const object=await env.ARTIFACTS.get(prefix(name)+`versions/${hash.parse(id)}.json`);if(!object)throw new HttpError(404,'native version not found');const sealed=versionSchema.parse(strictJson(await object.text()));if(sealed.content_hash!==id||await nativeHash(sealed.version)!==id)throw new HttpError(503,'native version corrupted');return sealed;}
+export async function loadVersion(env:Env,name:string,id:string){const object=await env.ARTIFACTS.get(prefix(name)+`versions/${hash.parse(id)}.json`);if(!object)throw new HttpError(404,'native version not found');const sealed=versionSchema.parse(strictJson(await object.text()));if(sealed.content_hash!==id||await nativeHash(sealed.version)!==id)throw new HttpError(503,'native version corrupted');return sealed;}
 export async function putObject(env:Env,name:string,id:string,bytes:Uint8Array){hash.parse(id);if(bytes.length>8388608)throw new HttpError(413,'native object exceeds 8 MiB');if(await sha256(bytes)!==id)throw new HttpError(409,'native object hash differs');await immutablePut(env.ARTIFACTS,prefix(name)+`objects/${id}`,bytes);return json({object:id,retained:true});}
 export async function putVersion(env:Env,name:string,id:string,bytes:Uint8Array){
   const sealed=versionSchema.parse(decode(bytes));if(sealed.content_hash!==hash.parse(id)||await nativeHash(sealed.version)!==id)throw new HttpError(409,'native version hash differs');
@@ -45,7 +45,7 @@ export async function putVersion(env:Env,name:string,id:string,bytes:Uint8Array)
 }
 export async function appendEntry(env:Env,name:string,bytes:Uint8Array,publisher='internal'){
   const entry=entrySchema.parse(decode(bytes));if(await nativeHash([entry.schema_version,entry.sequence,entry.previous,entry.version])!==entry.content_hash)throw new HttpError(409,'native journal hash differs');
-  const sealed=await version(env,name,entry.version);
+  const sealed=await loadVersion(env,name,entry.version);
   const result=await coordinate(env,`NATIVE-STORE-${storeName.parse(name)}`,'native-append',{entry,parents:sealed.version.parents,publisher});
   await immutablePut(env.ARTIFACTS,prefix(name)+`journal/${String(entry.sequence).padStart(8,'0')}.json`,encoder.encode(JSON.stringify(entry)));
   await env.DB.prepare('INSERT INTO native_stores (name, version_count, tip, updated_at) VALUES (?, ?, ?, ?) ON CONFLICT(name) DO UPDATE SET version_count = max(version_count, excluded.version_count), tip = CASE WHEN excluded.version_count >= version_count THEN excluded.tip ELSE tip END, updated_at = max(updated_at, excluded.updated_at)')
@@ -55,6 +55,6 @@ export async function appendEntry(env:Env,name:string,bytes:Uint8Array,publisher
 export async function readStore(env:Env,name:string){return json(await coordinate(env,`NATIVE-STORE-${storeName.parse(name)}`,'native-log',{}));}
 export async function listStores(env:Env){const result=await env.DB.prepare('SELECT name, version_count, tip, updated_at FROM native_stores ORDER BY updated_at DESC LIMIT 100').all();return json({stores:result.results,scope:'private_shared_workspace',account_roles:['admin','writer','reader']});}
 export async function readFile(env:Env,name:string,kind:'objects'|'versions',id:string){
-  if(kind==='versions')return json(await version(env,name,id));
+  if(kind==='versions')return json(await loadVersion(env,name,id));
   const object=await env.ARTIFACTS.get(prefix(name)+`objects/${hash.parse(id)}`);if(!object)throw new HttpError(404,'native object not found');const bytes=new Uint8Array(await object.arrayBuffer());if(await sha256(bytes)!==id)throw new HttpError(503,'native object corrupted');return new Response(bytes,{headers:{'content-type':'application/octet-stream'}});
 }

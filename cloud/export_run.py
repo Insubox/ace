@@ -1,8 +1,9 @@
 """Export trusted Rust-generated JSON only. Modules already live in R2."""
 import json
+import sys
 from pathlib import Path
 
-root = Path('/workspace/run')
+root = Path(sys.argv[1] if len(sys.argv) > 1 else '/workspace/run')
 files = [{'path': str(p.relative_to(root)), 'content': p.read_text()}
          for p in sorted(root.rglob('*.json'))]
 encoded = json.dumps(files, separators=(',', ':')).encode()

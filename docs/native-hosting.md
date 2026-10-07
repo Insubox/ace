@@ -83,8 +83,10 @@ invokes ACE verification on the complete history. There is no force push or
 automatic history merge. Publication retries repair interrupted remote indexing;
 partial local pulls need inspection and a fresh destination.
 
-Hosting preserves uploaded evaluation records but does not independently qualify
-them. Assess evidence with `ace memory`, `ace status` and replay. The browser
+Hosting preserves uploaded evaluation records as declared. The optional
+[server verification workflow](server-verification.md) independently checks native
+snapshots and retains a separate environment-scoped receipt and fresh run.
+Assess original local evidence with `ace memory`, `ace status` and replay. The browser
 displays source as inert text; previews show 8 KiB, downloads preserve exact bytes.
 Publisher metadata identifies who first published an entry, not its author.
 

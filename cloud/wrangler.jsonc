@@ -17,7 +17,7 @@
   "containers": [{ "class_name": "EvaluationSandbox", "scheduling_policy": "durable_object",
     "images": { "ace": { "dockerfile": "./Dockerfile", "build_context": ".." } }
   }],
-  "workflows": [{ "binding": "EXPERIMENTS", "name": "ace-experiments", "class_name": "ExperimentWorkflow" }],
+  "workflows": [{"binding":"NATIVE_VERIFICATIONS","name":"ace-native-verifications","class_name":"NativeVerificationWorkflow"}, { "binding": "EXPERIMENTS", "name": "ace-experiments", "class_name": "ExperimentWorkflow" }],
   "d1_databases": [{ "binding": "DB", "database_name": "ace-metadata",
     "database_id": "00000000-0000-0000-0000-000000000000", "migrations_dir": "migrations" }],
   "r2_buckets": [{ "binding": "ARTIFACTS", "bucket_name": "ace-artifacts" }],

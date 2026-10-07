@@ -26,6 +26,7 @@ mod memory;
 mod proposal;
 mod source;
 mod store;
+mod verify;
 
 #[derive(Parser)]
 #[command(
@@ -303,6 +304,12 @@ enum JudgeCommand {
 
 #[derive(Subcommand)]
 enum CloudCommand {
+    /// Validate native source/evidence and reproduce deterministic observations on this host.
+    VerifySnapshot {
+        snapshot: PathBuf,
+        #[arg(long)]
+        output: PathBuf,
+    },
     Prepare {
         directory: PathBuf,
         #[arg(long)]
@@ -602,6 +609,9 @@ fn run(cli: Cli) -> Result<()> {
             }
         },
         Command::Cloud { command } => match command {
+            CloudCommand::VerifySnapshot { snapshot, output } => {
+                print(&verify::snapshot(&snapshot, &output)?)?
+            }
             CloudCommand::Prepare { directory, output } => {
                 print(&ace_runner::prepare_cloud(&directory, &output)?)?;
             }

@@ -38,7 +38,9 @@ in its version; duplicate candidate IDs and inconsistent reported Champions are
 rejected. Invalid or missing reports are marked unavailable while original
 version files remain accessible. These checks do not independently qualify
 uploaded outcomes or establish signed provenance. Run native ACE verification
-and replay to assess the recorded evidence.
+and replay to assess the recorded evidence. The optional
+[server verification](server-verification.md) control in Trials requests an
+independent evaluation and displays its separate receipt.
 
 Source is inert text. Previews show up to 8 KiB and downloads preserve complete
 bytes. Requests have timeouts and streamed size limits; file previews allow

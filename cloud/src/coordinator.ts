@@ -16,6 +16,10 @@ export class ExperimentCoordinator extends DurableObject<Env> {
           if(!ticket||ticket.used||ticket.expires<=Date.now()||ticket.hash!==body.hash)throw new HttpError(401,'setup link expired or was already used');
           await tx.put('account-setup',{...ticket,used:true});return{claimed:true};
         }
+        if(op==='native-verify-budget'){
+          const used=await tx.get<number>('native-verifications-used')??0;
+          if(used>=8)return{allowed:false};await tx.put('native-verifications-used',used+1);return{allowed:true};
+        }
         if(op==='auth-attempt'){
           let budget=await tx.get<{count:number;until:number}>('auth-budget');
           if(!budget||budget.until<=Date.now())budget={count:0,until:Date.now()+600000};

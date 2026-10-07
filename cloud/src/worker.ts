@@ -7,6 +7,8 @@ import { generate, readGeneration, type Selector } from './generator';
 import * as nativeStores from './native-store';
 import dashboard from './dashboard.html';
 import * as accounts from './accounts';
+import {readVerification,requestVerification,readVerifiedRun} from './verification';
+export {NativeVerificationWorkflow} from './verification';
 export { ExperimentCoordinator } from './coordinator';
 export { EvaluationSandbox } from './sandbox';
 export { ExperimentWorkflow } from './workflow';
@@ -103,6 +105,8 @@ export default {
       if(url.pathname==='/v1/users'&&request.method==='POST')return await accounts.createUser(env,current,await limitedBody(request,16384));
       if(url.pathname==='/v1/users'&&request.method==='GET')return await accounts.users(env,current);
       if(url.pathname==='/v1/stores'&&request.method==='GET')return await nativeStores.listStores(env);
+      const check=/^\/v1\/stores\/([A-Za-z0-9][A-Za-z0-9_-]{0,63})\/versions\/([0-9a-f]{64})\/(verification(?:\/run)?|verify)$/.exec(url.pathname);
+      if(check){if(request.method==='GET'&&check[3]==='verification/run')return await readVerifiedRun(env,check[1]!,check[2]!);if(request.method==='GET'&&check[3]==='verification')return await readVerification(env,check[1]!,check[2]!);if(request.method==='POST'&&check[3]==='verify'){if((await limitedBody(request,1)).length)throw new HttpError(400,'verification does not accept caller-supplied results');return await requestVerification(env,check[1]!,check[2]!);}}
       const native=/^\/v1\/stores\/([A-Za-z0-9][A-Za-z0-9_-]{0,63})(?:\/(objects|versions)\/([0-9a-f]{64})|\/(journal))?$/.exec(url.pathname);
       if(native){const name=native[1]!,kind=native[2] as 'objects'|'versions'|undefined,id=native[3];
         if(request.method==='GET'){if(kind&&id)return await nativeStores.readFile(env,name,kind,id);if(!native[4])return await nativeStores.readStore(env,name);}

@@ -34,6 +34,8 @@ export type ExperimentState = {
 export type Env = {
   AI?: { run(model: string, input: Record<string, unknown>): Promise<unknown> };
   API_TOKEN: string;
+  NATIVE_VERIFIER_BINARY_HASH?: string;
+  NATIVE_VERIFICATIONS: Workflow<import('./verification').VerificationJob>;
   DB: D1Database; ARTIFACTS: R2Bucket;
   COORDINATORS: DurableObjectNamespace;
   SANDBOXES: DurableObjectNamespace<import('./sandbox').EvaluationSandbox>;

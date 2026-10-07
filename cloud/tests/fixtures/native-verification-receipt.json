@@ -1,0 +1,53 @@
+{
+  "candidates": [
+    {
+      "artifact_hash": "9c30fe96d0108bb1d68e0e9516066ec1f44497c001135ddcc07fed75fd47ab78",
+      "candidate": "C-baseline",
+      "claimed_outcome": "qualified",
+      "decision": {
+        "action": "elite"
+      },
+      "evidence_hash": "edcfdf8caa1aa9e2979dad4fc2db5198732394ede17a241210f0471de3ef6cde",
+      "matched": true,
+      "observed_outcome": "qualified"
+    },
+    {
+      "artifact_hash": "3f4cde96ef531b1fc8f0c92542ff3c8c90fd392aecee3a69c8986d65c3a33ea1",
+      "candidate": "C-agent-recursive",
+      "claimed_outcome": "qualified",
+      "decision": {
+        "action": "elite"
+      },
+      "evidence_hash": "f0f79a259084839901b4f18c051de85af4cf174e246cd9c87a4d12fa791a91f4",
+      "matched": true,
+      "observed_outcome": "qualified"
+    },
+    {
+      "artifact_hash": "be9e18799bb7c477590bd522dc983162c80fcd3128040fbf03f9a4e4d0f87a72",
+      "candidate": "C-agent-add",
+      "claimed_outcome": "failed_correctness",
+      "decision": {
+        "action": "kill",
+        "reason": "oracle_failed"
+      },
+      "evidence_hash": "981fafa944d7b943369b8bd1765777d23057843a3028219a3687dced3d3328b6",
+      "matched": true,
+      "observed_outcome": "failed_correctness"
+    }
+  ],
+  "champion": "C-agent-recursive",
+  "champion_matches": true,
+  "evaluator_binary_hash": "17753627dbee12a8a096d8729f1d2e80c4ae87a3fa0fbc486e49c38edd932974",
+  "harness_hash": "354e02459bdd42a03dda40e1b8a0b006af0a315ae2f13dc0a867a10328f1803d",
+  "original_environment_hash": "ac0fe6237acd0ef850ec87d00bb74b2972ed90d66611e2c828447f4dd633a53b",
+  "original_report_hash": "83baaf09fa10ccd2335a3ed42915b47c836597e1a8fd6e4aa827eb1bf1c799a3",
+  "runtime": "wasmi-2.0.0:deterministic:portable-dispatch:fuel:v1",
+  "same_environment": false,
+  "schema_version": 1,
+  "scope": "This recorded GCD workload re-evaluated in the server environment. Original host timing, provenance and production fitness are not certified.",
+  "snapshot_report_hash": "83baaf09fa10ccd2335a3ed42915b47c836597e1a8fd6e4aa827eb1bf1c799a3",
+  "source_count": 3,
+  "status": "reproduced",
+  "verified_environment_hash": "66044acf92f588d89c7cc7c4b52b733a81b06527ff03a8ff9760bfb8cc37e661",
+  "verified_report_hash": "4d9dd51060aa32391cd0b7a0464e7e5b41d0f0da9f6de501b946dd871cecb42e"
+}
