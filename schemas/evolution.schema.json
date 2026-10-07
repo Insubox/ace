@@ -1,0 +1,159 @@
+{
+  "$defs": {
+    "CandidateId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "ContentHash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "ExperimentId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "FiniteNumber": {
+      "description": "Finite numeric measurements only: NaN/Infinity must never become JSON null.",
+      "format": "double",
+      "type": "number"
+    },
+    "KnowledgeId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "ProtocolVersion": {
+      "const": 1,
+      "type": "integer"
+    },
+    "Step": {
+      "additionalProperties": false,
+      "properties": {
+        "baseline_artifact_hash": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "champion": {
+          "$ref": "#/$defs/CandidateId"
+        },
+        "champion_artifact_hash": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "experiment": {
+          "$ref": "#/$defs/ExperimentId"
+        },
+        "generation": {
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "generation_manifest_hash": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "improved": {
+          "type": "boolean"
+        },
+        "knowledge": {
+          "$ref": "#/$defs/KnowledgeId"
+        },
+        "knowledge_hash": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "mean_fuel": {
+          "$ref": "#/$defs/FiniteNumber"
+        },
+        "run_hash": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "seed": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "generation",
+        "seed",
+        "experiment",
+        "run_hash",
+        "generation_manifest_hash",
+        "baseline_artifact_hash",
+        "champion",
+        "champion_artifact_hash",
+        "mean_fuel",
+        "improved",
+        "knowledge",
+        "knowledge_hash"
+      ],
+      "type": "object"
+    },
+    "StopReason": {
+      "enum": [
+        "generation_budget",
+        "no_improvement"
+      ],
+      "type": "string"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "candidates": {
+      "format": "uint32",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "generator_version": {
+      "type": "string"
+    },
+    "jobs": {
+      "format": "uint32",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "max_generations": {
+      "format": "uint32",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "patience": {
+      "format": "uint32",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ProtocolVersion"
+    },
+    "seed": {
+      "format": "uint64",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "steps": {
+      "items": {
+        "$ref": "#/$defs/Step"
+      },
+      "type": "array"
+    },
+    "stop_reason": {
+      "$ref": "#/$defs/StopReason"
+    }
+  },
+  "required": [
+    "schema_version",
+    "generator_version",
+    "seed",
+    "candidates",
+    "max_generations",
+    "jobs",
+    "patience",
+    "stop_reason",
+    "steps"
+  ],
+  "title": "Campaign",
+  "type": "object"
+}

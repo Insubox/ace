@@ -1,0 +1,111 @@
+{
+  "$defs": {
+    "CandidateId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "ContentHash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "ExperimentId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "GeneratedArtifact": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_hash": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "candidate": {
+          "$ref": "#/$defs/CandidateId"
+        },
+        "diagnostic_control": {
+          "type": "boolean"
+        },
+        "source_hash": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "strategy": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "candidate",
+        "strategy",
+        "diagnostic_control",
+        "source_hash",
+        "artifact_hash"
+      ],
+      "type": "object"
+    },
+    "ProtocolVersion": {
+      "const": 1,
+      "type": "integer"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "artifacts": {
+      "items": {
+        "$ref": "#/$defs/GeneratedArtifact"
+      },
+      "type": "array"
+    },
+    "config_hash": {
+      "$ref": "#/$defs/ContentHash"
+    },
+    "generator_version": {
+      "type": "string"
+    },
+    "parent_evidence_hash": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ContentHash"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "parent_experiment": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ExperimentId"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "requested_candidates": {
+      "format": "uint32",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ProtocolVersion"
+    },
+    "seed": {
+      "format": "uint64",
+      "minimum": 0,
+      "type": "integer"
+    }
+  },
+  "required": [
+    "schema_version",
+    "generator_version",
+    "seed",
+    "requested_candidates",
+    "config_hash",
+    "artifacts"
+  ],
+  "title": "Generation",
+  "type": "object"
+}

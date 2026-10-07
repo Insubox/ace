@@ -12,9 +12,11 @@ dependencies = [
  "ace-protocol",
  "ace-runner",
  "clap",
+ "schemars",
  "serde",
  "serde_json",
  "tempfile",
+ "wat",
 ]
 
 [[package]]

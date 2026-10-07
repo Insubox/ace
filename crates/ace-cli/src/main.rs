@@ -11,6 +11,9 @@ use std::{
 
 type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
+mod evolve;
+mod generate;
+
 #[derive(Parser)]
 #[command(
     name = "ace",
@@ -24,6 +27,48 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Command {
+    /// Run successive offline generations, carrying verified Champions and Knowledge.
+    Evolve {
+        #[arg(default_value = "ace-evolution")]
+        directory: PathBuf,
+        #[arg(long, default_value_t = 42)]
+        seed: u64,
+        #[arg(long, default_value_t = 24, value_parser = clap::value_parser!(u32).range(4..=100))]
+        candidates: u32,
+        #[arg(long, default_value_t = 4, value_parser = clap::value_parser!(u32).range(1..=16))]
+        generations: u32,
+        #[arg(long, default_value_t = 2, value_parser = clap::value_parser!(u32).range(1..=8))]
+        jobs: u32,
+        /// Stop after this many consecutive generations without a qualified improvement.
+        #[arg(long, default_value_t = 2, value_parser = clap::value_parser!(u32).range(1..=16))]
+        patience: u32,
+        #[arg(long)]
+        json: bool,
+    },
+    /// Verify an evolution campaign's run evidence, Champion lineage and Knowledge graph.
+    History { directory: PathBuf },
+    /// Generate candidates and execute a complete offline experiment.
+    Demo {
+        #[arg(default_value = "ace-demo")]
+        directory: PathBuf,
+        #[arg(long, default_value_t = 42)]
+        seed: u64,
+        #[arg(long, default_value_t = 12, value_parser = clap::value_parser!(u32).range(4..=100))]
+        candidates: u32,
+        #[arg(long, default_value_t = 2, value_parser = clap::value_parser!(u32).range(1..=8))]
+        jobs: u32,
+        /// Emit the normal machine-readable run summary.
+        #[arg(long)]
+        json: bool,
+    },
+    /// Create a reproducible GCD candidate population without external tools.
+    Generate {
+        directory: PathBuf,
+        #[arg(long, default_value_t = 42)]
+        seed: u64,
+        #[arg(long, default_value_t = 12, value_parser = clap::value_parser!(u32).range(4..=100))]
+        candidates: u32,
+    },
     /// Advisory fast-judge routing and calibration; never qualifies or promotes.
     Judge {
         #[command(subcommand)]
@@ -206,6 +251,51 @@ fn evidence_path(project: &Path, id: &EvidenceId) -> PathBuf {
 
 fn run(cli: Cli) -> Result<()> {
     match cli.command {
+        Command::Evolve {
+            directory,
+            seed,
+            candidates,
+            generations,
+            jobs,
+            patience,
+            json,
+        } => {
+            let campaign = evolve::run(&directory, seed, candidates, generations, jobs, patience)?;
+            if json {
+                print(&campaign)?;
+            } else {
+                evolve::print_campaign(&directory, &campaign)?;
+            }
+        }
+        Command::History { directory } => print(&evolve::load(&directory)?)?,
+        Command::Generate {
+            directory,
+            seed,
+            candidates,
+        } => {
+            print(&generate::population(&directory, seed, candidates)?)?;
+        }
+        Command::Demo {
+            directory,
+            seed,
+            candidates,
+            jobs,
+            json,
+        } => {
+            generate::population(&directory, seed, candidates)?;
+            let output = directory.join("run");
+            let report = ace_runner::run(&directory, &output, jobs)?;
+            let verified = ace_runner::load_report(&output)?;
+            generate::verify_controls(&verified)?;
+            if report != verified {
+                return Err("demo output failed independent saved-run verification".into());
+            }
+            if json {
+                print_summary(&output, &verified)?;
+            } else {
+                generate::print_demo(&output, &verified)?;
+            }
+        }
         Command::Judge { command } => match command {
             JudgeCommand::Policy => print(&ace_eval::RoutingPolicy::default())?,
             JudgeCommand::Route {
@@ -341,6 +431,14 @@ fn run(cli: Cli) -> Result<()> {
             let mut schemas = ace_protocol::schemas()?;
             schemas.extend(ace_runner::runner_schemas()?);
             schemas.extend(ace_eval::schemas()?);
+            schemas.insert(
+                "generation.schema.json".into(),
+                serde_json::to_value(schemars::schema_for!(generate::Generation))?,
+            );
+            schemas.insert(
+                "evolution.schema.json".into(),
+                serde_json::to_value(schemars::schema_for!(evolve::Campaign))?,
+            );
             for (name, schema) in schemas {
                 let path = out.join(name);
                 let expected = json(&schema)?;

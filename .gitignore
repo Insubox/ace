@@ -5,6 +5,8 @@
 **/.ace-build/
 /cloud/.build/
 **/.build/
+/dist/
+__pycache__/
 /cloud/.wrangler/
 /.wrangler/
 .dev.vars
