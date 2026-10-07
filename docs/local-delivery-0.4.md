@@ -62,6 +62,15 @@ HTTPS clone of GitHub main built and ran the complete demo. Cross-target
 `cargo check --workspace --all-targets` passed for Windows MSVC, Mac Apple silicon
 and Mac Intel; this verifies compilation, not execution on those operating systems.
 
+The final deployed evaluator binary is
+`a208e0feb31b24f105d9755087b8da0161030ee4d24de47e9f62b95897802c5a`.
+New independent server receipts for the retained MaxU32 and rejected MinU32
+versions both reproduced all observations using this exact binary. Their
+recorded environment differs from the original 0.3.0 evaluator and is reported
+explicitly. The full automatic backup/isolated restore chain also completed;
+see [backup validation](backups.md). The operational snapshot then reported no
+stale-workflow or backup-freshness alerts.
+
 ACE remains a bounded technical preview. Hosted review/issues, arbitrary native
 application builds, IDE integrations, canonical Composition/promotion, measured
 100-container concurrency, external monitoring and a production failover are

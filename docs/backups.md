@@ -98,3 +98,11 @@ This replaces the earlier combined workflow, which exhausted the API request
 limit on the second full-size drill. Existing sealed snapshots can be restored
 without creating another backup. Observatory trial metadata and exact proposal
 objects are also retained; active sessions and recovery links remain excluded.
+
+The complete automatic copy → seal → independent restore chain subsequently
+passed for `backup-8b817561-a15b-4bce-998d-9792e3becb98`: 1,657 objects,
+5,920,203 bytes, thirteen metadata tables, nine experiment authorities, three
+native stores and the retained branch journal. The isolated Observatory store
+downloaded with all four evaluated versions and 92 verified native objects.
+Independent replay from that recovered history reproduced the observations.
+Production source overwrites and restored/exported sessions were both zero.
