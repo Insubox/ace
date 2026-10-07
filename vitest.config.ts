@@ -12,5 +12,5 @@ export default defineConfig({
       workflows: { NATIVE_VERIFICATIONS:{name:'ace-native-verifications',className:'NativeVerificationWorkflow'}, EXPERIMENTS: { name: 'ace-experiments', className: 'ExperimentWorkflow' } }
     }
   })],
-  test: { include: ['cloud/tests/**/*.test.ts'], testTimeout: 30_000 }
+  test: { setupFiles:['cloud/tests/setup.ts'], include: ['cloud/tests/**/*.test.ts'], testTimeout: 30_000 }
 });

@@ -1,13 +1,11 @@
 import { env, SELF, introspectWorkflowInstance } from 'cloudflare:test';
-import { beforeAll, expect, it, vi } from 'vitest';
-import migration from '../migrations/0001_control_plane.sql?raw';
+import { expect, it, vi } from 'vitest';
 import { type Env, type ExperimentState, type CloudPlan, type Task, type Job, coordinate, sha256, strictJson, immutablePut } from '../src/contracts';
 import { consumeEvaluation, consumeFinalization } from '../src/pipeline';
 
 const token = 'local-tests-only-0123456789abcdef0123456789abcdef';
 const auth = { authorization: `Bearer ${token}` };
 const emptyHash = '0'.repeat(64);
-beforeAll(async () => { await env.DB.batch(migration.split(';').map(s => s.trim()).filter(Boolean).map(s => env.DB.prepare(s))); });
 function makePlan(count = 1): CloudPlan {
   const module = { id: 'C-base', module: 'gcd.wasm', strategy: 'euclid', generator: { provider: 'manual', model: 'reviewed', revision: null } };
   return { schema_version: 1, requested_experiment: 'EXP-label', config: { schema_version: 1, project: 'PRJ-test',

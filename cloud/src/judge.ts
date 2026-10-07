@@ -93,6 +93,7 @@ async function failures(env: Env, context: JudgeContext, cell: string) {
   return out;
 }
 
+export async function judgementId(input:Uint8Array,selector:'flash'|'clef'){return sha256(new TextEncoder().encode(`${ADAPTER_VERSION}/${QUESTION_VERSION}/${selector}/${await sha256(input)}`));}
 export async function judge(env: Env, bytes: Uint8Array, selector: 'flash' | 'clef'): Promise<Response> {
   const context = judgeContextSchema.parse(strictJson(new TextDecoder().decode(bytes)));
   const plan = await registeredPlan(env, context.experiment);
@@ -103,7 +104,7 @@ export async function judge(env: Env, bytes: Uint8Array, selector: 'flash' | 'cl
   if (!await env.ARTIFACTS.head(`artifacts/${context.artifact_hash}.wasm`)) throw new HttpError(409, 'judge artifact is missing');
   const knownFailures = await failures(env, context, plan.config.cell);
   const inputHash = await sha256(bytes);
-  const id = await sha256(new TextEncoder().encode(`${ADAPTER_VERSION}/${QUESTION_VERSION}/${selector}/${inputHash}`));
+  const id = await judgementId(bytes,selector);
   const prefix = `judgements/${id}/`;
   const existing = await env.ARTIFACTS.get(prefix + 'manifest.json');
   if (existing) return new Response(existing.body, { headers: { 'content-type': 'application/json' } });

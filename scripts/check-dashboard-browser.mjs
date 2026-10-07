@@ -15,12 +15,12 @@ const csp=process.env.ACE_DASHBOARD_HTML?deployedCsp.replace(/(?:font-src data:;
 assert.match(csp,/font-src data:/);
 const fixtureToken='browser-fixture-not-a-production-credential';
 const setupCode='0'.repeat(64),password='isolated-browser-test-password';
-let setupCalls=0,createCalls=0,role='admin',liveReads=0,corruptObjects=false;
+let setupCalls=0,createCalls=0,recoveryCalls=0,memberCalls=0,role='admin',liveReads=0,corruptObjects=false;
 const server=createServer(async(req,res)=>{
   try{
     const url=new URL(req.url,'http://localhost');
     const send=(status,value)=>{res.writeHead(status,{'content-type':'application/json'});res.end(JSON.stringify(value));};
-    if(req.method==='GET'&&['/','/setup'].includes(url.pathname)){
+    if(req.method==='GET'&&['/','/setup','/recover'].includes(url.pathname)){
       res.writeHead(200,{'content-type':'text/html',
         'content-security-policy':csp,'cache-control':'no-store'});
       return res.end(html);
@@ -30,6 +30,7 @@ const server=createServer(async(req,res)=>{
       setupCalls++;const args=JSON.parse(input);assert.equal(args.code,setupCode);assert.equal(args.username,'fixture-admin');assert.equal(args.password,password);
       return send(201,{created:true,username:args.username,role:'admin'});
     }
+    if(req.method==='POST'&&url.pathname==='/v1/auth/recover'){const args=JSON.parse(input);assert.equal(args.code,setupCode);assert.equal(args.username,'fixture-admin');assert.equal(args.password,password);recoveryCalls++;return send(200,{recovered:true,sessions_revoked:true});}
     if(req.method==='POST'&&url.pathname==='/v1/auth/login'){
       const args=JSON.parse(input);if(args.password!==password)return send(401,{error:'invalid username or password'});
       role=args.username==='fixture-reader'?'reader':'admin';return send(200,{token:fixtureToken});
@@ -41,9 +42,14 @@ const server=createServer(async(req,res)=>{
       assert.equal(role,'admin');const args=JSON.parse(input);assert.equal(args.role,'reader');assert.equal(args.password,password);createCalls++;
       return send(201,{created:true,username:args.username,role:args.role});
     }
+    if(url.pathname===`/v1/users/fixture-reader/recovery`&&req.method==='POST')return send(200,{path:`/recover#recover=${setupCode}&user=fixture-reader`});
+    if(url.pathname==='/v1/auth/audit')return send(200,{events:[{recorded_at:Date.now(),actor:'account:fixture-admin',action:'recovery.issue',username:'fixture-reader'}]});
+    if(url.pathname===`/v1/projects/${name}/audit`)return send(200,{events:[{recorded_at:Date.now(),actor:'account:fixture-admin',action:'member.grant',resource:'fixture-reader:reader'}]});
+    if(url.pathname===`/v1/projects/${name}/members`){if(req.method==='POST'){assert.equal(role,'admin');memberCalls++;}return send(200,{members:[{username:'fixture-admin',role:'owner'},{username:'fixture-reader',role:'reader'}]});}
     // Only read deployed store data. No production account or source is mutated.
     if(req.method==='GET'&&(url.pathname==='/v1/stores'||url.pathname.startsWith(`/v1/stores/${name}`))){
       liveReads++;const response=await api(config,url.pathname,{signal:AbortSignal.timeout(30000)});
+      if(url.pathname==='/v1/stores'){const data=await response.json();for(const store of data.stores)store.project_role=role==='admin'?'owner':'reader';return send(200,data);}
       res.writeHead(200,{'content-type':response.headers.get('content-type')});return res.end(corruptObjects&&url.pathname.includes('/objects/')?Buffer.from('corrupted fixture bytes'):Buffer.from(await response.arrayBuffer()));
     }
     send(404,{error:'fixture route not found'});
@@ -84,7 +90,10 @@ try{
   assert.equal(await evaluate("document.getElementById('stat-versions').textContent"),'6');
   assert.equal(await evaluate("document.getElementById('stat-candidates').textContent"),'18');
   assert.equal(await evaluate("document.getElementById('stat-faults').textContent"),'1');
-  await evaluate("document.querySelector('#account-admin details').open=false");
+  await evaluate("document.getElementById('team-toggle').click()");await until("document.getElementById('members').children.length===2");
+  await fill({'member-user':'fixture-reader'});await submit('grant-member');await until("document.getElementById('team-result').textContent.includes('saved')");assert.equal(memberCalls,1);
+  await fill({'recovery-user':'fixture-reader'});await submit('issue-recovery');await until("!document.getElementById('recovery-link').hidden");
+  await evaluate("document.getElementById('team-toggle').click();document.querySelector('#account-admin details').open=false");
   if(process.argv[4])await writeFile(process.argv[4],Buffer.from((await call('Page.captureScreenshot',{format:'png'})).data,'base64'));
   await evaluate("document.getElementById('nav-learning').click()");
   assert.match(await evaluate("document.getElementById('learning-claims').textContent"),/Rejected strategies/);
@@ -134,6 +143,8 @@ try{
   assert.equal(await evaluate("document.getElementById('download').hidden"),true);
   assert.equal(await evaluate("document.getElementById('candidate-download').hidden"),true);
   assert.equal(await evaluate("document.getElementById('source').textContent"),'File could not be verified.');
+  await call('Page.navigate',{url:`${origin}/recover#recover=${setupCode}&user=fixture-admin`});await until("document.getElementById('recovery')&&!document.getElementById('recovery').hidden");assert.equal(await evaluate('location.hash'),'');
+  await fill({'recover-password':password,'recover-confirm':password});await submit('recover-form');await until("document.getElementById('recover-result').textContent.includes('Password updated')");assert.equal(recoveryCalls,1);assert.equal(await evaluate("document.getElementById('recover-password').value"),'');
   assert.deepEqual(exceptions,[]);assert.deepEqual(violations,[]);
-  console.log(JSON.stringify({browser:'Chromium',deployed_html:!process.env.ACE_DASHBOARD_HTML,observatory_main_views:4,mobile_layout:true,loaded_observations:18,winning_and_failed_source:true,csp_violations:0,corrupt_objects_refused:true,logout_clears_private_views:true,server_verification:process.env.ACE_EXPECT_SERVER_VERIFICATION==='1',deployed_native_versions:6,deployed_read_requests:liveReads,source_hash_verified:true,inert_source:true,setup_fragment_removed:true,account_forms:'isolated_fixture_only',password_confirmation:true,admin_and_reader_views:true,production_mutations:0}));
+  console.log(JSON.stringify({browser:'Chromium',deployed_html:!process.env.ACE_DASHBOARD_HTML,observatory_main_views:4,mobile_layout:true,loaded_observations:18,winning_and_failed_source:true,csp_violations:0,corrupt_objects_refused:true,logout_clears_private_views:true,server_verification:process.env.ACE_EXPECT_SERVER_VERIFICATION==='1',deployed_native_versions:6,deployed_read_requests:liveReads,source_hash_verified:true,inert_source:true,setup_fragment_removed:true,account_forms:'isolated_fixture_only',password_confirmation:true,project_team_form:true,recovery_fragment_removed:true,recovery_form:true,admin_and_reader_views:true,production_mutations:0}));
 }finally{socket.close();server.closeAllConnections();await new Promise(done=>server.close(done));}

@@ -33,16 +33,41 @@ Only password and session-token hashes enter D1. Sessions expire after twelve
 hours; sign out revokes one. Login permits 20 attempts per ten minutes for each
 username and source IP.
 
-| Role | Permission |
+| Account role | Permission ceiling |
 | --- | --- |
-| Administrator | Read/publish versions, generate/evaluate, create accounts |
-| Writer | Read/publish versions and generate/evaluate |
-| Reader | Read history, source/results and read-only remote MCP |
+| Administrator | Manage accounts/recovery and act within explicit project membership |
+| Writer | Create private projects; read/write projects where granted |
+| Reader | Read projects where granted; no publishing, evaluation or membership changes |
 
-Administrators expand **Manage workspace accounts** to create another account.
-Everyone shares this one private workspace. Per-repository permissions, independent
-tenants, password recovery, user removal, role editing and public signup/OAuth
-remain unfinished. The operator retains administrator infrastructure access.
+Project roles are **owner**, **writer** and **reader**. Owners grant/revoke membership
+through **project access** in the Observatory. A global administrator account does
+not automatically read private projects. Administrators remain trusted credential
+managers: password recovery can transfer control of the recovered account. The
+infrastructure operator can access all projects and recover administrators.
+
+On upgrade, existing accounts retain their earlier shared access to legacy projects
+(admin becomes owner). Newly created accounts receive no project memberships.
+First-administrator bootstrap takes ownership of pre-existing operator projects.
+The last project owner cannot be removed or downgraded; concurrent changes and
+revoked creators cannot bypass this restriction.
+
+**Manage workspace accounts** creates accounts and private recovery links. A link
+expires after ten minutes, works once and is invalidated by a replacement link.
+The recovery page immediately removes the fragment from browser history; successful
+recovery replaces the salted password hash and revokes all sessions atomically.
+Share links privately with their intended account owners. No public signup, email
+delivery, OAuth/MFA, account deletion or global role editing is implemented yet.
+
+Project audit records membership, publications, evaluations, verification and model
+requests. Account audit records creation and recovery. They exclude passwords,
+tokens, private recovery codes and source payloads; views return the latest 100
+records. Audit rows use infrastructure storage, not externally signed checkpoints.
+
+Every alternate artifact, experiment, generator, judge and MCP read checks project
+access. Upload exact artifacts before evaluation. Set `X-ACE-Project` on model and
+artifact writes (`ACE_PROJECT` for Node operator clients). Identical model inputs
+are locked to the first project; existing unassigned legacy model records remain
+operator-only until the operator explicitly submits the same inputs in a project.
 
 ## Terminal login and native sync
 

@@ -91,7 +91,7 @@ export async function drive({ directory, config, binary = 'ace', models = ['qwen
   }
   const root = resolve(directory);
   const campaign = join(root, 'campaign');
-  const options = { schema_version: 1, adapter_version: 'wat-generator-v4', storage: 'ace-native-v1', api_origin: config.origin, models, ...bounds };
+  const options = { schema_version: 1, adapter_version: 'wat-generator-v4', storage: 'ace-native-v1', api_origin: config.origin, ...(config.project?{project:config.project}:{}), models, ...bounds };
   if (resume) {
     const saved = JSON.parse(await readFile(join(root, 'driver.json'), 'utf8'));
     if (JSON.stringify(saved) !== JSON.stringify(options)) throw new Error('Resume settings differ from the original bounded campaign');

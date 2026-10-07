@@ -74,13 +74,14 @@ async function publish(env: Env, record: Retained): Promise<Response> {
   return json(manifest);
 }
 
+export async function generationId(input:Uint8Array,selector:Selector){return sha256(bytes(`${GENERATOR_VERSION}/${MODELS[selector]}/${await sha256(input)}`));}
 export async function generate(env: Env, input: Uint8Array, selector: Selector): Promise<Response> {
   const task = taskSchema.parse(strictJson(new TextDecoder().decode(input)));
   if (await sha256(bytes(task.context.memory.winner.wat)) !== task.context.memory.winner.source_hash)
     throw new HttpError(409, 'winner source hash differs');
   const model = MODELS[selector];
   const inputHash = await sha256(input);
-  const id = await sha256(bytes(`${GENERATOR_VERSION}/${model}/${inputHash}`));
+  const id = await generationId(input,selector);
   const prefix = `generations/${id}/`;
   const existing = await env.ARTIFACTS.get(prefix + 'manifest.json');
   if (existing) return new Response(existing.body, { headers: { 'content-type': 'application/json' } });

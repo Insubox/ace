@@ -1,5 +1,6 @@
 // Native ACE workspace accounts. Passwords and session tokens never enter logs.
 import { z } from 'zod';
+import {grantLegacyToFirstAdmin} from './projects';
 import { type Env, HttpError, sha256, coordinate, strictJson, json } from './contracts';
 const bytes=(s:string)=>new TextEncoder().encode(s);
 const userName=z.string().regex(/^[a-z0-9][a-z0-9_-]{2,31}$/);
@@ -37,6 +38,7 @@ export async function createUser(env:Env,current:Identity,input:Uint8Array){
   const result=await env.DB.prepare('INSERT INTO native_users (username, role, salt, password_hash, created_at) VALUES (?, ?, ?, ?, ?) ON CONFLICT(username) DO NOTHING')
     .bind(args.username,args.role,salt,digest,Date.now()).run();
   if(result.meta.changes!==1)throw new HttpError(409,'username already exists');
+  await accountAudit(env,current,'account.create',args.username);
   return json({username:args.username,role:args.role,created:true},201);
 }
 export async function login(request:Request,env:Env,input:Uint8Array){
@@ -80,5 +82,42 @@ export async function setup(env:Env,input:Uint8Array){
   const result=await env.DB.prepare('INSERT INTO native_users (username, role, salt, password_hash, created_at) SELECT ?, ?, ?, ?, ? WHERE NOT EXISTS (SELECT 1 FROM native_users) ON CONFLICT(username) DO NOTHING')
     .bind(args.username,'admin',salt,digest,Date.now()).run();
   if(result.meta.changes!==1)throw new HttpError(409,'workspace already has an account; sign in');
+  await grantLegacyToFirstAdmin(env,args.username);
   return json({created:true,username:args.username,role:'admin'},201);
+}
+
+async function accountAudit(env:Env,current:Identity,action:string,username:string){
+  await env.DB.prepare('INSERT INTO account_audit (id,actor,action,username,recorded_at) VALUES (?,?,?,?,?)').bind(crypto.randomUUID(),current.kind+':'+current.username,action,username,Date.now()).run();
+}
+export async function audit(env:Env,current:Identity){
+  if(current.role!=='admin')throw new HttpError(403,'administrator account required');
+  return json({events:(await env.DB.prepare('SELECT id,actor,action,username,recorded_at FROM account_audit ORDER BY recorded_at DESC,id DESC LIMIT 100').all()).results});
+}
+export async function recoveryTicket(env:Env,current:Identity,username:string){
+  if(current.role!=='admin')throw new HttpError(403,'administrator account required');
+  userName.parse(username);
+  if(!await env.DB.prepare('SELECT username FROM native_users WHERE username = ?').bind(username).first())throw new HttpError(404,'account not found');
+  const code=random(32),expires=Date.now()+600000;
+  await env.DB.batch([
+    env.DB.prepare('INSERT INTO native_recovery_tickets (username,code_hash,expires_at) VALUES (?,?,?) ON CONFLICT(username) DO UPDATE SET code_hash = excluded.code_hash, expires_at = excluded.expires_at').bind(username,await sha256(bytes(code)),expires),
+    env.DB.prepare('INSERT INTO account_audit (id,actor,action,username,recorded_at) VALUES (?,?,?,?,?)').bind(crypto.randomUUID(),current.kind+':'+current.username,'recovery.issue',username,Date.now())
+  ]);
+  return json({path:`/recover#recover=${code}&user=${username}`,expires_at:expires,purpose:'reset_password_and_revoke_sessions'});
+}
+export async function recover(request:Request,env:Env,input:Uint8Array){
+  const args=z.strictObject({username:userName,code:z.string().regex(/^[0-9a-f]{64}$/),password}).parse(strictJson(new TextDecoder().decode(input)));
+  const scope='recovery/'+(request.headers.get('CF-Connecting-IP')??'local');
+  const attempt=await coordinate(env,`ACE-AUTH-${await sha256(bytes(scope))}`,'auth-attempt',{}) as {allowed:boolean};
+  if(!attempt.allowed)throw new HttpError(429,'recovery attempt limit reached; try again later');
+  const salt=random(16),digest=await derive(args.password,salt),codeHash=await sha256(bytes(args.code)),now=Date.now();
+  // A single D1 transaction prevents replay, concurrent redemption and old-link races.
+  const valid='EXISTS (SELECT 1 FROM native_recovery_tickets WHERE username = ? AND code_hash = ? AND expires_at > ?)';
+  const results=await env.DB.batch([
+    env.DB.prepare(`UPDATE native_users SET salt = ?, password_hash = ? WHERE username = ? AND ${valid}`).bind(salt,digest,args.username,args.username,codeHash,now),
+    env.DB.prepare(`DELETE FROM native_sessions WHERE username = ? AND ${valid}`).bind(args.username,args.username,codeHash,now),
+    env.DB.prepare(`INSERT INTO account_audit (id,actor,action,username,recorded_at) SELECT ?,?,?,?,? WHERE ${valid}`).bind(crypto.randomUUID(),'account:'+args.username,'recovery.complete',args.username,now,args.username,codeHash,now),
+    env.DB.prepare('DELETE FROM native_recovery_tickets WHERE username = ? AND code_hash = ? AND expires_at > ?').bind(args.username,codeHash,now)
+  ]);
+  if(results[0]!.meta.changes!==1)throw new HttpError(401,'recovery link expired or was already used');
+  return json({recovered:true,sessions_revoked:true});
 }

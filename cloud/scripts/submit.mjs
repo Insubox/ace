@@ -15,7 +15,7 @@ for (const hash of new Set(plan.module_hashes)) {
   if (!path.startsWith(root + sep)) throw new Error('Artifact path escapes prepared directory');
   const bytes = await boundedFile(path, 1_048_576);
   if (rawHash(bytes) !== hash) throw new Error('Prepared artifact changed');
-  await api(config, `/v1/artifacts/${hash}`, { method: 'PUT', body: bytes });
+  await api(config, `/v1/artifacts/${hash}`, { method: 'PUT', headers:{'x-ace-project':plan.config.project}, body: bytes });
 }
-const response = await api(config, '/v1/experiments', { method: 'POST', headers: { 'content-type': 'application/json' }, body: planBytes });
+const response = await api(config, '/v1/experiments', { method: 'POST', headers: { 'content-type': 'application/json','x-ace-project':plan.config.project }, body: planBytes });
 console.log(JSON.stringify(await response.json(), null, 2));

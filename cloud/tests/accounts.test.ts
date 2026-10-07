@@ -47,3 +47,27 @@ it('limits repeated login attempts without spending generator or evaluator budge
   for(let i=0;i<21;i++)response=await request('/v1/auth/login','POST',{username,password},'');expect(response?.status).toBe(429);
   expect((await request('/v1/auth/me')).status).toBe(200);
 });
+
+it('administrator recovery replaces the password, revokes every session and keeps credentials out of audit',async()=>{
+ const a=await account('writer'),admin=await account('admin'),newPassword='new-account-recovery-password';
+ const login=await request('/v1/auth/login','POST',{username:a.username,password},'');const second=await login.json() as {token:string};
+ expect((await request(`/v1/users/${a.username}/recovery`,'POST',undefined,a.token)).status).toBe(403);
+ const ticket=await(await request(`/v1/users/${a.username}/recovery`,'POST',undefined,admin.token)).json() as {path:string};const code=new URLSearchParams(new URL('https://ace'+ticket.path).hash.slice(1)).get('recover');
+ const input={username:a.username,code,password:newPassword};
+ expect((await request('/v1/auth/recover','POST',input,'')).status).toBe(200);
+ for(const token of[a.token,second.token])expect((await request('/v1/auth/me','GET',undefined,token)).status).toBe(401);
+ expect((await request('/v1/auth/login','POST',{username:a.username,password},'')).status).toBe(401);
+ expect((await request('/v1/auth/login','POST',{username:a.username,password:newPassword},'')).status).toBe(200);
+ expect((await request('/v1/auth/recover','POST',input,'')).status).toBe(401);
+ const audit=await(await request('/v1/auth/audit','GET',undefined,admin.token)).text();expect(audit).toContain('recovery.complete');for(const secret of[password,newPassword,code!,a.token])expect(audit).not.toContain(secret);
+ expect((await request('/v1/auth/audit','GET',undefined,a.token)).status).toBe(401);
+});
+it('recovery invalidates replaced links and atomically admits only one concurrent redemption',async()=>{
+ const a=await account('writer');const issue=async()=>{const data=await(await request(`/v1/users/${a.username}/recovery`,'POST')).json() as {path:string};return new URLSearchParams(new URL('https://ace'+data.path).hash.slice(1)).get('recover');};
+ const old=await issue(),code=await issue();const input={username:a.username,password:'new-private-password',code};
+ expect((await request('/v1/auth/recover','POST',{...input,code:old},'')).status).toBe(401);
+ expect((await request('/v1/auth/recover','POST',{...input,username:'wrong-account'},'')).status).toBe(401);
+ const results=await Promise.all([request('/v1/auth/recover','POST',input,''),request('/v1/auth/recover','POST',input,'')]);expect(results.map(r=>r.status).sort()).toEqual([200,401]);
+ const expired=await issue();await env.DB.prepare('UPDATE native_recovery_tickets SET expires_at = 0 WHERE username = ?').bind(a.username).run();expect((await request('/v1/auth/recover','POST',{...input,code:expired},'')).status).toBe(401);
+ expect((await SELF.fetch('https://ace/recover')).status).toBe(200);
+});
