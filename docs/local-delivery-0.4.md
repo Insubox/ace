@@ -15,8 +15,8 @@ See [file input security](file-input-security.md) for the exact boundary and
 remaining filesystem limitations. A new source SAST result is still required to
 confirm the external scanner's finding status.
 
-Local validation covers the full Rust suite, Clippy, formatting, generated
-schemas, portable library WASM builds, Worker and Node client checks. Release
+Local validation passed 122 Rust tests, 74 Worker tests and 21 Node client tests,
+Clippy, formatting, all 45 generated schemas and portable library WASM builds. Release
 jobs run the full Rust workspace on Linux, both macOS architectures and Windows,
 then check each extracted executable with no provider credentials. Package
 checks include all 30 local MCP tools and real positive/negative unsigned Cell
@@ -50,6 +50,17 @@ This environment cannot presently read GitHub Actions results: the request to
 is saved in the environment draft and requires publication before a new access
 check. macOS/Windows execution and downloadable release assets remain unverified
 until their remote jobs can be inspected.
+
+The static Linux package built from `ea27ac0730f471ac21e3dc437857b62e5e01e96e`
+has archive SHA-256
+`43e80bfdd5bbdb5a9844918f5cc3ac60ab8b6141ca2074ff5c9748a549fa35e0`.
+Its extracted executable passed the 13-program demo, three generations,
+positive/negative unsigned Cells, 30-tool MCP, agent campaigns, native
+memory/clone/checkout and independent Cell replay with credentials absent and
+an empty external-tool PATH. Git compatibility was checked separately. A fresh
+HTTPS clone of GitHub main built and ran the complete demo. Cross-target
+`cargo check --workspace --all-targets` passed for Windows MSVC, Mac Apple silicon
+and Mac Intel; this verifies compilation, not execution on those operating systems.
 
 ACE remains a bounded technical preview. Hosted review/issues, arbitrary native
 application builds, IDE integrations, canonical Composition/promotion, measured

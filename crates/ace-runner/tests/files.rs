@@ -1,4 +1,6 @@
-use ace_runner::files::{ReadDirectory, read_beneath, read_regular};
+#[cfg(unix)]
+use ace_runner::files::read_beneath;
+use ace_runner::files::{ReadDirectory, read_regular};
 use std::{fs, path::Path};
 
 #[test]
