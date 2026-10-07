@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "payload": {
+    "kind": "oracle_result",
+    "data": {
+      "oracle": {
+        "id": "OR-example",
+        "version": 1
+      },
+      "outcome": "passed",
+      "output": {
+        "location": "example://fixture",
+        "hash": "347f6823d59faa0057d85fff54c178a614f516a303179fe85fbdaa5762d264da"
+      }
+    }
+  }
+}

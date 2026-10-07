@@ -1,0 +1,90 @@
+{
+  "$defs": {
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "properties": {
+        "hash": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "location": {
+          "$ref": "#/$defs/Text"
+        }
+      },
+      "required": [
+        "location",
+        "hash"
+      ],
+      "type": "object"
+    },
+    "CheckOutcome": {
+      "enum": [
+        "passed",
+        "failed",
+        "not_run",
+        "error"
+      ],
+      "type": "string"
+    },
+    "ContentHash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "OracleId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "Text": {
+      "description": "Nonempty text; unlike identifiers this may contain spaces and Unicode.",
+      "minLength": 1,
+      "pattern": "\\S",
+      "type": "string"
+    },
+    "VersionedOracle": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/OracleId"
+        },
+        "version": {
+          "format": "uint32",
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "version"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "https://ace.org.ai/schemas/v1/oracle-result.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "oracle": {
+      "$ref": "#/$defs/VersionedOracle"
+    },
+    "outcome": {
+      "$ref": "#/$defs/CheckOutcome"
+    },
+    "output": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "oracle",
+    "outcome"
+  ],
+  "title": "OracleResult",
+  "type": "object"
+}

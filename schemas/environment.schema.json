@@ -1,0 +1,190 @@
+{
+  "$defs": {
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "properties": {
+        "hash": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "location": {
+          "$ref": "#/$defs/Text"
+        }
+      },
+      "required": [
+        "location",
+        "hash"
+      ],
+      "type": "object"
+    },
+    "ContentHash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "EnvironmentId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "EvalSpecId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "OracleId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "Text": {
+      "description": "Nonempty text; unlike identifiers this may contain spaces and Unicode.",
+      "minLength": 1,
+      "pattern": "\\S",
+      "type": "string"
+    },
+    "VersionedEvalSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/EvalSpecId"
+        },
+        "version": {
+          "format": "uint32",
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "version"
+      ],
+      "type": "object"
+    },
+    "VersionedOracle": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/OracleId"
+        },
+        "version": {
+          "format": "uint32",
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "version"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "https://ace.org.ai/schemas/v1/environment.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Only reproducibility inputs belong here; do not insert raw secret values.",
+  "properties": {
+    "architecture": {
+      "$ref": "#/$defs/Text"
+    },
+    "configuration_hash": {
+      "$ref": "#/$defs/ContentHash"
+    },
+    "database_version": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Text"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "dataset_hash": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ContentHash"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "dependency_locks": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "\\S": {
+          "$ref": "#/$defs/ContentHash"
+        }
+      },
+      "type": "object"
+    },
+    "evalspec": {
+      "$ref": "#/$defs/VersionedEvalSpec"
+    },
+    "feature_flags": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "\\S": {
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "id": {
+      "$ref": "#/$defs/EnvironmentId"
+    },
+    "image": {
+      "$ref": "#/$defs/ArtifactRef"
+    },
+    "model_versions": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "\\S": {
+          "$ref": "#/$defs/Text"
+        }
+      },
+      "type": "object"
+    },
+    "oracle": {
+      "$ref": "#/$defs/VersionedOracle"
+    },
+    "runtime": {
+      "$ref": "#/$defs/Text"
+    },
+    "state_schema_version": {
+      "format": "uint32",
+      "minimum": 1,
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "traffic_profile_hash": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ContentHash"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "id",
+    "runtime",
+    "image",
+    "architecture",
+    "dependency_locks",
+    "configuration_hash",
+    "feature_flags",
+    "model_versions",
+    "oracle",
+    "evalspec"
+  ],
+  "title": "Environment",
+  "type": "object"
+}

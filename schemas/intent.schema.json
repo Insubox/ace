@@ -1,0 +1,245 @@
+{
+  "$defs": {
+    "Budget": {
+      "additionalProperties": false,
+      "properties": {
+        "max_candidates": {
+          "format": "uint32",
+          "minimum": 1,
+          "type": "integer"
+        },
+        "max_compute_usd": {
+          "$ref": "#/$defs/FiniteNumber"
+        },
+        "max_wall_clock_seconds": {
+          "format": "uint32",
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "max_candidates",
+        "max_wall_clock_seconds",
+        "max_compute_usd"
+      ],
+      "type": "object"
+    },
+    "CellId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "CheckName": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "Comparison": {
+      "enum": [
+        "at_least",
+        "at_most",
+        "equal"
+      ],
+      "type": "string"
+    },
+    "Direction": {
+      "enum": [
+        "minimize",
+        "maximize"
+      ],
+      "type": "string"
+    },
+    "EvalSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "hard_constraints": {
+          "additionalProperties": false,
+          "patternProperties": {
+            "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$": {
+              "$ref": "#/$defs/MetricConstraint"
+            }
+          },
+          "type": "object"
+        },
+        "id": {
+          "$ref": "#/$defs/EvalSpecId"
+        },
+        "objectives": {
+          "additionalProperties": false,
+          "patternProperties": {
+            "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$": {
+              "$ref": "#/$defs/Objective"
+            }
+          },
+          "type": "object"
+        },
+        "oracle": {
+          "$ref": "#/$defs/VersionedOracle"
+        },
+        "required_checks": {
+          "items": {
+            "$ref": "#/$defs/CheckName"
+          },
+          "type": "array",
+          "uniqueItems": true
+        },
+        "version": {
+          "format": "uint32",
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "oracle",
+        "hard_constraints",
+        "required_checks",
+        "objectives"
+      ],
+      "type": "object"
+    },
+    "EvalSpecId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "FiniteNumber": {
+      "description": "Finite numeric measurements only: NaN/Infinity must never become JSON null.",
+      "format": "double",
+      "type": "number"
+    },
+    "IntentId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "MetricConstraint": {
+      "additionalProperties": false,
+      "properties": {
+        "comparison": {
+          "$ref": "#/$defs/Comparison"
+        },
+        "unit": {
+          "$ref": "#/$defs/Text"
+        },
+        "value": {
+          "$ref": "#/$defs/FiniteNumber"
+        }
+      },
+      "required": [
+        "comparison",
+        "value",
+        "unit"
+      ],
+      "type": "object"
+    },
+    "Objective": {
+      "additionalProperties": false,
+      "properties": {
+        "direction": {
+          "$ref": "#/$defs/Direction"
+        },
+        "unit": {
+          "$ref": "#/$defs/Text"
+        }
+      },
+      "required": [
+        "direction",
+        "unit"
+      ],
+      "type": "object"
+    },
+    "OracleId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "Probability": {
+      "format": "double",
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "type": "number"
+    },
+    "StopPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "generations_without_material_gain": {
+          "format": "uint32",
+          "minimum": 1,
+          "type": "integer"
+        },
+        "min_relative_improvement": {
+          "$ref": "#/$defs/Probability"
+        }
+      },
+      "required": [
+        "min_relative_improvement",
+        "generations_without_material_gain"
+      ],
+      "type": "object"
+    },
+    "Text": {
+      "description": "Nonempty text; unlike identifiers this may contain spaces and Unicode.",
+      "minLength": 1,
+      "pattern": "\\S",
+      "type": "string"
+    },
+    "VersionedOracle": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/OracleId"
+        },
+        "version": {
+          "format": "uint32",
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "version"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "https://ace.org.ai/schemas/v1/intent.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "budget": {
+      "$ref": "#/$defs/Budget"
+    },
+    "cell": {
+      "$ref": "#/$defs/CellId"
+    },
+    "evalspec": {
+      "$ref": "#/$defs/EvalSpec"
+    },
+    "id": {
+      "$ref": "#/$defs/IntentId"
+    },
+    "objective": {
+      "$ref": "#/$defs/Text"
+    },
+    "stop": {
+      "$ref": "#/$defs/StopPolicy"
+    }
+  },
+  "required": [
+    "id",
+    "cell",
+    "objective",
+    "evalspec",
+    "budget",
+    "stop"
+  ],
+  "title": "Intent",
+  "type": "object"
+}

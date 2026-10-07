@@ -1,0 +1,355 @@
+{
+  "$defs": {
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "properties": {
+        "hash": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "location": {
+          "$ref": "#/$defs/Text"
+        }
+      },
+      "required": [
+        "location",
+        "hash"
+      ],
+      "type": "object"
+    },
+    "CandidateId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "CellId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "CheckOutcome": {
+      "enum": [
+        "passed",
+        "failed",
+        "not_run",
+        "error"
+      ],
+      "type": "string"
+    },
+    "ContentHash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "EvalSpecId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "EvaluationStage": {
+      "enum": [
+        "l0",
+        "l1",
+        "l2",
+        "l3"
+      ],
+      "type": "string"
+    },
+    "EvaluatorResult": {
+      "additionalProperties": false,
+      "properties": {
+        "outcome": {
+          "$ref": "#/$defs/CheckOutcome"
+        },
+        "output": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ArtifactRef"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "stage": {
+          "$ref": "#/$defs/EvaluationStage"
+        },
+        "version": {
+          "$ref": "#/$defs/Text"
+        }
+      },
+      "required": [
+        "stage",
+        "outcome",
+        "version"
+      ],
+      "type": "object"
+    },
+    "Evidence": {
+      "additionalProperties": false,
+      "properties": {
+        "candidate": {
+          "$ref": "#/$defs/CandidateId"
+        },
+        "cell": {
+          "$ref": "#/$defs/CellId"
+        },
+        "checks": {
+          "additionalProperties": false,
+          "patternProperties": {
+            "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$": {
+              "$ref": "#/$defs/CheckOutcome"
+            }
+          },
+          "type": "object"
+        },
+        "created_at": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "environment_hash": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "evalspec": {
+          "$ref": "#/$defs/VersionedEvalSpec"
+        },
+        "evaluator": {
+          "$ref": "#/$defs/EvaluatorResult"
+        },
+        "experiment": {
+          "$ref": "#/$defs/ExperimentId"
+        },
+        "fast_judge": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FastJudgeObservation"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "id": {
+          "$ref": "#/$defs/EvidenceId"
+        },
+        "measurements": {
+          "additionalProperties": false,
+          "patternProperties": {
+            "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$": {
+              "$ref": "#/$defs/Measurement"
+            }
+          },
+          "type": "object"
+        },
+        "oracle": {
+          "$ref": "#/$defs/OracleResult"
+        }
+      },
+      "required": [
+        "id",
+        "experiment",
+        "candidate",
+        "cell",
+        "environment_hash",
+        "evalspec",
+        "measurements",
+        "checks",
+        "oracle",
+        "evaluator",
+        "created_at"
+      ],
+      "type": "object"
+    },
+    "EvidenceId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "ExperimentId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "FastJudgeObservation": {
+      "additionalProperties": false,
+      "properties": {
+        "calibration_version": {
+          "$ref": "#/$defs/Text"
+        },
+        "input_hash": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "model": {
+          "$ref": "#/$defs/Text"
+        },
+        "provider": {
+          "$ref": "#/$defs/Text"
+        },
+        "question_schema_version": {
+          "$ref": "#/$defs/Text"
+        },
+        "regression_probability": {
+          "$ref": "#/$defs/Probability"
+        },
+        "revision": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Text"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "semantic_equivalence_probability": {
+          "$ref": "#/$defs/Probability"
+        },
+        "threshold_policy_version": {
+          "$ref": "#/$defs/Text"
+        },
+        "typed_answers": {
+          "$ref": "#/$defs/ArtifactRef"
+        }
+      },
+      "required": [
+        "provider",
+        "model",
+        "question_schema_version",
+        "calibration_version",
+        "threshold_policy_version",
+        "input_hash",
+        "typed_answers",
+        "semantic_equivalence_probability",
+        "regression_probability"
+      ],
+      "type": "object"
+    },
+    "FiniteNumber": {
+      "description": "Finite numeric measurements only: NaN/Infinity must never become JSON null.",
+      "format": "double",
+      "type": "number"
+    },
+    "Measurement": {
+      "additionalProperties": false,
+      "properties": {
+        "unit": {
+          "$ref": "#/$defs/Text"
+        },
+        "value": {
+          "$ref": "#/$defs/FiniteNumber"
+        }
+      },
+      "required": [
+        "value",
+        "unit"
+      ],
+      "type": "object"
+    },
+    "OracleId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "OracleResult": {
+      "additionalProperties": false,
+      "properties": {
+        "oracle": {
+          "$ref": "#/$defs/VersionedOracle"
+        },
+        "outcome": {
+          "$ref": "#/$defs/CheckOutcome"
+        },
+        "output": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ArtifactRef"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "oracle",
+        "outcome"
+      ],
+      "type": "object"
+    },
+    "Probability": {
+      "format": "double",
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "type": "number"
+    },
+    "Text": {
+      "description": "Nonempty text; unlike identifiers this may contain spaces and Unicode.",
+      "minLength": 1,
+      "pattern": "\\S",
+      "type": "string"
+    },
+    "Timestamp": {
+      "description": "UTC Unix seconds. The caller supplies time; the kernel has no ambient clock.",
+      "format": "uint64",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "VersionedEvalSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/EvalSpecId"
+        },
+        "version": {
+          "format": "uint32",
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "version"
+      ],
+      "type": "object"
+    },
+    "VersionedOracle": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/OracleId"
+        },
+        "version": {
+          "format": "uint32",
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "version"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "https://ace.org.ai/schemas/v1/sealed-evidence.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "A sealed observation exposes only shared access. Mutation produces a new seal.",
+  "properties": {
+    "content_hash": {
+      "$ref": "#/$defs/ContentHash"
+    },
+    "evidence": {
+      "$ref": "#/$defs/Evidence"
+    }
+  },
+  "required": [
+    "evidence",
+    "content_hash"
+  ],
+  "title": "SealedEvidence",
+  "type": "object"
+}

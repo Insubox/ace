@@ -1,0 +1,43 @@
+name: Rust kernel
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.99.0
+          components: rustfmt, clippy
+          targets: wasm32-unknown-unknown
+      - run: cargo fmt --all --check
+      - run: cargo clippy --workspace --all-targets --locked -- -D warnings
+      - run: cargo test --workspace --locked
+      - run: cargo build --locked --target wasm32-unknown-unknown -p ace-core -p ace-policy -p ace-protocol -p ace-eval
+      - run: cargo run --locked -p ace-cli -- schema --out schemas --check
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: node examples/judge-corpus/build.mjs
+      - run: cargo run --locked -p ace-cli -- run examples/judge-corpus --output /tmp/ace-corpus-ci --jobs 4
+      - run: node examples/judge-corpus/check-run.mjs /tmp/ace-corpus-ci
+  cloud:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run check
+      - run: npm test
+      - run: npm run test:clients
+      - run: npm run db:local
+      - run: npm run build:worker

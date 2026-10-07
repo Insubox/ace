@@ -1,0 +1,1527 @@
+{
+  "$defs": {
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "properties": {
+        "hash": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "location": {
+          "$ref": "#/$defs/Text"
+        }
+      },
+      "required": [
+        "location",
+        "hash"
+      ],
+      "type": "object"
+    },
+    "Budget": {
+      "additionalProperties": false,
+      "properties": {
+        "max_candidates": {
+          "format": "uint32",
+          "minimum": 1,
+          "type": "integer"
+        },
+        "max_compute_usd": {
+          "$ref": "#/$defs/FiniteNumber"
+        },
+        "max_wall_clock_seconds": {
+          "format": "uint32",
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "max_candidates",
+        "max_wall_clock_seconds",
+        "max_compute_usd"
+      ],
+      "type": "object"
+    },
+    "Candidate": {
+      "additionalProperties": false,
+      "properties": {
+        "base": {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        "cell": {
+          "$ref": "#/$defs/CellId"
+        },
+        "environment_hash": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "hypothesis": {
+          "$ref": "#/$defs/HypothesisId"
+        },
+        "id": {
+          "$ref": "#/$defs/CandidateId"
+        },
+        "parent": {
+          "$ref": "#/$defs/ChampionId"
+        },
+        "patch": {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        "provenance": {
+          "$ref": "#/$defs/Provenance"
+        }
+      },
+      "required": [
+        "id",
+        "parent",
+        "base",
+        "cell",
+        "hypothesis",
+        "patch",
+        "environment_hash",
+        "provenance"
+      ],
+      "type": "object"
+    },
+    "CandidateId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "CandidateOutcome": {
+      "enum": [
+        "qualified",
+        "failed_correctness",
+        "failed_contract",
+        "failed_resource_limit",
+        "invalid_module",
+        "budget_exhausted",
+        "evaluator_error"
+      ],
+      "type": "string"
+    },
+    "CandidateResult": {
+      "additionalProperties": false,
+      "properties": {
+        "candidate": {
+          "$ref": "#/$defs/Candidate"
+        },
+        "decision": {
+          "$ref": "#/$defs/PolicyDecision"
+        },
+        "evaluation": {
+          "$ref": "#/$defs/Evaluation"
+        },
+        "evidence": {
+          "$ref": "#/$defs/SealedEvidence"
+        },
+        "is_baseline": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "candidate",
+        "evaluation",
+        "evidence",
+        "decision",
+        "is_baseline"
+      ],
+      "type": "object"
+    },
+    "CellId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "Champion": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact": {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        "candidate": {
+          "$ref": "#/$defs/CandidateId"
+        },
+        "cell": {
+          "$ref": "#/$defs/CellId"
+        },
+        "environment_hash": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "evalspec": {
+          "$ref": "#/$defs/VersionedEvalSpec"
+        },
+        "id": {
+          "$ref": "#/$defs/ChampionId"
+        },
+        "oracle": {
+          "$ref": "#/$defs/VersionedOracle"
+        },
+        "policy_version": {
+          "$ref": "#/$defs/Text"
+        },
+        "qualification_evidence": {
+          "items": {
+            "$ref": "#/$defs/EvidenceId"
+          },
+          "type": "array",
+          "uniqueItems": true
+        },
+        "qualified_at": {
+          "$ref": "#/$defs/Timestamp"
+        }
+      },
+      "required": [
+        "id",
+        "cell",
+        "candidate",
+        "artifact",
+        "environment_hash",
+        "evalspec",
+        "oracle",
+        "qualification_evidence",
+        "policy_version",
+        "qualified_at"
+      ],
+      "type": "object"
+    },
+    "ChampionId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "CheckName": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "CheckOutcome": {
+      "enum": [
+        "passed",
+        "failed",
+        "not_run",
+        "error"
+      ],
+      "type": "string"
+    },
+    "Claim": {
+      "additionalProperties": false,
+      "properties": {
+        "confidence": {
+          "$ref": "#/$defs/Probability"
+        },
+        "contradicting_evidence": {
+          "items": {
+            "$ref": "#/$defs/EvidenceId"
+          },
+          "type": "array",
+          "uniqueItems": true
+        },
+        "created_at": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "environment_hash": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "id": {
+          "$ref": "#/$defs/ClaimId"
+        },
+        "scope": {
+          "$ref": "#/$defs/Text"
+        },
+        "statement": {
+          "$ref": "#/$defs/Text"
+        },
+        "status": {
+          "$ref": "#/$defs/ClaimStatus"
+        },
+        "superseded_by": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ClaimId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "supporting_evidence": {
+          "items": {
+            "$ref": "#/$defs/EvidenceId"
+          },
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "id",
+        "statement",
+        "status",
+        "supporting_evidence",
+        "contradicting_evidence",
+        "scope",
+        "confidence",
+        "environment_hash",
+        "created_at"
+      ],
+      "type": "object"
+    },
+    "ClaimId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "ClaimStatus": {
+      "enum": [
+        "open",
+        "proven",
+        "rejected",
+        "superseded"
+      ],
+      "type": "string"
+    },
+    "Comparison": {
+      "enum": [
+        "at_least",
+        "at_most",
+        "equal"
+      ],
+      "type": "string"
+    },
+    "ContentHash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "Decision": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "action": {
+              "const": "kill",
+              "type": "string"
+            },
+            "reason": {
+              "$ref": "#/$defs/KillReason"
+            }
+          },
+          "required": [
+            "action",
+            "reason"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "action": {
+              "const": "advance",
+              "type": "string"
+            },
+            "stage": {
+              "$ref": "#/$defs/EvaluationStage"
+            }
+          },
+          "required": [
+            "action",
+            "stage"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "action": {
+              "const": "hold",
+              "type": "string"
+            },
+            "reason": {
+              "$ref": "#/$defs/HoldReason"
+            }
+          },
+          "required": [
+            "action",
+            "reason"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "action": {
+              "const": "elite",
+              "type": "string"
+            }
+          },
+          "required": [
+            "action"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Reserved for a separate privileged promotion decision.",
+          "properties": {
+            "action": {
+              "const": "champion",
+              "type": "string"
+            }
+          },
+          "required": [
+            "action"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "Direction": {
+      "enum": [
+        "minimize",
+        "maximize"
+      ],
+      "type": "string"
+    },
+    "Environment": {
+      "additionalProperties": false,
+      "description": "Only reproducibility inputs belong here; do not insert raw secret values.",
+      "properties": {
+        "architecture": {
+          "$ref": "#/$defs/Text"
+        },
+        "configuration_hash": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "database_version": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Text"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "dataset_hash": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ContentHash"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "dependency_locks": {
+          "additionalProperties": false,
+          "patternProperties": {
+            "\\S": {
+              "$ref": "#/$defs/ContentHash"
+            }
+          },
+          "type": "object"
+        },
+        "evalspec": {
+          "$ref": "#/$defs/VersionedEvalSpec"
+        },
+        "feature_flags": {
+          "additionalProperties": false,
+          "patternProperties": {
+            "\\S": {
+              "type": "boolean"
+            }
+          },
+          "type": "object"
+        },
+        "id": {
+          "$ref": "#/$defs/EnvironmentId"
+        },
+        "image": {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        "model_versions": {
+          "additionalProperties": false,
+          "patternProperties": {
+            "\\S": {
+              "$ref": "#/$defs/Text"
+            }
+          },
+          "type": "object"
+        },
+        "oracle": {
+          "$ref": "#/$defs/VersionedOracle"
+        },
+        "runtime": {
+          "$ref": "#/$defs/Text"
+        },
+        "state_schema_version": {
+          "format": "uint32",
+          "minimum": 1,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "traffic_profile_hash": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ContentHash"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "runtime",
+        "image",
+        "architecture",
+        "dependency_locks",
+        "configuration_hash",
+        "feature_flags",
+        "model_versions",
+        "oracle",
+        "evalspec"
+      ],
+      "type": "object"
+    },
+    "EnvironmentId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "EvalSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "hard_constraints": {
+          "additionalProperties": false,
+          "patternProperties": {
+            "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$": {
+              "$ref": "#/$defs/MetricConstraint"
+            }
+          },
+          "type": "object"
+        },
+        "id": {
+          "$ref": "#/$defs/EvalSpecId"
+        },
+        "objectives": {
+          "additionalProperties": false,
+          "patternProperties": {
+            "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$": {
+              "$ref": "#/$defs/Objective"
+            }
+          },
+          "type": "object"
+        },
+        "oracle": {
+          "$ref": "#/$defs/VersionedOracle"
+        },
+        "required_checks": {
+          "items": {
+            "$ref": "#/$defs/CheckName"
+          },
+          "type": "array",
+          "uniqueItems": true
+        },
+        "version": {
+          "format": "uint32",
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "oracle",
+        "hard_constraints",
+        "required_checks",
+        "objectives"
+      ],
+      "type": "object"
+    },
+    "EvalSpecId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "Evaluation": {
+      "additionalProperties": false,
+      "properties": {
+        "checked_calls": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "mean_fuel": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FiniteNumber"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "median_call_ns": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FiniteNumber"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "outcome": {
+          "$ref": "#/$defs/CandidateOutcome"
+        },
+        "output_hash": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "peak_linear_memory_bytes": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "reason": {
+          "$ref": "#/$defs/Text"
+        },
+        "stage": {
+          "$ref": "#/$defs/EvaluationStage"
+        }
+      },
+      "required": [
+        "outcome",
+        "stage",
+        "reason",
+        "peak_linear_memory_bytes",
+        "checked_calls",
+        "output_hash"
+      ],
+      "type": "object"
+    },
+    "EvaluationStage": {
+      "enum": [
+        "l0",
+        "l1",
+        "l2",
+        "l3"
+      ],
+      "type": "string"
+    },
+    "EvaluatorResult": {
+      "additionalProperties": false,
+      "properties": {
+        "outcome": {
+          "$ref": "#/$defs/CheckOutcome"
+        },
+        "output": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ArtifactRef"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "stage": {
+          "$ref": "#/$defs/EvaluationStage"
+        },
+        "version": {
+          "$ref": "#/$defs/Text"
+        }
+      },
+      "required": [
+        "stage",
+        "outcome",
+        "version"
+      ],
+      "type": "object"
+    },
+    "Evidence": {
+      "additionalProperties": false,
+      "properties": {
+        "candidate": {
+          "$ref": "#/$defs/CandidateId"
+        },
+        "cell": {
+          "$ref": "#/$defs/CellId"
+        },
+        "checks": {
+          "additionalProperties": false,
+          "patternProperties": {
+            "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$": {
+              "$ref": "#/$defs/CheckOutcome"
+            }
+          },
+          "type": "object"
+        },
+        "created_at": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "environment_hash": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "evalspec": {
+          "$ref": "#/$defs/VersionedEvalSpec"
+        },
+        "evaluator": {
+          "$ref": "#/$defs/EvaluatorResult"
+        },
+        "experiment": {
+          "$ref": "#/$defs/ExperimentId"
+        },
+        "fast_judge": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FastJudgeObservation"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "id": {
+          "$ref": "#/$defs/EvidenceId"
+        },
+        "measurements": {
+          "additionalProperties": false,
+          "patternProperties": {
+            "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$": {
+              "$ref": "#/$defs/Measurement"
+            }
+          },
+          "type": "object"
+        },
+        "oracle": {
+          "$ref": "#/$defs/OracleResult"
+        }
+      },
+      "required": [
+        "id",
+        "experiment",
+        "candidate",
+        "cell",
+        "environment_hash",
+        "evalspec",
+        "measurements",
+        "checks",
+        "oracle",
+        "evaluator",
+        "created_at"
+      ],
+      "type": "object"
+    },
+    "EvidenceId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "Experiment": {
+      "additionalProperties": false,
+      "properties": {
+        "candidates": {
+          "items": {
+            "$ref": "#/$defs/CandidateId"
+          },
+          "type": "array",
+          "uniqueItems": true
+        },
+        "cell": {
+          "$ref": "#/$defs/CellId"
+        },
+        "created_at": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "environment_hash": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "evalspec": {
+          "$ref": "#/$defs/VersionedEvalSpec"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/EvidenceId"
+          },
+          "type": "array",
+          "uniqueItems": true
+        },
+        "hypothesis": {
+          "$ref": "#/$defs/HypothesisId"
+        },
+        "id": {
+          "$ref": "#/$defs/ExperimentId"
+        },
+        "intent": {
+          "$ref": "#/$defs/IntentId"
+        },
+        "oracle": {
+          "$ref": "#/$defs/VersionedOracle"
+        },
+        "parent_knowledge": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/KnowledgeId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "status": {
+          "$ref": "#/$defs/ExperimentStatus"
+        }
+      },
+      "required": [
+        "id",
+        "cell",
+        "intent",
+        "hypothesis",
+        "candidates",
+        "environment_hash",
+        "evalspec",
+        "oracle",
+        "status",
+        "evidence",
+        "created_at"
+      ],
+      "type": "object"
+    },
+    "ExperimentId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "ExperimentStatus": {
+      "enum": [
+        "created",
+        "running",
+        "stopped",
+        "completed"
+      ],
+      "type": "string"
+    },
+    "FastJudgeObservation": {
+      "additionalProperties": false,
+      "properties": {
+        "calibration_version": {
+          "$ref": "#/$defs/Text"
+        },
+        "input_hash": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "model": {
+          "$ref": "#/$defs/Text"
+        },
+        "provider": {
+          "$ref": "#/$defs/Text"
+        },
+        "question_schema_version": {
+          "$ref": "#/$defs/Text"
+        },
+        "regression_probability": {
+          "$ref": "#/$defs/Probability"
+        },
+        "revision": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Text"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "semantic_equivalence_probability": {
+          "$ref": "#/$defs/Probability"
+        },
+        "threshold_policy_version": {
+          "$ref": "#/$defs/Text"
+        },
+        "typed_answers": {
+          "$ref": "#/$defs/ArtifactRef"
+        }
+      },
+      "required": [
+        "provider",
+        "model",
+        "question_schema_version",
+        "calibration_version",
+        "threshold_policy_version",
+        "input_hash",
+        "typed_answers",
+        "semantic_equivalence_probability",
+        "regression_probability"
+      ],
+      "type": "object"
+    },
+    "FiniteNumber": {
+      "description": "Finite numeric measurements only: NaN/Infinity must never become JSON null.",
+      "format": "double",
+      "type": "number"
+    },
+    "Generator": {
+      "additionalProperties": false,
+      "properties": {
+        "model": {
+          "$ref": "#/$defs/Text"
+        },
+        "provider": {
+          "$ref": "#/$defs/Text"
+        },
+        "revision": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Text"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "provider",
+        "model"
+      ],
+      "type": "object"
+    },
+    "Harness": {
+      "additionalProperties": false,
+      "properties": {
+        "benchmark_rounds": {
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "benchmark_samples": {
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "entrypoint": {
+          "$ref": "#/$defs/CheckName",
+          "description": "WASM ABI: (i32, i32) -> i32, interpreted as unsigned 32-bit values."
+        },
+        "fuel_per_call": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "hidden_cases": {
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "hidden_max_input": {
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "memory_pages": {
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "oracle_seed": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "public_cases": {
+          "items": {
+            "items": {
+              "format": "uint32",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "maxItems": 2,
+            "minItems": 2,
+            "type": "array"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "entrypoint",
+        "public_cases",
+        "oracle_seed",
+        "hidden_cases",
+        "hidden_max_input",
+        "benchmark_samples",
+        "benchmark_rounds",
+        "fuel_per_call",
+        "memory_pages"
+      ],
+      "type": "object"
+    },
+    "HoldReason": {
+      "enum": [
+        "context_mismatch",
+        "incomplete_evidence",
+        "evaluation_error",
+        "oracle_error",
+        "future_evidence"
+      ],
+      "type": "string"
+    },
+    "HypothesisId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "Intent": {
+      "additionalProperties": false,
+      "properties": {
+        "budget": {
+          "$ref": "#/$defs/Budget"
+        },
+        "cell": {
+          "$ref": "#/$defs/CellId"
+        },
+        "evalspec": {
+          "$ref": "#/$defs/EvalSpec"
+        },
+        "id": {
+          "$ref": "#/$defs/IntentId"
+        },
+        "objective": {
+          "$ref": "#/$defs/Text"
+        },
+        "stop": {
+          "$ref": "#/$defs/StopPolicy"
+        }
+      },
+      "required": [
+        "id",
+        "cell",
+        "objective",
+        "evalspec",
+        "budget",
+        "stop"
+      ],
+      "type": "object"
+    },
+    "IntentId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "KillReason": {
+      "enum": [
+        "hard_check_failed",
+        "hard_constraint_failed",
+        "oracle_failed",
+        "evaluation_failed"
+      ],
+      "type": "string"
+    },
+    "Knowledge": {
+      "additionalProperties": false,
+      "properties": {
+        "agent_summary": {
+          "$ref": "#/$defs/Text"
+        },
+        "cell": {
+          "$ref": "#/$defs/CellId"
+        },
+        "claims": {
+          "items": {
+            "$ref": "#/$defs/Claim"
+          },
+          "type": "array"
+        },
+        "created_at": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "id": {
+          "$ref": "#/$defs/KnowledgeId"
+        },
+        "parents": {
+          "items": {
+            "$ref": "#/$defs/KnowledgeId"
+          },
+          "type": "array",
+          "uniqueItems": true
+        },
+        "version": {
+          "format": "uint32",
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "cell",
+        "version",
+        "parents",
+        "claims",
+        "agent_summary",
+        "created_at"
+      ],
+      "type": "object"
+    },
+    "KnowledgeId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "Measurement": {
+      "additionalProperties": false,
+      "properties": {
+        "unit": {
+          "$ref": "#/$defs/Text"
+        },
+        "value": {
+          "$ref": "#/$defs/FiniteNumber"
+        }
+      },
+      "required": [
+        "value",
+        "unit"
+      ],
+      "type": "object"
+    },
+    "MetricConstraint": {
+      "additionalProperties": false,
+      "properties": {
+        "comparison": {
+          "$ref": "#/$defs/Comparison"
+        },
+        "unit": {
+          "$ref": "#/$defs/Text"
+        },
+        "value": {
+          "$ref": "#/$defs/FiniteNumber"
+        }
+      },
+      "required": [
+        "comparison",
+        "value",
+        "unit"
+      ],
+      "type": "object"
+    },
+    "ModuleSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "generator": {
+          "$ref": "#/$defs/Generator"
+        },
+        "id": {
+          "$ref": "#/$defs/CandidateId"
+        },
+        "module": {
+          "description": "Relative path beneath the experiment input directory.",
+          "type": "string"
+        },
+        "strategy": {
+          "$ref": "#/$defs/Text"
+        }
+      },
+      "required": [
+        "id",
+        "module",
+        "strategy",
+        "generator"
+      ],
+      "type": "object"
+    },
+    "Objective": {
+      "additionalProperties": false,
+      "properties": {
+        "direction": {
+          "$ref": "#/$defs/Direction"
+        },
+        "unit": {
+          "$ref": "#/$defs/Text"
+        }
+      },
+      "required": [
+        "direction",
+        "unit"
+      ],
+      "type": "object"
+    },
+    "OracleId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "OracleResult": {
+      "additionalProperties": false,
+      "properties": {
+        "oracle": {
+          "$ref": "#/$defs/VersionedOracle"
+        },
+        "outcome": {
+          "$ref": "#/$defs/CheckOutcome"
+        },
+        "output": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ArtifactRef"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "oracle",
+        "outcome"
+      ],
+      "type": "object"
+    },
+    "PolicyDecision": {
+      "additionalProperties": false,
+      "properties": {
+        "candidate": {
+          "$ref": "#/$defs/CandidateId"
+        },
+        "decided_at": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "decision": {
+          "$ref": "#/$defs/Decision"
+        },
+        "evidence": {
+          "$ref": "#/$defs/EvidenceId"
+        },
+        "evidence_hash": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "inputs_hash": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "policy_version": {
+          "$ref": "#/$defs/Text"
+        },
+        "reasons": {
+          "items": {
+            "$ref": "#/$defs/Text"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "candidate",
+        "evidence",
+        "evidence_hash",
+        "policy_version",
+        "decision",
+        "reasons",
+        "inputs_hash",
+        "decided_at"
+      ],
+      "type": "object"
+    },
+    "Probability": {
+      "format": "double",
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "type": "number"
+    },
+    "ProjectId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "ProtocolVersion": {
+      "const": 1,
+      "type": "integer"
+    },
+    "Provenance": {
+      "additionalProperties": false,
+      "properties": {
+        "created_at": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "generator": {
+          "$ref": "#/$defs/Generator"
+        },
+        "input_hash": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "parent_candidates": {
+          "items": {
+            "$ref": "#/$defs/CandidateId"
+          },
+          "type": "array",
+          "uniqueItems": true
+        },
+        "tool_versions": {
+          "additionalProperties": false,
+          "patternProperties": {
+            "\\S": {
+              "$ref": "#/$defs/Text"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "required": [
+        "generator",
+        "input_hash",
+        "tool_versions",
+        "parent_candidates",
+        "created_at"
+      ],
+      "type": "object"
+    },
+    "RunConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "baseline": {
+          "$ref": "#/$defs/ModuleSpec"
+        },
+        "candidates": {
+          "items": {
+            "$ref": "#/$defs/ModuleSpec"
+          },
+          "type": "array"
+        },
+        "cell": {
+          "$ref": "#/$defs/CellId"
+        },
+        "experiment": {
+          "$ref": "#/$defs/ExperimentId"
+        },
+        "harness": {
+          "$ref": "#/$defs/Harness"
+        },
+        "hypothesis": {
+          "$ref": "#/$defs/HypothesisId"
+        },
+        "intent": {
+          "$ref": "#/$defs/IntentId"
+        },
+        "max_wall_clock_seconds": {
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "min_relative_improvement": {
+          "$ref": "#/$defs/Probability",
+          "description": "Mean WASMI instruction fuel is the deterministic objective; native timing\nis recorded separately and must not be mistaken for production latency."
+        },
+        "project": {
+          "$ref": "#/$defs/ProjectId"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/ProtocolVersion"
+        }
+      },
+      "required": [
+        "schema_version",
+        "project",
+        "experiment",
+        "cell",
+        "intent",
+        "hypothesis",
+        "baseline",
+        "candidates",
+        "harness",
+        "min_relative_improvement",
+        "max_wall_clock_seconds"
+      ],
+      "type": "object"
+    },
+    "RunReport": {
+      "additionalProperties": false,
+      "properties": {
+        "baseline_champion": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Champion"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "champion": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Champion"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "config": {
+          "$ref": "#/$defs/RunConfig"
+        },
+        "elites": {
+          "items": {
+            "$ref": "#/$defs/CandidateId"
+          },
+          "type": "array",
+          "uniqueItems": true
+        },
+        "environment": {
+          "$ref": "#/$defs/Environment"
+        },
+        "environment_hash": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "experiment": {
+          "$ref": "#/$defs/Experiment"
+        },
+        "input_hash": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "intent": {
+          "$ref": "#/$defs/Intent"
+        },
+        "jobs": {
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "knowledge": {
+          "$ref": "#/$defs/Knowledge"
+        },
+        "requested_experiment": {
+          "$ref": "#/$defs/ExperimentId"
+        },
+        "results": {
+          "items": {
+            "$ref": "#/$defs/CandidateResult"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "requested_experiment",
+        "config",
+        "input_hash",
+        "environment",
+        "environment_hash",
+        "intent",
+        "experiment",
+        "results",
+        "elites",
+        "knowledge",
+        "jobs"
+      ],
+      "type": "object"
+    },
+    "SealedEvidence": {
+      "additionalProperties": false,
+      "description": "A sealed observation exposes only shared access. Mutation produces a new seal.",
+      "properties": {
+        "content_hash": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
+        }
+      },
+      "required": [
+        "evidence",
+        "content_hash"
+      ],
+      "type": "object"
+    },
+    "StopPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "generations_without_material_gain": {
+          "format": "uint32",
+          "minimum": 1,
+          "type": "integer"
+        },
+        "min_relative_improvement": {
+          "$ref": "#/$defs/Probability"
+        }
+      },
+      "required": [
+        "min_relative_improvement",
+        "generations_without_material_gain"
+      ],
+      "type": "object"
+    },
+    "Text": {
+      "description": "Nonempty text; unlike identifiers this may contain spaces and Unicode.",
+      "minLength": 1,
+      "pattern": "\\S",
+      "type": "string"
+    },
+    "Timestamp": {
+      "description": "UTC Unix seconds. The caller supplies time; the kernel has no ambient clock.",
+      "format": "uint64",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "VersionedEvalSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/EvalSpecId"
+        },
+        "version": {
+          "format": "uint32",
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "version"
+      ],
+      "type": "object"
+    },
+    "VersionedOracle": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/OracleId"
+        },
+        "version": {
+          "format": "uint32",
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "version"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "https://ace.org.ai/schemas/v1/local-run.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "content_hash": {
+      "$ref": "#/$defs/ContentHash"
+    },
+    "report": {
+      "$ref": "#/$defs/RunReport"
+    }
+  },
+  "required": [
+    "report",
+    "content_hash"
+  ],
+  "title": "PersistedRun",
+  "type": "object"
+}

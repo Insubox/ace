@@ -1,0 +1,20 @@
+[package]
+name = "ace-protocol"
+description = "Versioned ACE document envelopes and JSON schemas"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+ace-core.workspace = true
+ace-policy.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+schemars.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+jsonschema = { version = "0.46", default-features = false }
+
+[lints]
+workspace = true

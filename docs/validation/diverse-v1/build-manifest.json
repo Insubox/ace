@@ -1,0 +1,245 @@
+{
+  "schema_version": 1,
+  "manifest_hash": "05a11e8371ecf59e26f6b4ad3699c79fbbb7a2319d9cf46fc4cf702831911ba0",
+  "compiler": "rustc 1.99.0 (b940084d7 2026-09-28)",
+  "flags": [
+    "--edition",
+    "2024",
+    "--target",
+    "wasm32-unknown-unknown",
+    "--crate-type",
+    "cdylib",
+    "-C",
+    "opt-level=3",
+    "-C",
+    "panic=abort",
+    "-A",
+    "unused-mut"
+  ],
+  "artifacts": [
+    {
+      "id": "C-reference",
+      "source": "src/reference.rs",
+      "split": "reference",
+      "module": ".ace-build/reference.wasm",
+      "source_hash": "40db3308e6fb6a6b4fc759fed69e14a451cd500fba4d1e84817da83540cabfa0",
+      "artifact_hash": "d63a79f9117d7ccfe56d798e6428d58bfa26bbd3865509d15459ca7597d1a6ac"
+    },
+    {
+      "id": "C-v01",
+      "source": "src/v01.rs",
+      "family": "symmetric-remainder",
+      "split": "development",
+      "module": ".ace-build/v01.wasm",
+      "source_hash": "e3fdbf16a662e58863f1fef3516dd7b56ff9ead2a9cf0d3202de2193004f415f",
+      "artifact_hash": "7a7260e5518ba9379674442002618165aa4cea9eb6fb37fcad8984105c38dfcb"
+    },
+    {
+      "id": "C-v02",
+      "source": "src/v02.rs",
+      "family": "alternating-remainder",
+      "split": "development",
+      "module": ".ace-build/v02.wasm",
+      "source_hash": "e6f384e1d4b692f06697d909a04226685f1fd6dcf0235a0b8bcdbf804d462034",
+      "artifact_hash": "237c0ee55cd822aa8bde220c74f0005f3a4ce567e8a4a420d6fd3e1e94a288b3"
+    },
+    {
+      "id": "C-v03",
+      "source": "src/v03.rs",
+      "family": "shift-loops",
+      "split": "holdout",
+      "module": ".ace-build/v03.wasm",
+      "source_hash": "f310873084dd4e70fdfe6cb6c9180b9b22878a826425ecef0905ae43c45ef60a",
+      "artifact_hash": "52e907abb18239e359b6eada9840968a0f0774218e452c5d0855265358661592"
+    },
+    {
+      "id": "C-v04",
+      "source": "src/v04.rs",
+      "family": "min-max-binary",
+      "split": "development",
+      "module": ".ace-build/v04.wasm",
+      "source_hash": "3990f7ac3ff927a1f802b167f9e465c977e59440542e33101f2d12d61a04a7e7",
+      "artifact_hash": "e162d67cdc66d9136e71b9f3457ab4129e5a8ecfb4c1e59e7f0ffb9b72baf539"
+    },
+    {
+      "id": "C-v05",
+      "source": "src/v05.rs",
+      "family": "small-tail-subtraction",
+      "split": "development",
+      "module": ".ace-build/v05.wasm",
+      "source_hash": "e86412a224cf789b0093ec95782fb37bdb23c992795972b612d7fcc24556716b",
+      "artifact_hash": "ec80cd298c89eb5a899fc5e5e3dbececcf487c96fcc844d93b8704cdeaff4d78"
+    },
+    {
+      "id": "C-v06",
+      "source": "src/v06.rs",
+      "family": "power-two-remainder",
+      "split": "holdout",
+      "module": ".ace-build/v06.wasm",
+      "source_hash": "d55914f67e48eb7843a2f67fa9fb65304750d20a92708ecf75d9ffeac52bc941",
+      "artifact_hash": "71331d14cd7aa4574f2ffb0a7a7a7d8dd3b85918784413cf25faedd1d48220e6"
+    },
+    {
+      "id": "C-v07",
+      "source": "src/v07.rs",
+      "family": "bounded-subtraction",
+      "split": "development",
+      "module": ".ace-build/v07.wasm",
+      "source_hash": "3804f08b186335bcd96e78f40e6ac91fec6332bb8f5f097dcfd296522b5dda64",
+      "artifact_hash": "3ded9d2d7c9907c934e943bd4fa424b817deac7d2621264285460c64d9c647c5"
+    },
+    {
+      "id": "C-v08",
+      "source": "src/v08.rs",
+      "family": "divisibility-fastpaths",
+      "split": "development",
+      "module": ".ace-build/v08.wasm",
+      "source_hash": "2e2b207be4c022bf181589ada9cc36f3178d63c9f0e4d45e4a906974c42f61a7",
+      "artifact_hash": "674e3ccfe9239e7a70dc9288108b0537659fa936e08de966878d31bfa48bd13f"
+    },
+    {
+      "id": "C-v09",
+      "source": "src/v09.rs",
+      "family": "recursive-remainder",
+      "split": "holdout",
+      "module": ".ace-build/v09.wasm",
+      "source_hash": "81178ab8a9142a5bdbc2a3e1ea5bc7a261534c246edfdc0ac96e20ae9d5e0dae",
+      "artifact_hash": "e1f96e9ae82a99389bd9d5219de759de3d10ec1767b9bb19d8713273218c1031"
+    },
+    {
+      "id": "C-v10",
+      "source": "src/v10.rs",
+      "family": "dual-binary",
+      "split": "development",
+      "module": ".ace-build/v10.wasm",
+      "source_hash": "813d640881513718db9dbf290eb9d70dcee1445cdea6b9d45bad7a3450dc2313",
+      "artifact_hash": "cbd7c0476be57fa72fb834f3aacc999344e6f43284653e6fee728f314b6e8bc3"
+    },
+    {
+      "id": "C-v11",
+      "source": "src/v11.rs",
+      "family": "bounded-divisor-search",
+      "split": "development",
+      "module": ".ace-build/v11.wasm",
+      "source_hash": "c237ccc3d04d68bf5450862a50eb3a41adaa758401f2564172ad117cd29e79fd",
+      "artifact_hash": "05fa155526e03e46bee3c910045e7801866981e37329f70f1ae91bc8903ec2fd"
+    },
+    {
+      "id": "C-v12",
+      "source": "src/v12.rs",
+      "family": "small-prime-factorization",
+      "split": "holdout",
+      "module": ".ace-build/v12.wasm",
+      "source_hash": "e221fd850c54a19d657f7859a2812a14557204e89756320fc6d6774c8065563e",
+      "artifact_hash": "e596607a48197993ea0a39f814187bd69e0b6ff26c0336b33de4dc9a93bbf98f"
+    },
+    {
+      "id": "C-v13",
+      "source": "src/v13.rs",
+      "family": "zero-boundary",
+      "split": "development",
+      "module": ".ace-build/v13.wasm",
+      "source_hash": "75565bbecc813eb76f63942fd7d92948ea0bd8d05aec0cb3cb18097fb242f09e",
+      "artifact_hash": "9e3abf38a25317f5119e19b88f982ed9055f493c74b9dfd7b23ddac094b141c5"
+    },
+    {
+      "id": "C-v14",
+      "source": "src/v14.rs",
+      "family": "equality-boundary",
+      "split": "development",
+      "module": ".ace-build/v14.wasm",
+      "source_hash": "646a587e34ff334343e78d49d6df6d1069b3752a184625ee3e3ec548f627d909",
+      "artifact_hash": "0c78f103f803543e3e1c5d46f143bf27f792a6ddcd8dbfcc9ac902824787d07d"
+    },
+    {
+      "id": "C-v15",
+      "source": "src/v15.rs",
+      "family": "zero-bitwise-boundary",
+      "split": "holdout",
+      "module": ".ace-build/v15.wasm",
+      "source_hash": "47140644920567e0aa9bae26611cd0dd2e73458c621ad0f3f3bb1eb089b18a5e",
+      "artifact_hash": "c91d2b76974f9fb20d75114c2998674270d2ad4e886361a2162c13a5c38ccaac"
+    },
+    {
+      "id": "C-v16",
+      "source": "src/v16.rs",
+      "family": "signed-conversion",
+      "split": "development",
+      "module": ".ace-build/v16.wasm",
+      "source_hash": "91adeabf8b059dc1a8e2cc44aa432caadbf795e733cca8a2f0451587f71f748a",
+      "artifact_hash": "1446edae9f592c2cccbe2620f7afb62e17dee221fe0ed0d8d35cd8be8c61231c"
+    },
+    {
+      "id": "C-v17",
+      "source": "src/v17.rs",
+      "family": "result-width",
+      "split": "development",
+      "module": ".ace-build/v17.wasm",
+      "source_hash": "4da21866115d3deb1cff4c6d90ab502944816e7f76523cadc5719fec8162975e",
+      "artifact_hash": "a07eb99718cba4256bdef13f45441a6dea34e2c62be9f9f8869ca35bc4dfad44"
+    },
+    {
+      "id": "C-v18",
+      "source": "src/v18.rs",
+      "family": "factor-scaling",
+      "split": "holdout",
+      "module": ".ace-build/v18.wasm",
+      "source_hash": "deac41227dba55bd26b30bc159bb7bace7e4617c13c07e37c48b087861588c84",
+      "artifact_hash": "6469f765d2fd2a4140c84168fb0c4e2a094abbd61a5b6ebda35ddaa2bf52a723"
+    },
+    {
+      "id": "C-v19",
+      "source": "src/v19.rs",
+      "family": "unit-boundary",
+      "split": "development",
+      "module": ".ace-build/v19.wasm",
+      "source_hash": "2160a2d30d9e74f5b8177dc73e0fa29a189bb6d904fb9d97a60bf8d7c9f57dd9",
+      "artifact_hash": "b903d1e544ba8f55a978b265170ae5dc470e6c6b149ae77a2346c9d08d5e5ced"
+    },
+    {
+      "id": "C-v20",
+      "source": "src/v20.rs",
+      "family": "addition",
+      "split": "development",
+      "module": ".ace-build/v20.wasm",
+      "source_hash": "920a3924a88ea86ad109d476e10f352713cbf9f5deb37a7fe04152eb441e7663",
+      "artifact_hash": "3b48c4feb6f1fe5915d22b7bb616bf30e3406e9e9e0c086c29a5632385b4864f"
+    },
+    {
+      "id": "C-v21",
+      "source": "src/v21.rs",
+      "family": "factor-three-shortcut",
+      "split": "holdout",
+      "module": ".ace-build/v21.wasm",
+      "source_hash": "4b7dc292d0b4100a238b1d7c9cfbc965780b44bf373ad10d8e0ac2b82568da70",
+      "artifact_hash": "72338235b2ea28a95e862591ccfcc2d331f46f14636863503d68f0ca703e8522"
+    },
+    {
+      "id": "C-v22",
+      "source": "src/v22.rs",
+      "family": "factor-five-shortcut",
+      "split": "development",
+      "module": ".ace-build/v22.wasm",
+      "source_hash": "f725a9117230a2082d9005a52408e4ef2aada2bf00ba7ac974862b7dba2bfced",
+      "artifact_hash": "83116f158150da9cbd5b32d8e5f2ee0d20ca4f874379a4e64a996847f9e925bb"
+    },
+    {
+      "id": "C-v23",
+      "source": "src/v23.rs",
+      "family": "unbounded-subtraction",
+      "split": "development",
+      "module": ".ace-build/v23.wasm",
+      "source_hash": "d3f7b5d1571f2dc229fb14ab0a8c679f3aa4192d24bb66bcd58f608d3d995a1a",
+      "artifact_hash": "48b8c1cb51e5cce134d1a5ef66c78813f0479cc8e76353287c581f6e681ca692"
+    },
+    {
+      "id": "C-v24",
+      "source": "src/v24.rs",
+      "family": "memory-growth",
+      "split": "holdout",
+      "module": ".ace-build/v24.wasm",
+      "source_hash": "dd2f916b7404cece49d7a25e1aacece42593cd9753c9e463960b157bd510314b",
+      "artifact_hash": "b8b65bed76b4329dea80c485aa7d72014d13c469cab36e3aea0c754fd9766f4c"
+    }
+  ]
+}

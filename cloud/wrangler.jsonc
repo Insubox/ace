@@ -1,0 +1,31 @@
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "ace-control-plane",
+  "main": "src/worker.ts",
+  "compatibility_date": "2026-10-05",
+  "compatibility_flags": ["nodejs_compat"],
+  "ai": { "binding": "AI" },
+  "durable_objects": { "bindings": [
+    { "name": "COORDINATORS", "class_name": "ExperimentCoordinator" },
+    { "name": "SANDBOXES", "class_name": "EvaluationSandbox" }
+  ] },
+  "exports": {
+    "ExperimentCoordinator": { "type": "durable-object", "storage": "sqlite" },
+    "EvaluationSandbox": { "type": "durable-object", "storage": "sqlite" }
+  },
+  "containers": [{ "class_name": "EvaluationSandbox", "scheduling_policy": "durable_object",
+    "images": { "ace": { "dockerfile": "./Dockerfile", "build_context": ".." } }
+  }],
+  "workflows": [{ "binding": "EXPERIMENTS", "name": "ace-experiments", "class_name": "ExperimentWorkflow" }],
+  "d1_databases": [{ "binding": "DB", "database_name": "ace-metadata",
+    "database_id": "00000000-0000-0000-0000-000000000000", "migrations_dir": "migrations" }],
+  "r2_buckets": [{ "binding": "ARTIFACTS", "bucket_name": "ace-artifacts" }],
+  "queues": {
+    "producers": [{ "binding": "EVALUATIONS", "queue": "ace-evaluations" }, { "binding": "FINALIZATIONS", "queue": "ace-finalizations" }],
+    "consumers": [
+      { "queue": "ace-evaluations", "max_batch_size": 1, "max_concurrency": 100, "max_retries": 5, "dead_letter_queue": "ace-dead" },
+      { "queue": "ace-finalizations", "max_batch_size": 1, "max_concurrency": 1, "max_retries": 5, "dead_letter_queue": "ace-dead" },
+      { "queue": "ace-dead", "max_batch_size": 1 }
+    ]
+  }
+}

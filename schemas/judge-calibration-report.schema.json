@@ -1,0 +1,167 @@
+{
+  "$defs": {
+    "ContentHash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "FiniteNumber": {
+      "description": "Finite numeric measurements only: NaN/Infinity must never become JSON null.",
+      "format": "double",
+      "type": "number"
+    },
+    "Probability": {
+      "format": "double",
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "type": "number"
+    },
+    "Text": {
+      "description": "Nonempty text; unlike identifiers this may contain spaces and Unicode.",
+      "minLength": 1,
+      "pattern": "\\S",
+      "type": "string"
+    }
+  },
+  "$id": "https://ace.org.ai/schemas/v1/judge-calibration-report.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "audited_count": {
+      "format": "uint64",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "dataset_hash": {
+      "$ref": "#/$defs/ContentHash"
+    },
+    "dataset_version": {
+      "$ref": "#/$defs/Text"
+    },
+    "hypothetical_filtered_qualified": {
+      "format": "uint64",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "hypothetical_filtered_winners": {
+      "format": "uint64",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "inference_input_tokens": {
+      "format": "uint64",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "inference_latency_p50_ms": {
+      "format": "uint64",
+      "minimum": 0,
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "inference_latency_p95_ms": {
+      "format": "uint64",
+      "minimum": 0,
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "inference_output_tokens": {
+      "format": "uint64",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "missing_usage_rows": {
+      "format": "uint64",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "policy_hash": {
+      "$ref": "#/$defs/ContentHash"
+    },
+    "production_filtering_authorized": {
+      "description": "Always false in shadow mode, regardless of favorable fixture metrics.",
+      "type": "boolean"
+    },
+    "provider_faults": {
+      "format": "uint64",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "qualified_count": {
+      "format": "uint64",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "qualified_recall": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Probability"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "regression_brier_score": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/FiniteNumber"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "rows": {
+      "format": "uint64",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "scored_correctness_rows": {
+      "format": "uint64",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "synthetic_predictions": {
+      "type": "boolean"
+    },
+    "winner_count": {
+      "format": "uint64",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "winner_recall": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Probability"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "dataset_hash",
+    "dataset_version",
+    "policy_hash",
+    "synthetic_predictions",
+    "rows",
+    "provider_faults",
+    "scored_correctness_rows",
+    "qualified_count",
+    "hypothetical_filtered_qualified",
+    "winner_count",
+    "hypothetical_filtered_winners",
+    "audited_count",
+    "inference_input_tokens",
+    "inference_output_tokens",
+    "missing_usage_rows",
+    "production_filtering_authorized"
+  ],
+  "title": "CalibrationReport",
+  "type": "object"
+}

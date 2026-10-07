@@ -1,0 +1,423 @@
+{
+  "$defs": {
+    "CalibrationDataset": {
+      "additionalProperties": false,
+      "properties": {
+        "rows": {
+          "items": {
+            "$ref": "#/$defs/CalibrationRow"
+          },
+          "type": "array"
+        },
+        "schema_version": {
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "synthetic_predictions": {
+          "description": "Explicit fixture provenance; synthetic scores cannot become live calibration.",
+          "type": "boolean"
+        },
+        "version": {
+          "$ref": "#/$defs/Text"
+        }
+      },
+      "required": [
+        "schema_version",
+        "version",
+        "synthetic_predictions",
+        "rows"
+      ],
+      "type": "object"
+    },
+    "CalibrationLabel": {
+      "enum": [
+        "qualified",
+        "correctness_failure",
+        "contract_failure",
+        "resource_failure",
+        "infrastructure_failure"
+      ],
+      "type": "string"
+    },
+    "CalibrationRow": {
+      "additionalProperties": false,
+      "properties": {
+        "context": {
+          "$ref": "#/$defs/JudgeContext"
+        },
+        "context_bytes": {
+          "$ref": "#/$defs/Text",
+          "description": "Exact UTF-8 request bytes, retained so context/hash linkage is checkable."
+        },
+        "evidence": {
+          "$ref": "#/$defs/FailureReference"
+        },
+        "fault": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/JudgeFault"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "input_hash": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "label": {
+          "$ref": "#/$defs/CalibrationLabel"
+        },
+        "result": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/JudgeResult"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "winner": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "context",
+        "context_bytes",
+        "input_hash",
+        "evidence",
+        "label",
+        "winner"
+      ],
+      "type": "object"
+    },
+    "CandidateId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "ContentHash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "EvidenceId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "ExperimentId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "FailureReference": {
+      "additionalProperties": false,
+      "properties": {
+        "content_hash": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "evidence": {
+          "$ref": "#/$defs/EvidenceId"
+        },
+        "experiment": {
+          "$ref": "#/$defs/ExperimentId"
+        }
+      },
+      "required": [
+        "experiment",
+        "evidence",
+        "content_hash"
+      ],
+      "type": "object"
+    },
+    "JudgeAnswers": {
+      "additionalProperties": false,
+      "properties": {
+        "architectural_fit": {
+          "description": "Ordered probabilities: good, uncertain, poor.",
+          "items": {
+            "$ref": "#/$defs/Probability"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "type": "array"
+        },
+        "behavior_change_risk": {
+          "$ref": "#/$defs/Probability"
+        },
+        "novelty": {
+          "description": "Ordered probabilities: duplicate, incremental, new, highly novel.",
+          "items": {
+            "$ref": "#/$defs/Probability"
+          },
+          "maxItems": 4,
+          "minItems": 4,
+          "type": "array"
+        },
+        "prior_failure_similarity": {
+          "$ref": "#/$defs/Probability"
+        }
+      },
+      "required": [
+        "behavior_change_risk",
+        "prior_failure_similarity",
+        "architectural_fit",
+        "novelty"
+      ],
+      "type": "object"
+    },
+    "JudgeAttempt": {
+      "additionalProperties": false,
+      "properties": {
+        "fault": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/JudgeFault"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "input_hash": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "result": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/JudgeResult"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "schema_version": {
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "schema_version",
+        "input_hash"
+      ],
+      "type": "object"
+    },
+    "JudgeContext": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_hash": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "candidate": {
+          "$ref": "#/$defs/CandidateId"
+        },
+        "candidate_summary": {
+          "$ref": "#/$defs/Text",
+          "description": "Caller-supplied public text, not verified compilation provenance."
+        },
+        "contract_summary": {
+          "$ref": "#/$defs/Text"
+        },
+        "experiment": {
+          "$ref": "#/$defs/ExperimentId"
+        },
+        "high_impact": {
+          "type": "boolean"
+        },
+        "intent_summary": {
+          "$ref": "#/$defs/Text"
+        },
+        "known_failures": {
+          "items": {
+            "$ref": "#/$defs/FailureReference"
+          },
+          "type": "array"
+        },
+        "schema_version": {
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "schema_version",
+        "experiment",
+        "candidate",
+        "artifact_hash",
+        "contract_summary",
+        "intent_summary",
+        "candidate_summary",
+        "high_impact",
+        "known_failures"
+      ],
+      "type": "object"
+    },
+    "JudgeFault": {
+      "enum": [
+        "unavailable",
+        "timeout",
+        "invalid_response",
+        "budget_exhausted"
+      ],
+      "type": "string"
+    },
+    "JudgeResult": {
+      "additionalProperties": false,
+      "properties": {
+        "adapter_version": {
+          "$ref": "#/$defs/Text"
+        },
+        "answers": {
+          "$ref": "#/$defs/JudgeAnswers"
+        },
+        "calibration_version": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Text"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "input_hash": {
+          "$ref": "#/$defs/ContentHash",
+          "description": "Raw SHA-256 of the exact frozen public context bytes."
+        },
+        "latency_ms": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "model": {
+          "$ref": "#/$defs/Text"
+        },
+        "provider": {
+          "$ref": "#/$defs/Text"
+        },
+        "question_schema_version": {
+          "$ref": "#/$defs/Text"
+        },
+        "request_hash": {
+          "$ref": "#/$defs/ContentHash",
+          "description": "Raw SHA-256 of the actual provider request bytes retained by the adapter."
+        },
+        "revision": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Text"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "schema_version": {
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "stage": {
+          "$ref": "#/$defs/JudgeStage"
+        },
+        "token_usage": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TokenUsage"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "None means not reported, never zero-token inference."
+        }
+      },
+      "required": [
+        "schema_version",
+        "provider",
+        "adapter_version",
+        "model",
+        "stage",
+        "question_schema_version",
+        "input_hash",
+        "request_hash",
+        "latency_ms",
+        "answers"
+      ],
+      "type": "object"
+    },
+    "JudgeStage": {
+      "enum": [
+        "l1a",
+        "l1b"
+      ],
+      "type": "string"
+    },
+    "Probability": {
+      "format": "double",
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "type": "number"
+    },
+    "Text": {
+      "description": "Nonempty text; unlike identifiers this may contain spaces and Unicode.",
+      "minLength": 1,
+      "pattern": "\\S",
+      "type": "string"
+    },
+    "TokenUsage": {
+      "additionalProperties": false,
+      "properties": {
+        "input_tokens": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "output_tokens": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "input_tokens",
+        "output_tokens"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "https://ace.org.ai/schemas/v1/judge-comparison-dataset.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "first_stage": {
+      "$ref": "#/$defs/CalibrationDataset"
+    },
+    "schema_version": {
+      "format": "uint32",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "second_stage": {
+      "description": "At most one L1b attempt for the exact same public input bytes.",
+      "items": {
+        "$ref": "#/$defs/JudgeAttempt"
+      },
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "first_stage",
+    "second_stage"
+  ],
+  "title": "ComparisonDataset",
+  "type": "object"
+}

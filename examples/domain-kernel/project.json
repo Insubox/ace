@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "payload": {
+    "kind": "project",
+    "data": {
+      "id": "PRJ-example",
+      "name": "ACE domain example",
+      "created_at": 1
+    }
+  }
+}

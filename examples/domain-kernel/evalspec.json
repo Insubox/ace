@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "payload": {
+    "kind": "evalspec",
+    "data": {
+      "id": "ES-example",
+      "version": 1,
+      "oracle": {
+        "id": "OR-example",
+        "version": 1
+      },
+      "hard_constraints": {
+        "memory_mb": {
+          "comparison": "at_most",
+          "value": 256.0,
+          "unit": "MB"
+        }
+      },
+      "required_checks": [
+        "contract",
+        "isolation"
+      ],
+      "objectives": {
+        "p95_ms": {
+          "direction": "minimize",
+          "unit": "ms"
+        }
+      }
+    }
+  }
+}

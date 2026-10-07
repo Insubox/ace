@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "payload": {
+    "kind": "policy_decision",
+    "data": {
+      "candidate": "C-example",
+      "evidence": "EV-example",
+      "evidence_hash": "6c6f1e3733ef83acc2f74ccd13396029cf008f82c34bcfec4cc261a20a76ed7e",
+      "policy_version": "ace-policy-v0",
+      "decision": {
+        "action": "elite"
+      },
+      "reasons": [
+        "deep evaluation and oracle passed; promotion requires a separate decision"
+      ],
+      "inputs_hash": "efa0b6eff6b141e5955243fa669d8d0ee9ce3bc34dea91f05de919fb844b55be",
+      "decided_at": 2
+    }
+  }
+}

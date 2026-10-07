@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "payload": {
+    "kind": "champion",
+    "data": {
+      "id": "CH-example",
+      "cell": "ExampleCell",
+      "candidate": "C-example",
+      "artifact": {
+        "location": "example://fixture",
+        "hash": "347f6823d59faa0057d85fff54c178a614f516a303179fe85fbdaa5762d264da"
+      },
+      "environment_hash": "9bc420ce3271d55f67ddba0541e9a2840e08501f3ca9f6bf364a5cb0f47f7560",
+      "evalspec": {
+        "id": "ES-example",
+        "version": 1
+      },
+      "oracle": {
+        "id": "OR-example",
+        "version": 1
+      },
+      "qualification_evidence": [
+        "EV-example"
+      ],
+      "policy_version": "fixture-v1",
+      "qualified_at": 2
+    }
+  }
+}

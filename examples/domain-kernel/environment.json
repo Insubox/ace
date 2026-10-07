@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "payload": {
+    "kind": "environment",
+    "data": {
+      "id": "ENV-example",
+      "runtime": "rust-1.99.0",
+      "image": {
+        "location": "example://fixture",
+        "hash": "347f6823d59faa0057d85fff54c178a614f516a303179fe85fbdaa5762d264da"
+      },
+      "architecture": "x86_64",
+      "dependency_locks": {
+        "Cargo.lock": "347f6823d59faa0057d85fff54c178a614f516a303179fe85fbdaa5762d264da"
+      },
+      "database_version": null,
+      "state_schema_version": null,
+      "dataset_hash": "347f6823d59faa0057d85fff54c178a614f516a303179fe85fbdaa5762d264da",
+      "traffic_profile_hash": null,
+      "configuration_hash": "347f6823d59faa0057d85fff54c178a614f516a303179fe85fbdaa5762d264da",
+      "feature_flags": {
+        "deterministic": true
+      },
+      "model_versions": {},
+      "oracle": {
+        "id": "OR-example",
+        "version": 1
+      },
+      "evalspec": {
+        "id": "ES-example",
+        "version": 1
+      }
+    }
+  }
+}

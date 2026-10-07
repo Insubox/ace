@@ -1,0 +1,333 @@
+{
+  "$defs": {
+    "CalibrationLabel": {
+      "enum": [
+        "qualified",
+        "correctness_failure",
+        "contract_failure",
+        "resource_failure",
+        "infrastructure_failure"
+      ],
+      "type": "string"
+    },
+    "CandidateId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "ComparisonArm": {
+      "additionalProperties": false,
+      "properties": {
+        "audit_count": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "candidates": {
+          "items": {
+            "$ref": "#/$defs/ComparisonCandidate"
+          },
+          "type": "array"
+        },
+        "escalation_count": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "hypothetical_filtered": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "hypothetical_filtered_qualified": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "hypothetical_filtered_winners": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "included_attempts": {
+          "description": "Included retained records, not a claim of separately measured billing.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "included_latency_sum_ms": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "input_tokens": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "missing_latency_attempts": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "missing_second_opinions": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "missing_usage_attempts": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "mode": {
+          "$ref": "#/$defs/ComparisonMode"
+        },
+        "output_tokens": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "provider_faults": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "qualified_count": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "qualified_recall": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Probability"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "rows": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "winner_count": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "winner_recall": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Probability"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "mode",
+        "rows",
+        "hypothetical_filtered",
+        "qualified_count",
+        "hypothetical_filtered_qualified",
+        "winner_count",
+        "hypothetical_filtered_winners",
+        "audit_count",
+        "escalation_count",
+        "missing_second_opinions",
+        "included_attempts",
+        "provider_faults",
+        "included_latency_sum_ms",
+        "missing_latency_attempts",
+        "input_tokens",
+        "output_tokens",
+        "missing_usage_attempts",
+        "candidates"
+      ],
+      "type": "object"
+    },
+    "ComparisonCandidate": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_hash": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "audit_holdout": {
+          "type": "boolean"
+        },
+        "candidate": {
+          "$ref": "#/$defs/CandidateId"
+        },
+        "evidence": {
+          "$ref": "#/$defs/FailureReference"
+        },
+        "label": {
+          "$ref": "#/$defs/CalibrationLabel"
+        },
+        "second_opinion_missing": {
+          "type": "boolean"
+        },
+        "second_opinion_requested": {
+          "type": "boolean"
+        },
+        "selected_stage": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/JudgeStage"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "winner": {
+          "type": "boolean"
+        },
+        "would_filter": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "candidate",
+        "artifact_hash",
+        "evidence",
+        "label",
+        "winner",
+        "audit_holdout",
+        "second_opinion_requested",
+        "second_opinion_missing",
+        "would_filter"
+      ],
+      "type": "object"
+    },
+    "ComparisonMode": {
+      "enum": [
+        "bypass",
+        "flash_only",
+        "flash_then_clef"
+      ],
+      "type": "string"
+    },
+    "ContentHash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "EvidenceId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "ExperimentId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "FailureReference": {
+      "additionalProperties": false,
+      "properties": {
+        "content_hash": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "evidence": {
+          "$ref": "#/$defs/EvidenceId"
+        },
+        "experiment": {
+          "$ref": "#/$defs/ExperimentId"
+        }
+      },
+      "required": [
+        "experiment",
+        "evidence",
+        "content_hash"
+      ],
+      "type": "object"
+    },
+    "JudgeStage": {
+      "enum": [
+        "l1a",
+        "l1b"
+      ],
+      "type": "string"
+    },
+    "Probability": {
+      "format": "double",
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "type": "number"
+    },
+    "Text": {
+      "description": "Nonempty text; unlike identifiers this may contain spaces and Unicode.",
+      "minLength": 1,
+      "pattern": "\\S",
+      "type": "string"
+    }
+  },
+  "$id": "https://ace.org.ai/schemas/v1/judge-comparison-report.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "advisory_only": {
+      "type": "boolean"
+    },
+    "arms": {
+      "items": {
+        "$ref": "#/$defs/ComparisonArm"
+      },
+      "type": "array"
+    },
+    "available_second_opinions": {
+      "format": "uint64",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "dataset_hash": {
+      "$ref": "#/$defs/ContentHash"
+    },
+    "execution_savings_measured": {
+      "type": "boolean"
+    },
+    "policy_hash": {
+      "$ref": "#/$defs/ContentHash"
+    },
+    "policy_version": {
+      "$ref": "#/$defs/Text"
+    },
+    "production_filtering_authorized": {
+      "type": "boolean"
+    },
+    "schema_version": {
+      "format": "uint32",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "synthetic_predictions": {
+      "type": "boolean"
+    },
+    "time_to_champion_comparison_measured": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "schema_version",
+    "dataset_hash",
+    "policy_hash",
+    "policy_version",
+    "synthetic_predictions",
+    "advisory_only",
+    "available_second_opinions",
+    "production_filtering_authorized",
+    "execution_savings_measured",
+    "time_to_champion_comparison_measured",
+    "arms"
+  ],
+  "title": "ComparisonReport",
+  "type": "object"
+}

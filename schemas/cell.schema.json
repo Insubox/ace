@@ -1,0 +1,252 @@
+{
+  "$defs": {
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "properties": {
+        "hash": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "location": {
+          "$ref": "#/$defs/Text"
+        }
+      },
+      "required": [
+        "location",
+        "hash"
+      ],
+      "type": "object"
+    },
+    "Capabilities": {
+      "additionalProperties": false,
+      "properties": {
+        "allowed_hosts": {
+          "items": {
+            "$ref": "#/$defs/Text"
+          },
+          "type": "array",
+          "uniqueItems": true
+        },
+        "network": {
+          "$ref": "#/$defs/NetworkAccess"
+        },
+        "read": {
+          "items": {
+            "$ref": "#/$defs/Text"
+          },
+          "type": "array",
+          "uniqueItems": true
+        },
+        "secrets": {
+          "items": {
+            "$ref": "#/$defs/Text"
+          },
+          "type": "array",
+          "uniqueItems": true
+        },
+        "write": {
+          "items": {
+            "$ref": "#/$defs/Text"
+          },
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "read",
+        "write",
+        "network",
+        "allowed_hosts",
+        "secrets"
+      ],
+      "type": "object"
+    },
+    "CellId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "CheckName": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "ContentHash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "Contract": {
+      "additionalProperties": false,
+      "properties": {
+        "input_schema": {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        "output_schema": {
+          "$ref": "#/$defs/ArtifactRef"
+        }
+      },
+      "required": [
+        "input_schema",
+        "output_schema"
+      ],
+      "type": "object"
+    },
+    "EvalSpecId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "NetworkAccess": {
+      "enum": [
+        "deny",
+        "allow_listed"
+      ],
+      "type": "string"
+    },
+    "ProjectId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "ResourceLimits": {
+      "additionalProperties": false,
+      "properties": {
+        "cpu_ms": {
+          "format": "uint32",
+          "minimum": 1,
+          "type": "integer"
+        },
+        "memory_mb": {
+          "format": "uint32",
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "memory_mb",
+        "cpu_ms"
+      ],
+      "type": "object"
+    },
+    "StateContract": {
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "$ref": "#/$defs/StateMode"
+        },
+        "schema_version": {
+          "format": "uint32",
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "mode",
+        "schema_version"
+      ],
+      "type": "object"
+    },
+    "StateMode": {
+      "enum": [
+        "stateless",
+        "read_only",
+        "isolated"
+      ],
+      "type": "string"
+    },
+    "Text": {
+      "description": "Nonempty text; unlike identifiers this may contain spaces and Unicode.",
+      "minLength": 1,
+      "pattern": "\\S",
+      "type": "string"
+    },
+    "VersionedEvalSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/EvalSpecId"
+        },
+        "version": {
+          "format": "uint32",
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "version"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "https://ace.org.ai/schemas/v1/cell.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "capabilities": {
+      "$ref": "#/$defs/Capabilities"
+    },
+    "contract": {
+      "$ref": "#/$defs/Contract"
+    },
+    "dependencies": {
+      "items": {
+        "$ref": "#/$defs/CellId"
+      },
+      "type": "array",
+      "uniqueItems": true
+    },
+    "evalspec": {
+      "$ref": "#/$defs/VersionedEvalSpec"
+    },
+    "id": {
+      "$ref": "#/$defs/CellId"
+    },
+    "implementation": {
+      "$ref": "#/$defs/ArtifactRef"
+    },
+    "invariants": {
+      "items": {
+        "$ref": "#/$defs/CheckName"
+      },
+      "type": "array",
+      "uniqueItems": true
+    },
+    "project": {
+      "$ref": "#/$defs/ProjectId"
+    },
+    "resources": {
+      "$ref": "#/$defs/ResourceLimits"
+    },
+    "rollback_backward_compatible": {
+      "type": "boolean"
+    },
+    "state": {
+      "$ref": "#/$defs/StateContract"
+    },
+    "version": {
+      "format": "uint32",
+      "minimum": 1,
+      "type": "integer"
+    }
+  },
+  "required": [
+    "id",
+    "project",
+    "version",
+    "contract",
+    "implementation",
+    "capabilities",
+    "resources",
+    "state",
+    "dependencies",
+    "invariants",
+    "evalspec",
+    "rollback_backward_compatible"
+  ],
+  "title": "Cell",
+  "type": "object"
+}

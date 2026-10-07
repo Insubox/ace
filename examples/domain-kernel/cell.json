@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "payload": {
+    "kind": "cell",
+    "data": {
+      "id": "ExampleCell",
+      "project": "PRJ-example",
+      "version": 1,
+      "contract": {
+        "input_schema": {
+          "location": "example://fixture",
+          "hash": "347f6823d59faa0057d85fff54c178a614f516a303179fe85fbdaa5762d264da"
+        },
+        "output_schema": {
+          "location": "example://fixture",
+          "hash": "347f6823d59faa0057d85fff54c178a614f516a303179fe85fbdaa5762d264da"
+        }
+      },
+      "implementation": {
+        "location": "example://fixture",
+        "hash": "347f6823d59faa0057d85fff54c178a614f516a303179fe85fbdaa5762d264da"
+      },
+      "capabilities": {
+        "read": [],
+        "write": [],
+        "network": "deny",
+        "allowed_hosts": [],
+        "secrets": []
+      },
+      "resources": {
+        "memory_mb": 256,
+        "cpu_ms": 1000
+      },
+      "state": {
+        "mode": "stateless",
+        "schema_version": 1
+      },
+      "dependencies": [],
+      "invariants": [
+        "contract",
+        "isolation"
+      ],
+      "evalspec": {
+        "id": "ES-example",
+        "version": 1
+      },
+      "rollback_backward_compatible": true
+    }
+  }
+}

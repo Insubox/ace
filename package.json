@@ -1,0 +1,32 @@
+{
+  "name": "ace-cloud",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:clients": "node --test cloud/scripts/tests/*.test.mjs",
+    "dev": "wrangler dev --config cloud/wrangler.jsonc",
+    "build:worker": "wrangler deploy --dry-run --config cloud/wrangler.jsonc --outdir cloud/.build",
+    "db:local": "wrangler d1 migrations apply ace-metadata --local --config cloud/wrangler.jsonc",
+    "cloud:submit": "node cloud/scripts/submit.mjs"
+  },
+  "dependencies": {
+    "@cloudflare/sandbox": "1.0.0",
+    "zod": "4.5.4"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "0.22.0",
+    "@cloudflare/workers-types": "5.20261006.1",
+    "typescript": "7.0.2",
+    "vitest": "4.1.11",
+    "wrangler": "4.147.0"
+  },
+  "overrides": {
+    "workerd": "1.20261006.1"
+  }
+}

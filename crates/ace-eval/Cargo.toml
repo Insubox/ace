@@ -1,0 +1,16 @@
+[package]
+name = "ace-eval"
+description = "Portable advisory judge routing and evidence-linked calibration"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+ace-core.workspace = true
+ace-protocol.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+schemars.workspace = true
+
+[lints]
+workspace = true

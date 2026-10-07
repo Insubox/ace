@@ -1,0 +1,328 @@
+{
+  "$defs": {
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "properties": {
+        "hash": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "location": {
+          "$ref": "#/$defs/Text"
+        }
+      },
+      "required": [
+        "location",
+        "hash"
+      ],
+      "type": "object"
+    },
+    "CandidateOutcome": {
+      "enum": [
+        "qualified",
+        "failed_correctness",
+        "failed_contract",
+        "failed_resource_limit",
+        "invalid_module",
+        "budget_exhausted",
+        "evaluator_error"
+      ],
+      "type": "string"
+    },
+    "CloudObservation": {
+      "additionalProperties": false,
+      "properties": {
+        "environment": {
+          "$ref": "#/$defs/Environment"
+        },
+        "evaluation": {
+          "$ref": "#/$defs/Evaluation"
+        },
+        "index": {
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "module_hash": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "observed_at": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "plan_hash": {
+          "$ref": "#/$defs/ContentHash"
+        }
+      },
+      "required": [
+        "plan_hash",
+        "index",
+        "module_hash",
+        "environment",
+        "evaluation",
+        "observed_at"
+      ],
+      "type": "object"
+    },
+    "ContentHash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "Environment": {
+      "additionalProperties": false,
+      "description": "Only reproducibility inputs belong here; do not insert raw secret values.",
+      "properties": {
+        "architecture": {
+          "$ref": "#/$defs/Text"
+        },
+        "configuration_hash": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "database_version": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Text"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "dataset_hash": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ContentHash"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "dependency_locks": {
+          "additionalProperties": false,
+          "patternProperties": {
+            "\\S": {
+              "$ref": "#/$defs/ContentHash"
+            }
+          },
+          "type": "object"
+        },
+        "evalspec": {
+          "$ref": "#/$defs/VersionedEvalSpec"
+        },
+        "feature_flags": {
+          "additionalProperties": false,
+          "patternProperties": {
+            "\\S": {
+              "type": "boolean"
+            }
+          },
+          "type": "object"
+        },
+        "id": {
+          "$ref": "#/$defs/EnvironmentId"
+        },
+        "image": {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        "model_versions": {
+          "additionalProperties": false,
+          "patternProperties": {
+            "\\S": {
+              "$ref": "#/$defs/Text"
+            }
+          },
+          "type": "object"
+        },
+        "oracle": {
+          "$ref": "#/$defs/VersionedOracle"
+        },
+        "runtime": {
+          "$ref": "#/$defs/Text"
+        },
+        "state_schema_version": {
+          "format": "uint32",
+          "minimum": 1,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "traffic_profile_hash": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ContentHash"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "runtime",
+        "image",
+        "architecture",
+        "dependency_locks",
+        "configuration_hash",
+        "feature_flags",
+        "model_versions",
+        "oracle",
+        "evalspec"
+      ],
+      "type": "object"
+    },
+    "EnvironmentId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "EvalSpecId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "Evaluation": {
+      "additionalProperties": false,
+      "properties": {
+        "checked_calls": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "mean_fuel": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FiniteNumber"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "median_call_ns": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FiniteNumber"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "outcome": {
+          "$ref": "#/$defs/CandidateOutcome"
+        },
+        "output_hash": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "peak_linear_memory_bytes": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "reason": {
+          "$ref": "#/$defs/Text"
+        },
+        "stage": {
+          "$ref": "#/$defs/EvaluationStage"
+        }
+      },
+      "required": [
+        "outcome",
+        "stage",
+        "reason",
+        "peak_linear_memory_bytes",
+        "checked_calls",
+        "output_hash"
+      ],
+      "type": "object"
+    },
+    "EvaluationStage": {
+      "enum": [
+        "l0",
+        "l1",
+        "l2",
+        "l3"
+      ],
+      "type": "string"
+    },
+    "FiniteNumber": {
+      "description": "Finite numeric measurements only: NaN/Infinity must never become JSON null.",
+      "format": "double",
+      "type": "number"
+    },
+    "OracleId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "Text": {
+      "description": "Nonempty text; unlike identifiers this may contain spaces and Unicode.",
+      "minLength": 1,
+      "pattern": "\\S",
+      "type": "string"
+    },
+    "Timestamp": {
+      "description": "UTC Unix seconds. The caller supplies time; the kernel has no ambient clock.",
+      "format": "uint64",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "VersionedEvalSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/EvalSpecId"
+        },
+        "version": {
+          "format": "uint32",
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "version"
+      ],
+      "type": "object"
+    },
+    "VersionedOracle": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/OracleId"
+        },
+        "version": {
+          "format": "uint32",
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "version"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "https://ace.org.ai/schemas/v1/cloud-observation.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "content_hash": {
+      "$ref": "#/$defs/ContentHash"
+    },
+    "observation": {
+      "$ref": "#/$defs/CloudObservation"
+    }
+  },
+  "required": [
+    "observation",
+    "content_hash"
+  ],
+  "title": "SealedObservation",
+  "type": "object"
+}

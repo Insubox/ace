@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "payload": {
+    "kind": "knowledge",
+    "data": {
+      "id": "K-example",
+      "cell": "ExampleCell",
+      "version": 1,
+      "parents": [],
+      "claims": [
+        {
+          "id": "CL-example",
+          "statement": "Illustrative claim backed by fixture evidence",
+          "status": "proven",
+          "supporting_evidence": [
+            "EV-example"
+          ],
+          "contradicting_evidence": [],
+          "scope": "Example only",
+          "confidence": 1.0,
+          "environment_hash": "9bc420ce3271d55f67ddba0541e9a2840e08501f3ca9f6bf364a5cb0f47f7560",
+          "created_at": 2,
+          "superseded_by": null
+        }
+      ],
+      "agent_summary": "Illustrative data; no code experiment has run",
+      "created_at": 2
+    }
+  }
+}

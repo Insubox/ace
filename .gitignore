@@ -1,0 +1,11 @@
+/target/
+/.ace/
+/node_modules/
+/.pnpm-store/
+**/.ace-build/
+/cloud/.build/
+**/.build/
+/cloud/.wrangler/
+/.wrangler/
+.dev.vars
+.env

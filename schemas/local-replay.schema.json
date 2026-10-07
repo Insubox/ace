@@ -1,0 +1,136 @@
+{
+  "$defs": {
+    "CandidateId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "CandidateOutcome": {
+      "enum": [
+        "qualified",
+        "failed_correctness",
+        "failed_contract",
+        "failed_resource_limit",
+        "invalid_module",
+        "budget_exhausted",
+        "evaluator_error"
+      ],
+      "type": "string"
+    },
+    "ContentHash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "Evaluation": {
+      "additionalProperties": false,
+      "properties": {
+        "checked_calls": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "mean_fuel": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FiniteNumber"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "median_call_ns": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FiniteNumber"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "outcome": {
+          "$ref": "#/$defs/CandidateOutcome"
+        },
+        "output_hash": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "peak_linear_memory_bytes": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "reason": {
+          "$ref": "#/$defs/Text"
+        },
+        "stage": {
+          "$ref": "#/$defs/EvaluationStage"
+        }
+      },
+      "required": [
+        "outcome",
+        "stage",
+        "reason",
+        "peak_linear_memory_bytes",
+        "checked_calls",
+        "output_hash"
+      ],
+      "type": "object"
+    },
+    "EvaluationStage": {
+      "enum": [
+        "l0",
+        "l1",
+        "l2",
+        "l3"
+      ],
+      "type": "string"
+    },
+    "FiniteNumber": {
+      "description": "Finite numeric measurements only: NaN/Infinity must never become JSON null.",
+      "format": "double",
+      "type": "number"
+    },
+    "Text": {
+      "description": "Nonempty text; unlike identifiers this may contain spaces and Unicode.",
+      "minLength": 1,
+      "pattern": "\\S",
+      "type": "string"
+    }
+  },
+  "$id": "https://ace.org.ai/schemas/v1/local-replay.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "candidate": {
+      "$ref": "#/$defs/CandidateId"
+    },
+    "environment_hash": {
+      "$ref": "#/$defs/ContentHash"
+    },
+    "matched": {
+      "description": "Compare outcome, output trace and deterministic fuel; timing is intentionally excluded.",
+      "type": "boolean"
+    },
+    "observed": {
+      "$ref": "#/$defs/Evaluation"
+    },
+    "original_evidence_hash": {
+      "$ref": "#/$defs/ContentHash"
+    },
+    "original_outcome": {
+      "$ref": "#/$defs/CandidateOutcome"
+    }
+  },
+  "required": [
+    "candidate",
+    "original_evidence_hash",
+    "environment_hash",
+    "original_outcome",
+    "observed",
+    "matched"
+  ],
+  "title": "ReplayReport",
+  "type": "object"
+}

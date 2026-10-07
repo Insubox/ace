@@ -1,0 +1,153 @@
+{
+  "$defs": {
+    "CheckName": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "Comparison": {
+      "enum": [
+        "at_least",
+        "at_most",
+        "equal"
+      ],
+      "type": "string"
+    },
+    "Direction": {
+      "enum": [
+        "minimize",
+        "maximize"
+      ],
+      "type": "string"
+    },
+    "EvalSpecId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "FiniteNumber": {
+      "description": "Finite numeric measurements only: NaN/Infinity must never become JSON null.",
+      "format": "double",
+      "type": "number"
+    },
+    "MetricConstraint": {
+      "additionalProperties": false,
+      "properties": {
+        "comparison": {
+          "$ref": "#/$defs/Comparison"
+        },
+        "unit": {
+          "$ref": "#/$defs/Text"
+        },
+        "value": {
+          "$ref": "#/$defs/FiniteNumber"
+        }
+      },
+      "required": [
+        "comparison",
+        "value",
+        "unit"
+      ],
+      "type": "object"
+    },
+    "Objective": {
+      "additionalProperties": false,
+      "properties": {
+        "direction": {
+          "$ref": "#/$defs/Direction"
+        },
+        "unit": {
+          "$ref": "#/$defs/Text"
+        }
+      },
+      "required": [
+        "direction",
+        "unit"
+      ],
+      "type": "object"
+    },
+    "OracleId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "Text": {
+      "description": "Nonempty text; unlike identifiers this may contain spaces and Unicode.",
+      "minLength": 1,
+      "pattern": "\\S",
+      "type": "string"
+    },
+    "VersionedOracle": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/OracleId"
+        },
+        "version": {
+          "format": "uint32",
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "version"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "https://ace.org.ai/schemas/v1/evalspec.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "hard_constraints": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$": {
+          "$ref": "#/$defs/MetricConstraint"
+        }
+      },
+      "type": "object"
+    },
+    "id": {
+      "$ref": "#/$defs/EvalSpecId"
+    },
+    "objectives": {
+      "additionalProperties": false,
+      "patternProperties": {
+        "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$": {
+          "$ref": "#/$defs/Objective"
+        }
+      },
+      "type": "object"
+    },
+    "oracle": {
+      "$ref": "#/$defs/VersionedOracle"
+    },
+    "required_checks": {
+      "items": {
+        "$ref": "#/$defs/CheckName"
+      },
+      "type": "array",
+      "uniqueItems": true
+    },
+    "version": {
+      "format": "uint32",
+      "minimum": 1,
+      "type": "integer"
+    }
+  },
+  "required": [
+    "id",
+    "version",
+    "oracle",
+    "hard_constraints",
+    "required_checks",
+    "objectives"
+  ],
+  "title": "EvalSpec",
+  "type": "object"
+}

@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "payload": {
+    "kind": "candidate",
+    "data": {
+      "id": "C-example",
+      "parent": "CH-base",
+      "base": {
+        "location": "example://fixture",
+        "hash": "347f6823d59faa0057d85fff54c178a614f516a303179fe85fbdaa5762d264da"
+      },
+      "cell": "ExampleCell",
+      "hypothesis": "H-example",
+      "patch": {
+        "location": "example://fixture",
+        "hash": "347f6823d59faa0057d85fff54c178a614f516a303179fe85fbdaa5762d264da"
+      },
+      "environment_hash": "9bc420ce3271d55f67ddba0541e9a2840e08501f3ca9f6bf364a5cb0f47f7560",
+      "provenance": {
+        "generator": {
+          "provider": "manual",
+          "model": "fixture",
+          "revision": null
+        },
+        "input_hash": "347f6823d59faa0057d85fff54c178a614f516a303179fe85fbdaa5762d264da",
+        "tool_versions": {
+          "ace": "0.1.0"
+        },
+        "parent_candidates": [],
+        "created_at": 1
+      }
+    }
+  }
+}

@@ -1,0 +1,152 @@
+import { z } from 'zod';
+import { type Env, type ExperimentState, type FinalizeJob, HttpError, coordinate, planSchema, identifier, hash,
+  strictJson, limitedBody, immutablePut, sha256, json } from './contracts';
+import { consumeEvaluation, consumeFinalization, failExperiment } from './pipeline';
+import { judge, readJudgement } from './judge';
+export { ExperimentCoordinator } from './coordinator';
+export { EvaluationSandbox } from './sandbox';
+export { ExperimentWorkflow } from './workflow';
+
+async function authenticate(request: Request, env: Env): Promise<void> {
+  if (!env.API_TOKEN || env.API_TOKEN.length < 32) throw new HttpError(503, 'API authentication is not configured');
+  const provided = request.headers.get('authorization') ?? '';
+  // Hash equal-length inputs before comparison; never log or forward the bearer.
+  const [actual, expected] = await Promise.all([sha256(new TextEncoder().encode(provided)), sha256(new TextEncoder().encode(`Bearer ${env.API_TOKEN}`))]);
+  let different = 0; for (let i = 0; i < actual.length; i++) different |= actual.charCodeAt(i) ^ expected.charCodeAt(i);
+  if (different) throw new HttpError(401, 'unauthorized');
+}
+async function status(env: Env, id: string): Promise<ExperimentState> {
+  identifier.parse(id); return await coordinate(env, id, 'status') as ExperimentState;
+}
+async function report(env: Env, id: string): Promise<Record<string, unknown>> {
+  const state = await status(env, id);
+  if (state.status !== 'completed' || !state.reportKey) throw new HttpError(409, 'experiment has no completed report');
+  const object = await env.ARTIFACTS.get(state.reportKey);
+  if (!object) throw new HttpError(503, 'completed report missing');
+  const bytes = await object.arrayBuffer();
+  if (await sha256(bytes) !== state.finalizer.resultHash) throw new HttpError(503, 'completed report corrupted');
+  return (JSON.parse(new TextDecoder().decode(bytes)) as { report: Record<string, unknown> }).report;
+}
+function publicStatus(state: ExperimentState): unknown {
+  return { experiment: state.experiment, project: state.project, status: state.status, total: state.count,
+    completed: state.completed, deadline: state.deadline, error: state.error ?? null };
+}
+export async function submit(env: Env, bytes: Uint8Array): Promise<Response> {
+  const p = planSchema.parse(strictJson(new TextDecoder().decode(bytes)));
+  const experiment = p.config.experiment;
+  const planHash = await sha256(bytes);
+  for (const artifact of new Set(p.module_hashes)) {
+    if (!await env.ARTIFACTS.head(`artifacts/${artifact}.wasm`)) throw new HttpError(409, `module ${artifact} must be uploaded first`);
+  }
+  const state = await coordinate(env, experiment, 'init', { experiment, project: p.config.project, planHash, count: p.module_hashes.length }) as ExperimentState;
+  await immutablePut(env.ARTIFACTS, `experiments/${experiment}/plan.json`, bytes);
+  await env.DB.prepare('INSERT INTO experiments (id, project, plan_hash, status, created_at) VALUES (?, ?, ?, ?, ?) ON CONFLICT(id) DO NOTHING')
+    .bind(experiment, p.config.project, planHash, state.status, Date.now()).run();
+  // An identical HTTP retry repairs interrupted registration/startup.
+  try { await env.EXPERIMENTS.create({ id: experiment, params: { experiment, planHash } }); }
+  catch (e) {
+    const existing = await env.EXPERIMENTS.get(experiment);
+    const observed = await existing.status();
+    if (!observed.status || observed.status === 'unknown') throw e;
+  }
+  return json({ experiment, planHash, status: state.status }, 202);
+}
+async function inspect(env: Env, id: string, kind: string, candidate?: string): Promise<unknown> {
+  if (kind === 'status') return publicStatus(await status(env, id));
+  const r = await report(env, id);
+  if (kind === 'run') return r;
+  if (kind === 'champion' && !r.champion) throw new HttpError(409, 'no Champion: baseline did not qualify');
+  if (kind === 'champion' || kind === 'knowledge') return { schema_version: 1, payload: { kind, data: r[kind] } };
+  identifier.parse(candidate);
+  const result = (r.results as { candidate: { id: string }; evidence: unknown }[]).find(result => result.candidate.id === candidate);
+  if (!result) throw new HttpError(404, 'candidate not registered');
+  return kind === 'evidence' ? { schema_version: 1, payload: { kind: 'evidence', data: result.evidence } } : result;
+}
+const tools = [
+  { name: 'ace_status', description: 'Read experiment status and completed task count.' },
+  { name: 'ace_champion', description: 'Read the locally scoped qualified Champion from a completed distributed experiment.' },
+  { name: 'ace_knowledge', description: 'Read evidence-backed knowledge from a completed experiment.' },
+  { name: 'ace_explain', description: 'Read measured evaluation and Rust policy decision for a registered candidate.' }
+].map(t => ({ ...t, inputSchema: { type: 'object', properties: { experiment: { type: 'string' }, ...(t.name === 'ace_explain' ? { candidate: { type: 'string' } } : {}) },
+  required: t.name === 'ace_explain' ? ['experiment', 'candidate'] : ['experiment'], additionalProperties: false } }));
+async function mcp(request: Request, env: Env): Promise<Response> {
+  const body = z.strictObject({ jsonrpc: z.literal('2.0'), id: z.union([z.string(), z.number(), z.null()]).optional(),
+    method: z.string(), params: z.unknown().optional() }).parse(strictJson(new TextDecoder().decode(await limitedBody(request, 16_384))));
+  if (body.id === undefined) {
+    if (body.method === 'notifications/initialized') return new Response(null, { status: 204 });
+    return new Response(null, { status: 202 });
+  }
+  const reply = (result: unknown) => json({ jsonrpc: '2.0', id: body.id, result });
+  if (body.method === 'initialize') return reply({ protocolVersion: '2025-03-26', capabilities: { tools: {} }, serverInfo: { name: 'ace', version: '0.1.0' } });
+  if (body.method === 'ping') return reply({});
+  if (body.method === 'tools/list') return reply({ tools });
+  if (body.method === 'tools/call') {
+    try {
+      const { name, arguments: args } = z.strictObject({ name: z.enum(['ace_status', 'ace_champion', 'ace_knowledge', 'ace_explain']),
+        arguments: z.strictObject({ experiment: identifier, candidate: identifier.optional() }) }).parse(body.params);
+      const value = await inspect(env, args.experiment, name.slice(4), args.candidate);
+      return reply({ content: [{ type: 'text', text: JSON.stringify(value) }], isError: false });
+    } catch (e) { return reply({ content: [{ type: 'text', text: e instanceof HttpError ? e.message : 'invalid tool arguments' }], isError: true }); }
+  }
+  return json({ jsonrpc: '2.0', id: body.id, error: { code: -32601, message: 'Method not found' } });
+}
+
+export default {
+  async fetch(request: Request, env: Env): Promise<Response> {
+    try {
+      await authenticate(request, env);
+      const url = new URL(request.url);
+      if (url.pathname === '/mcp' && request.method === 'POST') return await mcp(request, env);
+      const judgeRoute = /^\/v1\/judge\/(flash|clef)$/.exec(url.pathname);
+      if (judgeRoute && request.method === 'POST') return await judge(env, await limitedBody(request, 32_768), judgeRoute[1] as 'flash' | 'clef');
+      const judgement = /^\/v1\/judgements\/([0-9a-f]{64})(?:\/(context|request|response|attempt))?$/.exec(url.pathname);
+      if (judgement && request.method === 'GET') return await readJudgement(env, judgement[1]!, judgement[2]);
+      const artifact = /^\/v1\/artifacts\/([0-9a-f]{64})$/.exec(url.pathname);
+      if (artifact && request.method === 'PUT') {
+        const bytes = await limitedBody(request, 1_048_576);
+        if (await sha256(bytes) !== artifact[1]) throw new HttpError(400, 'artifact hash mismatch');
+        await immutablePut(env.ARTIFACTS, `artifacts/${artifact[1]}.wasm`, bytes); return json({ hash: artifact[1] }, 201);
+      }
+      if (artifact && request.method === 'GET') {
+        const object = await env.ARTIFACTS.get(`artifacts/${artifact[1]}.wasm`);
+        if (!object) throw new HttpError(404, 'artifact not found');
+        return new Response(object.body, { headers: { 'content-type': 'application/wasm' } });
+      }
+      if (url.pathname === '/v1/experiments' && request.method === 'POST') return await submit(env, await limitedBody(request, 131_072));
+      const route = /^\/v1\/experiments\/([^/]+)(?:\/(run|champion|knowledge|explain|evidence)(?:\/([^/]+))?)?$/.exec(url.pathname);
+      if (route && request.method === 'GET') return json(await inspect(env, route[1]!, route[2] ?? 'status', route[3]));
+      const file = /^\/v1\/experiments\/([^/]+)\/files\/(.+)$/.exec(url.pathname);
+      if (file && request.method === 'GET') {
+        const state = await status(env, file[1]!); await report(env, file[1]!);
+        if (!/^(?:run|environment|intent|experiment|knowledge|champion|baseline-champion)\.json$|^candidates\/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}\/(?:candidate|evaluation|evidence|decision)\.json$/.test(file[2]!)) throw new HttpError(404, 'file not found');
+        const prefix = state.reportKey!.slice(0, -'run.json'.length);
+        const object = await env.ARTIFACTS.get(prefix + file[2]);
+        if (!object) throw new HttpError(404, 'file not found');
+        return new Response(object.body, { headers: { 'content-type': 'application/json' } });
+      }
+      throw new HttpError(404, 'route not found');
+    } catch (e) {
+      if (e instanceof HttpError) return json({ error: e.message }, e.status);
+      if (e instanceof z.ZodError) return json({ error: 'invalid request', issues: e.issues.map(i => ({ path: i.path, message: i.message })) }, 400);
+      // Internal SDK errors can contain request headers: keep responses/logs generic.
+      return json({ error: 'control plane operation failed; retry the same request' }, 503);
+    }
+  },
+  async queue(batch: MessageBatch<unknown>, env: Env): Promise<void> {
+    for (const message of batch.messages) {
+      try {
+        let result: 'ack' | 'retry';
+        if (batch.queue === 'ace-evaluations') result = await consumeEvaluation(env, message.body);
+        else if (batch.queue === 'ace-finalizations') result = await consumeFinalization(env, message.body as FinalizeJob);
+        else if (batch.queue === 'ace-dead') {
+          const job = z.object({ experiment: identifier, planHash: hash }).parse(message.body);
+          await failExperiment(env, job, 'queue exhausted delivery retries; no candidate correctness conclusion'); result = 'ack';
+        } else throw new Error('unknown queue');
+        if (result === 'retry') message.retry({ delaySeconds: 60 }); else message.ack();
+      } catch (e) {
+        if (e instanceof z.ZodError) message.ack(); // malformed internal message has no registered identity
+        else message.retry({ delaySeconds: 60 });
+      }
+    }
+  }
+} satisfies ExportedHandler<Env>;

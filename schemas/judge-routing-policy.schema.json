@@ -1,0 +1,51 @@
+{
+  "$defs": {
+    "Probability": {
+      "format": "double",
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "type": "number"
+    },
+    "Text": {
+      "description": "Nonempty text; unlike identifiers this may contain spaces and Unicode.",
+      "minLength": 1,
+      "pattern": "\\S",
+      "type": "string"
+    }
+  },
+  "$id": "https://ace.org.ai/schemas/v1/judge-routing-policy.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "audit_basis_points": {
+      "format": "uint32",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "audit_seed": {
+      "$ref": "#/$defs/Text"
+    },
+    "hypothetical_filter_min": {
+      "$ref": "#/$defs/Probability"
+    },
+    "uncertain_max": {
+      "$ref": "#/$defs/Probability"
+    },
+    "uncertain_min": {
+      "$ref": "#/$defs/Probability"
+    },
+    "version": {
+      "$ref": "#/$defs/Text"
+    }
+  },
+  "required": [
+    "version",
+    "uncertain_min",
+    "uncertain_max",
+    "hypothetical_filter_min",
+    "audit_basis_points",
+    "audit_seed"
+  ],
+  "title": "RoutingPolicy",
+  "type": "object"
+}

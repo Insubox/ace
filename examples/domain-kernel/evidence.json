@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "payload": {
+    "kind": "evidence",
+    "data": {
+      "evidence": {
+        "id": "EV-example",
+        "experiment": "EXP-example",
+        "candidate": "C-example",
+        "cell": "ExampleCell",
+        "environment_hash": "9bc420ce3271d55f67ddba0541e9a2840e08501f3ca9f6bf364a5cb0f47f7560",
+        "evalspec": {
+          "id": "ES-example",
+          "version": 1
+        },
+        "measurements": {
+          "memory_mb": {
+            "value": 64.0,
+            "unit": "MB"
+          },
+          "p95_ms": {
+            "value": 12.5,
+            "unit": "ms"
+          }
+        },
+        "checks": {
+          "contract": "passed",
+          "isolation": "passed"
+        },
+        "oracle": {
+          "oracle": {
+            "id": "OR-example",
+            "version": 1
+          },
+          "outcome": "passed",
+          "output": {
+            "location": "example://fixture",
+            "hash": "347f6823d59faa0057d85fff54c178a614f516a303179fe85fbdaa5762d264da"
+          }
+        },
+        "evaluator": {
+          "stage": "l3",
+          "outcome": "passed",
+          "version": "fixture-v1",
+          "output": {
+            "location": "example://fixture",
+            "hash": "347f6823d59faa0057d85fff54c178a614f516a303179fe85fbdaa5762d264da"
+          }
+        },
+        "fast_judge": null,
+        "created_at": 1
+      },
+      "content_hash": "6c6f1e3733ef83acc2f74ccd13396029cf008f82c34bcfec4cc261a20a76ed7e"
+    }
+  }
+}

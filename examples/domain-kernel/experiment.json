@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "payload": {
+    "kind": "experiment",
+    "data": {
+      "id": "EXP-example",
+      "cell": "ExampleCell",
+      "intent": "INT-example",
+      "hypothesis": "H-example",
+      "parent_knowledge": null,
+      "candidates": [
+        "C-example"
+      ],
+      "environment_hash": "9bc420ce3271d55f67ddba0541e9a2840e08501f3ca9f6bf364a5cb0f47f7560",
+      "evalspec": {
+        "id": "ES-example",
+        "version": 1
+      },
+      "oracle": {
+        "id": "OR-example",
+        "version": 1
+      },
+      "status": "completed",
+      "evidence": [
+        "EV-example"
+      ],
+      "created_at": 1
+    }
+  }
+}

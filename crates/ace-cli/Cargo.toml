@@ -1,0 +1,24 @@
+[package]
+name = "ace-cli"
+description = "Local ACE domain and immutable evidence CLI"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[[bin]]
+name = "ace"
+path = "src/main.rs"
+
+[dependencies]
+ace-core.workspace = true
+ace-policy.workspace = true
+ace-protocol.workspace = true
+ace-runner.workspace = true
+ace-eval.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+clap.workspace = true
+tempfile.workspace = true
+
+[lints]
+workspace = true

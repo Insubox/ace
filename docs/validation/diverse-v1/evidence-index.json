@@ -1,0 +1,1226 @@
+{
+  "schema_version": 1,
+  "experiment": "EXP-36a011208b918caa9933f9c0506956030cd2be02694a0358ca457a3b3f926035",
+  "run_manifest_hash": "184d26f9cef0dcd6eb5f28fd143cb826cfdec5e9c7d4e3fc4fb2e03e74bf6410",
+  "environment_hash": "425ebe04e355bb4e06a4c4428cf696ad88b4f8c6f52e29eb31a187caa1cdf234",
+  "champion": "C-v09",
+  "checked_calls": 6305,
+  "advisory_only": true,
+  "production_filtering_authorized": false,
+  "actual_model_requests": {
+    "flash": 25,
+    "clef": 25
+  },
+  "actual_model_input_tokens": {
+    "flash": 20672,
+    "clef": 20672
+  },
+  "recorded_model_latency_sum_ms": {
+    "flash": 5144,
+    "clef": 8175
+  },
+  "input_price_estimate_usd": 0.00682176,
+  "estimate_is_bill": false,
+  "records": [
+    {
+      "candidate": "C-reference",
+      "split": "reference",
+      "file": "C-reference.json",
+      "input_hash": "b4dd20306cc859747fa416e24b30ddfdd0313bcd79943ecc197a3a137914f97d",
+      "judgements": {
+        "flash": {
+          "judgement": "15b19fd161f246227a9abf43a9751ff383b2c3b827d60d66fc388d4accb6cebe",
+          "files": {
+            "context": "b4dd20306cc859747fa416e24b30ddfdd0313bcd79943ecc197a3a137914f97d",
+            "request": "34b0133d939ad9a98c61e0ef2397bf8ab426cc61fb25083d50b1458fc3bdbca6",
+            "attempt": "fc624505e621b13e1bf3414ed445515f63e4a21dd1f42a24fbc21edf29fe54b8",
+            "response": "0c99b28ee05bfe02fedc1407f79b2843120f842b2485cc68e4a4f91dfbfa14df"
+          },
+          "model": "@cf/cloudflare/clef-flash",
+          "request_hash": "34b0133d939ad9a98c61e0ef2397bf8ab426cc61fb25083d50b1458fc3bdbca6",
+          "input_hash": "b4dd20306cc859747fa416e24b30ddfdd0313bcd79943ecc197a3a137914f97d",
+          "fault": null
+        },
+        "clef": {
+          "judgement": "14b952d909ed66d1a3ca3fc0bb2ca99fc5c873b84980e85c8036557093398f89",
+          "files": {
+            "context": "b4dd20306cc859747fa416e24b30ddfdd0313bcd79943ecc197a3a137914f97d",
+            "request": "40bd6746c961d45552f541767aba8c3b4a0842f51df1a74c631e4512913f02ba",
+            "attempt": "754451c7a41d34a0a74f887f042ba40b7f428cc0a9437627b53717c8d21872c8",
+            "response": "209701822df6c039e79ab318b896d1a2607b360bec7ab6017591815bda718a73"
+          },
+          "model": "@cf/cloudflare/clef",
+          "request_hash": "40bd6746c961d45552f541767aba8c3b4a0842f51df1a74c631e4512913f02ba",
+          "input_hash": "b4dd20306cc859747fa416e24b30ddfdd0313bcd79943ecc197a3a137914f97d",
+          "fault": null
+        }
+      },
+      "evaluation": {
+        "outcome": "qualified",
+        "stage": "l3",
+        "reason": "public workload, independent oracle and repeated benchmark calls passed",
+        "mean_fuel": 1248.642857142857,
+        "median_call_ns": 220.0,
+        "peak_linear_memory_bytes": 1114112,
+        "checked_calls": 480,
+        "output_hash": "6e7f95515a49367acee35549db6ed0d7342395cf3bf1be7b264a4f4d0eded47d"
+      },
+      "evidence": {
+        "id": "EV-28e3541d9534c3b5eaed55b6a234b2b34d1f8f6e81c4c557589ba7f7a1de9e9b",
+        "content_hash": "a86b1b0910c3e48fc43964ffe8c677fc3f75470b4effb359842e4fa1c2159102"
+      }
+    },
+    {
+      "candidate": "C-v01",
+      "split": "development",
+      "file": "C-v01.json",
+      "input_hash": "8063f2c19d212d89ffda3ced79ac1d6df20885ff456145e711b3618fb253815b",
+      "judgements": {
+        "flash": {
+          "judgement": "b0761c327c576079c9334f5a6c2bfcc245a5992d33822e7187dc30e6e4ec59e1",
+          "files": {
+            "context": "8063f2c19d212d89ffda3ced79ac1d6df20885ff456145e711b3618fb253815b",
+            "request": "8e0d76e6d7f1470dc0fcd7ba3a3555eef8dcf5d1d22c7e7caeede04253e5f6a9",
+            "attempt": "0dbd5cc194e5aff37b0eb3e77566f755ad13dcc345b92850305e204cc52dd1b3",
+            "response": "ea21040df7d5f0a00be8d50899954418eeaea96039583d25ef59a6fd8625c24c"
+          },
+          "model": "@cf/cloudflare/clef-flash",
+          "request_hash": "8e0d76e6d7f1470dc0fcd7ba3a3555eef8dcf5d1d22c7e7caeede04253e5f6a9",
+          "input_hash": "8063f2c19d212d89ffda3ced79ac1d6df20885ff456145e711b3618fb253815b",
+          "fault": null
+        },
+        "clef": {
+          "judgement": "4de55f001032c2864bde10c3ef4c21c7ae39077a25643b1ca9c44f508c7a95f5",
+          "files": {
+            "context": "8063f2c19d212d89ffda3ced79ac1d6df20885ff456145e711b3618fb253815b",
+            "request": "db093895715f4dd13521d8a14ae9483f7a29bfa960db2f8bd8be7264e0b63f79",
+            "attempt": "5b7c5bad1117811d640c75715ae9f9b8fb20a228aec4bf23951410ac9fb560fb",
+            "response": "88eabc1f8f3cebdb44b57f77b7ae4dff2438ebbdbfa8a97e405b39746d106222"
+          },
+          "model": "@cf/cloudflare/clef",
+          "request_hash": "db093895715f4dd13521d8a14ae9483f7a29bfa960db2f8bd8be7264e0b63f79",
+          "input_hash": "8063f2c19d212d89ffda3ced79ac1d6df20885ff456145e711b3618fb253815b",
+          "fault": null
+        }
+      },
+      "evaluation": {
+        "outcome": "qualified",
+        "stage": "l3",
+        "reason": "public workload, independent oracle and repeated benchmark calls passed",
+        "mean_fuel": 41.214285714285715,
+        "median_call_ns": 190.0,
+        "peak_linear_memory_bytes": 1048576,
+        "checked_calls": 480,
+        "output_hash": "6e7f95515a49367acee35549db6ed0d7342395cf3bf1be7b264a4f4d0eded47d"
+      },
+      "evidence": {
+        "id": "EV-b3ad494d456e9f429759e2e909db5f767adc1f2c08fe13e819ad02d80cd876fc",
+        "content_hash": "35c5b591539ddd8a388d9e7ab5b49f1fce445386d06ee454b2896a607090df0c"
+      }
+    },
+    {
+      "candidate": "C-v02",
+      "split": "development",
+      "file": "C-v02.json",
+      "input_hash": "0c4f6f9fe1157b258dd4e5f9531f0dd52c4d496c4217f0a7d1242dd75b12c2f6",
+      "judgements": {
+        "flash": {
+          "judgement": "91e62f2249e9bb5f7e780c05157a190a5087cd78de8307453f497f4f764c95c3",
+          "files": {
+            "context": "0c4f6f9fe1157b258dd4e5f9531f0dd52c4d496c4217f0a7d1242dd75b12c2f6",
+            "request": "64384fe272c7b5782131a1d8e26db2d83d0ef643abbefb72c576b4c39a7b8fee",
+            "attempt": "3395a4970f9b59f05d422532369505e7dabd41bec2f354c775682856035be822",
+            "response": "4ad7dcc786eabbc21e85e507239f686fd6f0cfcfa7a4626170ef497b4bb657a1"
+          },
+          "model": "@cf/cloudflare/clef-flash",
+          "request_hash": "64384fe272c7b5782131a1d8e26db2d83d0ef643abbefb72c576b4c39a7b8fee",
+          "input_hash": "0c4f6f9fe1157b258dd4e5f9531f0dd52c4d496c4217f0a7d1242dd75b12c2f6",
+          "fault": null
+        },
+        "clef": {
+          "judgement": "dd1d0649b7a3f4867e3899d63339e88e938d7e43de7579645066876fadf09e43",
+          "files": {
+            "context": "0c4f6f9fe1157b258dd4e5f9531f0dd52c4d496c4217f0a7d1242dd75b12c2f6",
+            "request": "3fa6990523eb68cd2235baee1ecf2136d0149d5dfd59f64dec9d6aeb41a40aae",
+            "attempt": "424cff6f714ca4e5743506d8cad327c5f15a31c71c5ac264608e3f720951dd41",
+            "response": "4579d8a50088a4da10811471d7bc612be9bc7bc8d4cfb67c6699923d0a60c353"
+          },
+          "model": "@cf/cloudflare/clef",
+          "request_hash": "3fa6990523eb68cd2235baee1ecf2136d0149d5dfd59f64dec9d6aeb41a40aae",
+          "input_hash": "0c4f6f9fe1157b258dd4e5f9531f0dd52c4d496c4217f0a7d1242dd75b12c2f6",
+          "fault": null
+        }
+      },
+      "evaluation": {
+        "outcome": "qualified",
+        "stage": "l3",
+        "reason": "public workload, independent oracle and repeated benchmark calls passed",
+        "mean_fuel": 19.571428571428573,
+        "median_call_ns": 140.0,
+        "peak_linear_memory_bytes": 1048576,
+        "checked_calls": 480,
+        "output_hash": "6e7f95515a49367acee35549db6ed0d7342395cf3bf1be7b264a4f4d0eded47d"
+      },
+      "evidence": {
+        "id": "EV-e93900dfbdb68e26d3a1539dd891dc1520c90ee994c880f98de05662e9f2b927",
+        "content_hash": "416d640bb81e8de3567a4640741a4bef1b23d6c4ba6d9360521c8af16ed6c812"
+      }
+    },
+    {
+      "candidate": "C-v03",
+      "split": "holdout",
+      "file": "C-v03.json",
+      "input_hash": "62a256b4075a84fdfe185fc194fe3431a02c4ea04e84673de4c1bb96cc393182",
+      "judgements": {
+        "flash": {
+          "judgement": "11abbe14ba532647cd8173c40d98a2a8f17bda57ea52858728e5395e44042c10",
+          "files": {
+            "context": "62a256b4075a84fdfe185fc194fe3431a02c4ea04e84673de4c1bb96cc393182",
+            "request": "e5091bd8de22092b46def8bf2df9f2fc6ed29bd492136f0fc3a206e58c1de2ac",
+            "attempt": "c792d43aa9ff5661be80212368079b715c5807eec4f774bb50380edf9d10f88c",
+            "response": "f67e1da9577b4fb7e2fc9df428c29c98846aad81e748d2214b9079282ee32b25"
+          },
+          "model": "@cf/cloudflare/clef-flash",
+          "request_hash": "e5091bd8de22092b46def8bf2df9f2fc6ed29bd492136f0fc3a206e58c1de2ac",
+          "input_hash": "62a256b4075a84fdfe185fc194fe3431a02c4ea04e84673de4c1bb96cc393182",
+          "fault": null
+        },
+        "clef": {
+          "judgement": "7634bf40c37b62de03dd81fb56ca96053b2ce352fb3b31d5e4ada0ec3572c647",
+          "files": {
+            "context": "62a256b4075a84fdfe185fc194fe3431a02c4ea04e84673de4c1bb96cc393182",
+            "request": "ed6f9bec15c413c1d23adbef023d6b78f9ded4a4682936751e4341a08465fbd5",
+            "attempt": "c03249817800ea1156a3234d632283b1624a297169c069780033b60841a8aa5b",
+            "response": "d434920048f89076badfa816c281f318443df38e7518ffe0750bf281948fa62f"
+          },
+          "model": "@cf/cloudflare/clef",
+          "request_hash": "ed6f9bec15c413c1d23adbef023d6b78f9ded4a4682936751e4341a08465fbd5",
+          "input_hash": "62a256b4075a84fdfe185fc194fe3431a02c4ea04e84673de4c1bb96cc393182",
+          "fault": null
+        }
+      },
+      "evaluation": {
+        "outcome": "qualified",
+        "stage": "l3",
+        "reason": "public workload, independent oracle and repeated benchmark calls passed",
+        "mean_fuel": 663.8571428571429,
+        "median_call_ns": 550.0,
+        "peak_linear_memory_bytes": 1048576,
+        "checked_calls": 480,
+        "output_hash": "6e7f95515a49367acee35549db6ed0d7342395cf3bf1be7b264a4f4d0eded47d"
+      },
+      "evidence": {
+        "id": "EV-480beacf415a8f058ad6a9aaab75804d443184756c547235ef3d9179f4bde014",
+        "content_hash": "a241e70c4182dcb8eddb5cbcb54e567441429c9eadac61e3bb86c95d8c2fb899"
+      }
+    },
+    {
+      "candidate": "C-v04",
+      "split": "development",
+      "file": "C-v04.json",
+      "input_hash": "9cb7e451078a9b539c4221531aa75b2a3eb570a0ae3aa2298232b1c8dc70f88a",
+      "judgements": {
+        "flash": {
+          "judgement": "0c0efe0c6c2bd885a799fe3d6094561e1c5605da69f0a5f0401f8470bd4f55da",
+          "files": {
+            "context": "9cb7e451078a9b539c4221531aa75b2a3eb570a0ae3aa2298232b1c8dc70f88a",
+            "request": "3f56a5139309486428000a4a242f4926289608bea43a967a8c16587447d59adc",
+            "attempt": "5a0fe958db9ef179e15f5123c2e96c335e3874b0b92b81dd17b7e058b3d4c1a5",
+            "response": "2971d2882f770904553acc94a386c03f4a9ae444904583c968cfa65792d83dd5"
+          },
+          "model": "@cf/cloudflare/clef-flash",
+          "request_hash": "3f56a5139309486428000a4a242f4926289608bea43a967a8c16587447d59adc",
+          "input_hash": "9cb7e451078a9b539c4221531aa75b2a3eb570a0ae3aa2298232b1c8dc70f88a",
+          "fault": null
+        },
+        "clef": {
+          "judgement": "4405d1580972498ac579fb3082ad75258bfa36d5999078c475a3bd0f0031503b",
+          "files": {
+            "context": "9cb7e451078a9b539c4221531aa75b2a3eb570a0ae3aa2298232b1c8dc70f88a",
+            "request": "9d6794335d8fcfa7bbc298a912d34daae0a5249699bfc08085715ee13b5429ba",
+            "attempt": "be555c0330e4a7b7f33181c60cdde66d5482ab5f1ef29215c2a20c3e62098eba",
+            "response": "7907b09b6bed222f7d34ce8bbe0766132e65fb06dd8aee6bcec9f13505ee9aa3"
+          },
+          "model": "@cf/cloudflare/clef",
+          "request_hash": "9d6794335d8fcfa7bbc298a912d34daae0a5249699bfc08085715ee13b5429ba",
+          "input_hash": "9cb7e451078a9b539c4221531aa75b2a3eb570a0ae3aa2298232b1c8dc70f88a",
+          "fault": null
+        }
+      },
+      "evaluation": {
+        "outcome": "qualified",
+        "stage": "l3",
+        "reason": "public workload, independent oracle and repeated benchmark calls passed",
+        "mean_fuel": 266.2857142857143,
+        "median_call_ns": 330.0,
+        "peak_linear_memory_bytes": 1048576,
+        "checked_calls": 480,
+        "output_hash": "6e7f95515a49367acee35549db6ed0d7342395cf3bf1be7b264a4f4d0eded47d"
+      },
+      "evidence": {
+        "id": "EV-b9dc94ce037e5924c0e91eb79a49485a0e464d6f6e2a2cbc1aee80771910c9f5",
+        "content_hash": "caaff2da7c274583d7acd9360d8cb23ea637cfe241c0f066df2888c45bebc8bf"
+      }
+    },
+    {
+      "candidate": "C-v05",
+      "split": "development",
+      "file": "C-v05.json",
+      "input_hash": "af036e26ce7b53118ca8fc3afb802cf42bde316724acb68de849b09e6d06d379",
+      "judgements": {
+        "flash": {
+          "judgement": "9316014be688aec85e66dd22ed354e113355e0fa0f4fd1ea4c611e40d04e9f8f",
+          "files": {
+            "context": "af036e26ce7b53118ca8fc3afb802cf42bde316724acb68de849b09e6d06d379",
+            "request": "44bf758c2cff1336fc171886a20a037fc554e9a8c2f891d6746d9923094322d7",
+            "attempt": "30c1eb30af63aca7047c6a68daf0d3eed936ed4f801a20d7b06a84a9f3ff7170",
+            "response": "6a3ecaded4204543a7a0488584ae2d81766d2929b5835a440b2954cb31ec9b76"
+          },
+          "model": "@cf/cloudflare/clef-flash",
+          "request_hash": "44bf758c2cff1336fc171886a20a037fc554e9a8c2f891d6746d9923094322d7",
+          "input_hash": "af036e26ce7b53118ca8fc3afb802cf42bde316724acb68de849b09e6d06d379",
+          "fault": null
+        },
+        "clef": {
+          "judgement": "7fc0745bacd19cbeae05ee307b6de54d0e3a2335b6fe46c596b325f9b2a765b9",
+          "files": {
+            "context": "af036e26ce7b53118ca8fc3afb802cf42bde316724acb68de849b09e6d06d379",
+            "request": "dc4aeaea763ba14af3accdb0d9462cc38924f4a7cdd2613b7a81876bd2758e07",
+            "attempt": "cbdcbaeb9066b3dffa55c921f57e72d30099c3b1b2eab3279d329e431c15a182",
+            "response": "5bfa3c9ecfb856111d37ff1537b4ac95036048e5a97600d46b3dea8dbb64f757"
+          },
+          "model": "@cf/cloudflare/clef",
+          "request_hash": "dc4aeaea763ba14af3accdb0d9462cc38924f4a7cdd2613b7a81876bd2758e07",
+          "input_hash": "af036e26ce7b53118ca8fc3afb802cf42bde316724acb68de849b09e6d06d379",
+          "fault": null
+        }
+      },
+      "evaluation": {
+        "outcome": "qualified",
+        "stage": "l3",
+        "reason": "public workload, independent oracle and repeated benchmark calls passed",
+        "mean_fuel": 53.42857142857143,
+        "median_call_ns": 250.0,
+        "peak_linear_memory_bytes": 1048576,
+        "checked_calls": 480,
+        "output_hash": "6e7f95515a49367acee35549db6ed0d7342395cf3bf1be7b264a4f4d0eded47d"
+      },
+      "evidence": {
+        "id": "EV-d0412c880543e9b979becd145478f40aa1eb685aac178f92c1d78f1d8e5e43b3",
+        "content_hash": "72632010d39b1f93ea0c6c509278888789eb30bef6169391c96a40bf1fd01d63"
+      }
+    },
+    {
+      "candidate": "C-v06",
+      "split": "holdout",
+      "file": "C-v06.json",
+      "input_hash": "b3947c7a0ad9da8ff2e7b53ef97813f88131a2c4ab673d5d8fbb6ed1b64c7a33",
+      "judgements": {
+        "flash": {
+          "judgement": "049e58e6a7b4c613ae48df415a28988f7326d295a0ccc151de1d90d7d110538b",
+          "files": {
+            "context": "b3947c7a0ad9da8ff2e7b53ef97813f88131a2c4ab673d5d8fbb6ed1b64c7a33",
+            "request": "39c799c24df4a82fa1d7a0335ca1d9b742e24426741b8ec9420fc9f47fb2ced8",
+            "attempt": "f80581e1cfd9edff9523437f681f0eae69a6ff9285433f8f895d68d68bb1767d",
+            "response": "51467be6e14bd55d7835675b7cbc23efc7deccc10e1fdf504f978233fb8f1745"
+          },
+          "model": "@cf/cloudflare/clef-flash",
+          "request_hash": "39c799c24df4a82fa1d7a0335ca1d9b742e24426741b8ec9420fc9f47fb2ced8",
+          "input_hash": "b3947c7a0ad9da8ff2e7b53ef97813f88131a2c4ab673d5d8fbb6ed1b64c7a33",
+          "fault": null
+        },
+        "clef": {
+          "judgement": "42666d04a7a8da616f9ecf53166b223dfa45d59f8cd89115ad6b568f637a0340",
+          "files": {
+            "context": "b3947c7a0ad9da8ff2e7b53ef97813f88131a2c4ab673d5d8fbb6ed1b64c7a33",
+            "request": "39252e5ade592adfa93b84d5ab1b267bf62881849df67519157b8a8d0bce2516",
+            "attempt": "f6c64b5e5ab0a496c7d9c6d5658a3d24b024bb1de61044fae6bca875bec9995d",
+            "response": "65f489e684401b91c5c3a58aeee4a44486550e2240855119fba2630e9c33af10"
+          },
+          "model": "@cf/cloudflare/clef",
+          "request_hash": "39252e5ade592adfa93b84d5ab1b267bf62881849df67519157b8a8d0bce2516",
+          "input_hash": "b3947c7a0ad9da8ff2e7b53ef97813f88131a2c4ab673d5d8fbb6ed1b64c7a33",
+          "fault": null
+        }
+      },
+      "evaluation": {
+        "outcome": "qualified",
+        "stage": "l3",
+        "reason": "public workload, independent oracle and repeated benchmark calls passed",
+        "mean_fuel": 47.214285714285715,
+        "median_call_ns": 270.0,
+        "peak_linear_memory_bytes": 1048576,
+        "checked_calls": 480,
+        "output_hash": "6e7f95515a49367acee35549db6ed0d7342395cf3bf1be7b264a4f4d0eded47d"
+      },
+      "evidence": {
+        "id": "EV-1347aaeadb4392662fabddce7ca9f5def442197d2aa3bf7fc3911d36c6f11806",
+        "content_hash": "2560c4fa9fb84778ff561f50a986a38a777117a12941444b60b5e38b9d5fd4f4"
+      }
+    },
+    {
+      "candidate": "C-v07",
+      "split": "development",
+      "file": "C-v07.json",
+      "input_hash": "70bb043f1fef28626c74e25d6ee682e581920643deca33d95aef1db69a3193c1",
+      "judgements": {
+        "flash": {
+          "judgement": "262c3bf6fa2fa6cd23b3f4d2835047af89756c2399918ea62f406bd983f85437",
+          "files": {
+            "context": "70bb043f1fef28626c74e25d6ee682e581920643deca33d95aef1db69a3193c1",
+            "request": "9a0a4d1b8e68d67b15d6c3db6a9b206ad7ac32c9b8286496f9c0ba202c0e62f0",
+            "attempt": "e29a6aa22e1ed1733a31a86e364699d16995b2f4907aae6c04c7070c7670e22c",
+            "response": "5833785e4dd5036a957b00a667f5afb7c8175246d09af5e7768d85eacad558d1"
+          },
+          "model": "@cf/cloudflare/clef-flash",
+          "request_hash": "9a0a4d1b8e68d67b15d6c3db6a9b206ad7ac32c9b8286496f9c0ba202c0e62f0",
+          "input_hash": "70bb043f1fef28626c74e25d6ee682e581920643deca33d95aef1db69a3193c1",
+          "fault": null
+        },
+        "clef": {
+          "judgement": "7c17fe5186229986218978bbfcc68b8ae9dde3b2eb4c710447ce2433f1f64d15",
+          "files": {
+            "context": "70bb043f1fef28626c74e25d6ee682e581920643deca33d95aef1db69a3193c1",
+            "request": "006b47ec74d55f83b4b3f76ff61dc5445f8e147fc026e2cae945fd11fb36e5e8",
+            "attempt": "3f55df008adc75f691122630b793cd6ae13c9101be8e36fc586f8db3b75dafaa",
+            "response": "c119de5ac4862771ff0ecfe8a19d54027028d93125d0398d96978a2a246ab9d1"
+          },
+          "model": "@cf/cloudflare/clef",
+          "request_hash": "006b47ec74d55f83b4b3f76ff61dc5445f8e147fc026e2cae945fd11fb36e5e8",
+          "input_hash": "70bb043f1fef28626c74e25d6ee682e581920643deca33d95aef1db69a3193c1",
+          "fault": null
+        }
+      },
+      "evaluation": {
+        "outcome": "qualified",
+        "stage": "l3",
+        "reason": "public workload, independent oracle and repeated benchmark calls passed",
+        "mean_fuel": 72.0,
+        "median_call_ns": 230.0,
+        "peak_linear_memory_bytes": 1048576,
+        "checked_calls": 480,
+        "output_hash": "6e7f95515a49367acee35549db6ed0d7342395cf3bf1be7b264a4f4d0eded47d"
+      },
+      "evidence": {
+        "id": "EV-18cc880f08bfccf12676c949d153b79399f04a4cf164c517a7c5d0af6c29f6e2",
+        "content_hash": "23f7733fe5db8454bab25b1ab1c193d289846590276a3736f79a0ba9e06d0fd5"
+      }
+    },
+    {
+      "candidate": "C-v08",
+      "split": "development",
+      "file": "C-v08.json",
+      "input_hash": "fcd2b1f07da6a966358f28e4fe56a50c2d09cc7a2993c04a2ad7c6cecaa57f1d",
+      "judgements": {
+        "flash": {
+          "judgement": "1d9084e99b6aa9007524ada34a159c9ee05eb854fccc4b7f1d6d5a8847230986",
+          "files": {
+            "context": "fcd2b1f07da6a966358f28e4fe56a50c2d09cc7a2993c04a2ad7c6cecaa57f1d",
+            "request": "e2bd4d40eaba5627ecb47b2ddc977e63868f3598d5861ad425a9568431b1243a",
+            "attempt": "8da46bdfa34f523a313ede981ca303820b7f5fe1f0b0e7c1996532b3c473b3c3",
+            "response": "1b89a18d0475b5e830bc18dd4fc219a12e1f55c92f0c7ecb5dba539cddfe2fa2"
+          },
+          "model": "@cf/cloudflare/clef-flash",
+          "request_hash": "e2bd4d40eaba5627ecb47b2ddc977e63868f3598d5861ad425a9568431b1243a",
+          "input_hash": "fcd2b1f07da6a966358f28e4fe56a50c2d09cc7a2993c04a2ad7c6cecaa57f1d",
+          "fault": null
+        },
+        "clef": {
+          "judgement": "c06a6021ac5ee2b849de06045043ba023c50db5b9185e8e40992241e705f6634",
+          "files": {
+            "context": "fcd2b1f07da6a966358f28e4fe56a50c2d09cc7a2993c04a2ad7c6cecaa57f1d",
+            "request": "33ec4caa62a153cd456f86f872b7ffc7e7bfeda2cfc99be58c801a2f63c8b711",
+            "attempt": "7d19766e6da03133e9af7e6336b8e1508e8a91e61e8a629b8f764896c6fc1084",
+            "response": "2a31adb629edf970d418923862871b944573bb9927f952f9387122d27835b53b"
+          },
+          "model": "@cf/cloudflare/clef",
+          "request_hash": "33ec4caa62a153cd456f86f872b7ffc7e7bfeda2cfc99be58c801a2f63c8b711",
+          "input_hash": "fcd2b1f07da6a966358f28e4fe56a50c2d09cc7a2993c04a2ad7c6cecaa57f1d",
+          "fault": null
+        }
+      },
+      "evaluation": {
+        "outcome": "qualified",
+        "stage": "l3",
+        "reason": "public workload, independent oracle and repeated benchmark calls passed",
+        "mean_fuel": 37.714285714285715,
+        "median_call_ns": 230.0,
+        "peak_linear_memory_bytes": 1048576,
+        "checked_calls": 480,
+        "output_hash": "6e7f95515a49367acee35549db6ed0d7342395cf3bf1be7b264a4f4d0eded47d"
+      },
+      "evidence": {
+        "id": "EV-895c626637df8d425d8c378e327bdab9a298b6a287f2501eee638d19714ff001",
+        "content_hash": "68aadb870bd79a29bebc23e159e70fca16dbbcea14172e52d3c03bb6c38a3e6f"
+      }
+    },
+    {
+      "candidate": "C-v09",
+      "split": "holdout",
+      "file": "C-v09.json",
+      "input_hash": "82ce25fa7b553263617d20f61bb046093fd0029504e5dd4c31c6649fcb2513d9",
+      "judgements": {
+        "flash": {
+          "judgement": "dcc8e63a07525263d7c0ad1ab5e6f3ddc0c5501d5b39112d18675d080345fe3c",
+          "files": {
+            "context": "82ce25fa7b553263617d20f61bb046093fd0029504e5dd4c31c6649fcb2513d9",
+            "request": "612884bbad776ed31639a8cebdd785f13ba8b9f95ef2fcd3e196ab594834da02",
+            "attempt": "fc156c9564a2d29870efb5f677eb385452d3393dfd8c97039ce40000fe80985b",
+            "response": "1cb07c8146de0bf784222cd8678351c2c5515e037f99ccbad56cad71f3ca44a0"
+          },
+          "model": "@cf/cloudflare/clef-flash",
+          "request_hash": "612884bbad776ed31639a8cebdd785f13ba8b9f95ef2fcd3e196ab594834da02",
+          "input_hash": "82ce25fa7b553263617d20f61bb046093fd0029504e5dd4c31c6649fcb2513d9",
+          "fault": null
+        },
+        "clef": {
+          "judgement": "cf139e86f63f8c8178f79ed5da82395f17d2112f82d63d95e9390d621a9a68eb",
+          "files": {
+            "context": "82ce25fa7b553263617d20f61bb046093fd0029504e5dd4c31c6649fcb2513d9",
+            "request": "7e84c9e4aca0988c694ab18ef28bc6fa8ece0a4bf96febfeda126eb3c326e74b",
+            "attempt": "5dce02135f91217678c0e5b4fc6549fe702f61a51e09063f5852db6b4b484797",
+            "response": "d2ca4c8b6f8f728f0ab31bd59eb1632155eab9ecf61a4de442df64ea52de5b35"
+          },
+          "model": "@cf/cloudflare/clef",
+          "request_hash": "7e84c9e4aca0988c694ab18ef28bc6fa8ece0a4bf96febfeda126eb3c326e74b",
+          "input_hash": "82ce25fa7b553263617d20f61bb046093fd0029504e5dd4c31c6649fcb2513d9",
+          "fault": null
+        }
+      },
+      "evaluation": {
+        "outcome": "qualified",
+        "stage": "l3",
+        "reason": "public workload, independent oracle and repeated benchmark calls passed",
+        "mean_fuel": 19.0,
+        "median_call_ns": 270.0,
+        "peak_linear_memory_bytes": 1048576,
+        "checked_calls": 480,
+        "output_hash": "6e7f95515a49367acee35549db6ed0d7342395cf3bf1be7b264a4f4d0eded47d"
+      },
+      "evidence": {
+        "id": "EV-7a7e0d171f3da1eaa4b3e0efadafa8647fdab787d6497a17187ef2d6eca86caf",
+        "content_hash": "d9aae54d3d91bf7d27437ee2693bdfda121397e26b674b16230f517a97736d55"
+      }
+    },
+    {
+      "candidate": "C-v10",
+      "split": "development",
+      "file": "C-v10.json",
+      "input_hash": "1c3ce2fada0543afb2f831361f271133537382072f60cc7dfbe950629cdeb877",
+      "judgements": {
+        "flash": {
+          "judgement": "02180138bfd912e8869aeb5c4b9569dd8288c7ca17bf7f27708e19906fa185d4",
+          "files": {
+            "context": "1c3ce2fada0543afb2f831361f271133537382072f60cc7dfbe950629cdeb877",
+            "request": "83b2b1cff142a46db5917f0d2353c9166ea5750c53f22d82f889177eae51147b",
+            "attempt": "fd272b1a1cc5716a4168ea5c0b363ddfa084465ea03a7becc94806d8503f2ef7",
+            "response": "5afdfcba48b2f519a800b57feb06028cb831e6ffb9e703615b77d686aeb5a609"
+          },
+          "model": "@cf/cloudflare/clef-flash",
+          "request_hash": "83b2b1cff142a46db5917f0d2353c9166ea5750c53f22d82f889177eae51147b",
+          "input_hash": "1c3ce2fada0543afb2f831361f271133537382072f60cc7dfbe950629cdeb877",
+          "fault": null
+        },
+        "clef": {
+          "judgement": "627803a3699a1ec29daee08540e87afb730197855f64d9b81ca161da61b912ce",
+          "files": {
+            "context": "1c3ce2fada0543afb2f831361f271133537382072f60cc7dfbe950629cdeb877",
+            "request": "a037cd49c40f129f1899095ef0058337825d8fcd9207642421fed030bf94b4d3",
+            "attempt": "67d00672a242b6fe9e90ff5770e15fdab81f6cb70d50076ee54f70780cfcd9f6",
+            "response": "d5e57e8d27c8fe42a8f7b33c6fd55eb3ef5e32ad496622c03812d5f9c65349b6"
+          },
+          "model": "@cf/cloudflare/clef",
+          "request_hash": "a037cd49c40f129f1899095ef0058337825d8fcd9207642421fed030bf94b4d3",
+          "input_hash": "1c3ce2fada0543afb2f831361f271133537382072f60cc7dfbe950629cdeb877",
+          "fault": null
+        }
+      },
+      "evaluation": {
+        "outcome": "qualified",
+        "stage": "l3",
+        "reason": "public workload, independent oracle and repeated benchmark calls passed",
+        "mean_fuel": 223.28571428571428,
+        "median_call_ns": 310.0,
+        "peak_linear_memory_bytes": 1048576,
+        "checked_calls": 480,
+        "output_hash": "6e7f95515a49367acee35549db6ed0d7342395cf3bf1be7b264a4f4d0eded47d"
+      },
+      "evidence": {
+        "id": "EV-c60b6122e43d3b4d35dcd7460f6e75d43da34b6a4fa29beee319ac03afa29e45",
+        "content_hash": "1902786e1706ae4b3da1bf0621d0651e950cceb61c8dea0f59286ab2602fcef3"
+      }
+    },
+    {
+      "candidate": "C-v11",
+      "split": "development",
+      "file": "C-v11.json",
+      "input_hash": "1d35210f274a070d8a5b955f1eebcb68bbf17fa27f8954774960f423cff2651a",
+      "judgements": {
+        "flash": {
+          "judgement": "f8ccb0051a3d0095d1efe900a0f2368f94c30e126acb6018e080d3bc6f35e019",
+          "files": {
+            "context": "1d35210f274a070d8a5b955f1eebcb68bbf17fa27f8954774960f423cff2651a",
+            "request": "0af7c97e22dc229e5420dd80286617628e492d2db02a1cfb8410fc24dc36d7f4",
+            "attempt": "d86df9d6b69d01b88c1a0a64d86d061f2a4c9f2c7e2faa78db3975ee8ba73ec4",
+            "response": "479e46c16023a19bed0686491ef77546293fcd2ed421766a11c038294611478e"
+          },
+          "model": "@cf/cloudflare/clef-flash",
+          "request_hash": "0af7c97e22dc229e5420dd80286617628e492d2db02a1cfb8410fc24dc36d7f4",
+          "input_hash": "1d35210f274a070d8a5b955f1eebcb68bbf17fa27f8954774960f423cff2651a",
+          "fault": null
+        },
+        "clef": {
+          "judgement": "fc0119a6f6614a37dddc19f788d6708e7ec62f97b74e61805f2f4434c73718b5",
+          "files": {
+            "context": "1d35210f274a070d8a5b955f1eebcb68bbf17fa27f8954774960f423cff2651a",
+            "request": "946e849feecb2ec46d1521622d9528d2572aa2d50061f9bb9280ac98c729d50d",
+            "attempt": "bccf2001b70e1425b3f46190ea456f70bedcb2e54c7cc7d00df0bb0121666766",
+            "response": "e104d5b1ce3afa30d15e350b0c386ebbfe52c1f324c7f33482248f59d216c1b8"
+          },
+          "model": "@cf/cloudflare/clef",
+          "request_hash": "946e849feecb2ec46d1521622d9528d2572aa2d50061f9bb9280ac98c729d50d",
+          "input_hash": "1d35210f274a070d8a5b955f1eebcb68bbf17fa27f8954774960f423cff2651a",
+          "fault": null
+        }
+      },
+      "evaluation": {
+        "outcome": "qualified",
+        "stage": "l3",
+        "reason": "public workload, independent oracle and repeated benchmark calls passed",
+        "mean_fuel": 525.3571428571429,
+        "median_call_ns": 190.0,
+        "peak_linear_memory_bytes": 1114112,
+        "checked_calls": 480,
+        "output_hash": "6e7f95515a49367acee35549db6ed0d7342395cf3bf1be7b264a4f4d0eded47d"
+      },
+      "evidence": {
+        "id": "EV-2afb998033b8d23c1298624cae1cbe1ee6b7b058f9be9f3f385a6dab4d077ad0",
+        "content_hash": "409c352716cc499730d547bd0396061a155755fc044e596451eb3e92d25b79a6"
+      }
+    },
+    {
+      "candidate": "C-v12",
+      "split": "holdout",
+      "file": "C-v12.json",
+      "input_hash": "5f9ba1e63202705c61dfe6274506eb6179e8f12b031094e43a74959f3cfc1d91",
+      "judgements": {
+        "flash": {
+          "judgement": "d6c7e344d2d1882f98d7759b79768e367d8da071216587d88e8d762dc9d27f36",
+          "files": {
+            "context": "5f9ba1e63202705c61dfe6274506eb6179e8f12b031094e43a74959f3cfc1d91",
+            "request": "ee0a246385218c1c07021a96a7f649ef9c4fe29399b3d13458b874fbec83a397",
+            "attempt": "99936358e48a4aa9111bbd58a17c4c98ffc7f32cbc1364216a4e2b1fade210e2",
+            "response": "f317e4acdcc37c5e053edde359d5d0ce9a659ead3693e11757f9aeea77ec7dbd"
+          },
+          "model": "@cf/cloudflare/clef-flash",
+          "request_hash": "ee0a246385218c1c07021a96a7f649ef9c4fe29399b3d13458b874fbec83a397",
+          "input_hash": "5f9ba1e63202705c61dfe6274506eb6179e8f12b031094e43a74959f3cfc1d91",
+          "fault": null
+        },
+        "clef": {
+          "judgement": "3057d295728b55179ef197f305aa71ae37d7bc6d1f656921ca339c896ed2850b",
+          "files": {
+            "context": "5f9ba1e63202705c61dfe6274506eb6179e8f12b031094e43a74959f3cfc1d91",
+            "request": "6572e50bb980eee579f2cafb63184f33d454efc22124d394f2f03400ffea022d",
+            "attempt": "f8122b63375b1ec7768e34650670fad8679beb0ce94383559c58940f7641d064",
+            "response": "c337af8cdf9aa87bc1a19a462b1385fe8d62c93280c05dc67d9baee49fa51393"
+          },
+          "model": "@cf/cloudflare/clef",
+          "request_hash": "6572e50bb980eee579f2cafb63184f33d454efc22124d394f2f03400ffea022d",
+          "input_hash": "5f9ba1e63202705c61dfe6274506eb6179e8f12b031094e43a74959f3cfc1d91",
+          "fault": null
+        }
+      },
+      "evaluation": {
+        "outcome": "qualified",
+        "stage": "l3",
+        "reason": "public workload, independent oracle and repeated benchmark calls passed",
+        "mean_fuel": 166.35714285714286,
+        "median_call_ns": 500.0,
+        "peak_linear_memory_bytes": 1048576,
+        "checked_calls": 480,
+        "output_hash": "6e7f95515a49367acee35549db6ed0d7342395cf3bf1be7b264a4f4d0eded47d"
+      },
+      "evidence": {
+        "id": "EV-814e49b5798b1ec940032cc9ceee229c19246c3a720383a456d22943d0284c97",
+        "content_hash": "5f8116450af6b2b525f31a06a4e01066ea045db89cfbf79c860ea854ebd10264"
+      }
+    },
+    {
+      "candidate": "C-v13",
+      "split": "development",
+      "file": "C-v13.json",
+      "input_hash": "08f19862c55fce7f1cadbc9198bf9a86b6cbab57940207123f640a305d0d7c09",
+      "judgements": {
+        "flash": {
+          "judgement": "3f02f4df5a97aca381ba7e9b26f26d538146afad3972d19e1c9832ef1577b65c",
+          "files": {
+            "context": "08f19862c55fce7f1cadbc9198bf9a86b6cbab57940207123f640a305d0d7c09",
+            "request": "48dfc77bd5098726df43b4b6375bcaef15480793fab355a2531cd265e36dbe18",
+            "attempt": "0954d7da2d0d9ac74668b0d710e04686a675577cda1767b587b4200b59bef906",
+            "response": "e8bb2f49d1606e1d2ddc14baa3ee1d6e401284682a42f872d7a2c7c7ee83e8f3"
+          },
+          "model": "@cf/cloudflare/clef-flash",
+          "request_hash": "48dfc77bd5098726df43b4b6375bcaef15480793fab355a2531cd265e36dbe18",
+          "input_hash": "08f19862c55fce7f1cadbc9198bf9a86b6cbab57940207123f640a305d0d7c09",
+          "fault": null
+        },
+        "clef": {
+          "judgement": "436a7738253cfb007a7fbf969579fd14444daad9291b6272a55e2a57e6607be6",
+          "files": {
+            "context": "08f19862c55fce7f1cadbc9198bf9a86b6cbab57940207123f640a305d0d7c09",
+            "request": "65a4fcf5a2e9af086c9d7c7de03e804446d42d6cbb0cbd019b6744d2a5c1ded8",
+            "attempt": "71c9f74079f9a6ec8da8721ce7c3cfcfeb69623b8fd2e2d6199a4a7edb44bf5b",
+            "response": "96e05c51752289d9fb4d94a398fc255b3f12597862a76232e03180d5caf84be1"
+          },
+          "model": "@cf/cloudflare/clef",
+          "request_hash": "65a4fcf5a2e9af086c9d7c7de03e804446d42d6cbb0cbd019b6744d2a5c1ded8",
+          "input_hash": "08f19862c55fce7f1cadbc9198bf9a86b6cbab57940207123f640a305d0d7c09",
+          "fault": null
+        }
+      },
+      "evaluation": {
+        "outcome": "failed_correctness",
+        "stage": "l3",
+        "reason": "independent oracle rejected output on call 2",
+        "mean_fuel": null,
+        "median_call_ns": null,
+        "peak_linear_memory_bytes": 1048576,
+        "checked_calls": 2,
+        "output_hash": "ecc48a7fc2b23afaa84f1b068d1d8391d2296fb0bcf0acd274b863dfadeffe22"
+      },
+      "evidence": {
+        "id": "EV-a9cdab02517eaf85e6cfb3800ec0499a731737166a14ef1cd015e5d00e71307f",
+        "content_hash": "503e8535f106cb3af85bd00162e9590a37a90ec8d6e20145e7777c359709fde8"
+      }
+    },
+    {
+      "candidate": "C-v14",
+      "split": "development",
+      "file": "C-v14.json",
+      "input_hash": "472cf536b5fc2b4da1eecc06abd920acc52f2a05eb82dc96885507fb8e6e8aff",
+      "judgements": {
+        "flash": {
+          "judgement": "94a9c7df6289295df953feeddd4e3bc5caf38e6badd3b2a53eabfc4f0dedb284",
+          "files": {
+            "context": "472cf536b5fc2b4da1eecc06abd920acc52f2a05eb82dc96885507fb8e6e8aff",
+            "request": "785167deaa859bbeb951d5a1a26a436c7b041e988288076813c139eb8eca0ab9",
+            "attempt": "d8b39b482694d5b55fd934f7068fe55c7fb3b71cda9be22ae9fc6a5b5f47ca55",
+            "response": "834cbcd346989e40e2998ef18df9dc908716e52d71537a11d3ea3b28962006d1"
+          },
+          "model": "@cf/cloudflare/clef-flash",
+          "request_hash": "785167deaa859bbeb951d5a1a26a436c7b041e988288076813c139eb8eca0ab9",
+          "input_hash": "472cf536b5fc2b4da1eecc06abd920acc52f2a05eb82dc96885507fb8e6e8aff",
+          "fault": null
+        },
+        "clef": {
+          "judgement": "65535cd9daa5e44cbfec0ff8f535f26d9bb0b5038619251607fb0341caf3c50d",
+          "files": {
+            "context": "472cf536b5fc2b4da1eecc06abd920acc52f2a05eb82dc96885507fb8e6e8aff",
+            "request": "4b1d63bb454162faa313c164a938e5854de725936d1b39144d591d5419a97330",
+            "attempt": "3d62d05b6ee6d3024e22d6586a9dca0b05c0ea4bd6a5add6ed3cf65d47e329a8",
+            "response": "24c3fbf29701fddec958e022378460e306eadd58f71154fc305877e9e5ad8bf4"
+          },
+          "model": "@cf/cloudflare/clef",
+          "request_hash": "4b1d63bb454162faa313c164a938e5854de725936d1b39144d591d5419a97330",
+          "input_hash": "472cf536b5fc2b4da1eecc06abd920acc52f2a05eb82dc96885507fb8e6e8aff",
+          "fault": null
+        }
+      },
+      "evaluation": {
+        "outcome": "failed_correctness",
+        "stage": "l3",
+        "reason": "independent oracle rejected output on call 8",
+        "mean_fuel": null,
+        "median_call_ns": null,
+        "peak_linear_memory_bytes": 1048576,
+        "checked_calls": 8,
+        "output_hash": "0064d660f516fd40a316304edbbc27b126467264323ff35393b6a2a9c153748b"
+      },
+      "evidence": {
+        "id": "EV-b85b31d5ec4aaad5fab9ef955f6139782110225d9e2f0c4e36a50099f5294053",
+        "content_hash": "61b1d26e8974fb3df45e5fbbfe25aeb2c3bc64cffdd2d713ee3748fc5be4798c"
+      }
+    },
+    {
+      "candidate": "C-v15",
+      "split": "holdout",
+      "file": "C-v15.json",
+      "input_hash": "8c847787d8fc349ec6d880367bfd330446109cbb17a7a5f506d81ebef0709895",
+      "judgements": {
+        "flash": {
+          "judgement": "091dfde009c3b3dc2a61ec3cf6467044b361cc147281a2ab3e6707ccf48bd729",
+          "files": {
+            "context": "8c847787d8fc349ec6d880367bfd330446109cbb17a7a5f506d81ebef0709895",
+            "request": "830f3b50997adb78371b4722d49b18f79eb033f6d0144a8568f0aaaad4b25a6b",
+            "attempt": "1e409ff7cdc0fc6d9ccf79cda41ee3b1479156f704ca5c2d96272d66b17993ee",
+            "response": "7eb378a4e105589207679fb8051945fd037bd3cdb8f25e672a80df57b6ed8488"
+          },
+          "model": "@cf/cloudflare/clef-flash",
+          "request_hash": "830f3b50997adb78371b4722d49b18f79eb033f6d0144a8568f0aaaad4b25a6b",
+          "input_hash": "8c847787d8fc349ec6d880367bfd330446109cbb17a7a5f506d81ebef0709895",
+          "fault": null
+        },
+        "clef": {
+          "judgement": "0ab3b257fc1784330b22af5c552d1cd6bcc5706a7c9a535288a7bff329457c47",
+          "files": {
+            "context": "8c847787d8fc349ec6d880367bfd330446109cbb17a7a5f506d81ebef0709895",
+            "request": "b124b04764e2483cd68cd1e90ce585c77bd0de758bafd90579fa10c6ed86b175",
+            "attempt": "ccc32b72dd073eb8a91ff8ebce5e205be489216665ea3b2c2e538df956bed205",
+            "response": "a58540231c3b2ce584931cbdc8276759857186b8c7df548cb861a82b176f0d74"
+          },
+          "model": "@cf/cloudflare/clef",
+          "request_hash": "b124b04764e2483cd68cd1e90ce585c77bd0de758bafd90579fa10c6ed86b175",
+          "input_hash": "8c847787d8fc349ec6d880367bfd330446109cbb17a7a5f506d81ebef0709895",
+          "fault": null
+        }
+      },
+      "evaluation": {
+        "outcome": "failed_correctness",
+        "stage": "l3",
+        "reason": "independent oracle rejected output on call 1",
+        "mean_fuel": null,
+        "median_call_ns": null,
+        "peak_linear_memory_bytes": 1048576,
+        "checked_calls": 1,
+        "output_hash": "c3e42245ffdff31c980d63b232de1414ca2461a08c6efccca2af96737ef4d068"
+      },
+      "evidence": {
+        "id": "EV-251a77d063a074844a1a910d19c002c32b7bd23b9a94575d1f560a73e6f70152",
+        "content_hash": "40d61b7b8d26ae5e372536db31e8c7487dc804f347a2f5819c974c24d73beff9"
+      }
+    },
+    {
+      "candidate": "C-v16",
+      "split": "development",
+      "file": "C-v16.json",
+      "input_hash": "8323c67cc8802257d459ce2c016f1e3a4bb2af4830c5e2532e2dbc9791b47b54",
+      "judgements": {
+        "flash": {
+          "judgement": "2ce2025b1883d791a06301433b5d1b45ec15516566e5bf27d1e0d8afe7a5ade6",
+          "files": {
+            "context": "8323c67cc8802257d459ce2c016f1e3a4bb2af4830c5e2532e2dbc9791b47b54",
+            "request": "353eb7db4cebb924b32609d542683d9c13d1865d7fd9247c2e3738e28161a221",
+            "attempt": "563eee5c0d4540a51f07d190f6de66c8293ca63ed2ca247d69f75e7eaaa83816",
+            "response": "a5ab588478a7daabdd9bac69ffdfd0211db99e6addee0d3edc259ba67596b8fb"
+          },
+          "model": "@cf/cloudflare/clef-flash",
+          "request_hash": "353eb7db4cebb924b32609d542683d9c13d1865d7fd9247c2e3738e28161a221",
+          "input_hash": "8323c67cc8802257d459ce2c016f1e3a4bb2af4830c5e2532e2dbc9791b47b54",
+          "fault": null
+        },
+        "clef": {
+          "judgement": "e2678545bf57769d57f7450dfa056eed82a44bebc62f1188340b6176816ffc09",
+          "files": {
+            "context": "8323c67cc8802257d459ce2c016f1e3a4bb2af4830c5e2532e2dbc9791b47b54",
+            "request": "e43f749ebb3c965df6bfdf2dc602e9584a325e5830188153487d3fdf1178c765",
+            "attempt": "a68da408a7c681cf0baffba16595a484ac3fd400055143b5b5d2e315e8c275b1",
+            "response": "a50d1e5dc22b7ab2005db1b36955ff807a2a90709f74660a5f351235613967e2"
+          },
+          "model": "@cf/cloudflare/clef",
+          "request_hash": "e43f749ebb3c965df6bfdf2dc602e9584a325e5830188153487d3fdf1178c765",
+          "input_hash": "8323c67cc8802257d459ce2c016f1e3a4bb2af4830c5e2532e2dbc9791b47b54",
+          "fault": null
+        }
+      },
+      "evaluation": {
+        "outcome": "failed_correctness",
+        "stage": "l3",
+        "reason": "independent oracle rejected output on call 8",
+        "mean_fuel": null,
+        "median_call_ns": null,
+        "peak_linear_memory_bytes": 1048576,
+        "checked_calls": 8,
+        "output_hash": "c0a37740e1d843c5d49dab0eefe3accf5c0b44817223063f5955b13239737091"
+      },
+      "evidence": {
+        "id": "EV-b00e6ef124a85a7098e3c42a9709045186585a57d0447415a10991bf9375fa3a",
+        "content_hash": "ec024535632ad2fe418a9e50429d0096a7cee735c0343efcd1bf51c0e810c748"
+      }
+    },
+    {
+      "candidate": "C-v17",
+      "split": "development",
+      "file": "C-v17.json",
+      "input_hash": "12bc3732ca8c7fa6fb125d8427c1538b33412b03ae0b78ae4039450c0805ae1e",
+      "judgements": {
+        "flash": {
+          "judgement": "494ac0bd48f763516c367eb978fdf4bf83d3e00f0b2a9556b1d5da9feea936a0",
+          "files": {
+            "context": "12bc3732ca8c7fa6fb125d8427c1538b33412b03ae0b78ae4039450c0805ae1e",
+            "request": "a15e9f62e17e2102b875c2d39ef666c7ed470fc2006bfe385460cfd91fe46118",
+            "attempt": "caa637636af3f4501b145697f3993311b73faec44e4a102f825ef3b41de5ea88",
+            "response": "1cf65d23780f553166968534376e7d5e424fe09078653f25f7f104a6200302fa"
+          },
+          "model": "@cf/cloudflare/clef-flash",
+          "request_hash": "a15e9f62e17e2102b875c2d39ef666c7ed470fc2006bfe385460cfd91fe46118",
+          "input_hash": "12bc3732ca8c7fa6fb125d8427c1538b33412b03ae0b78ae4039450c0805ae1e",
+          "fault": null
+        },
+        "clef": {
+          "judgement": "db8b2767aee98975404edf8ef0e15bd5b4d64e297a275929c4528107ab3cd757",
+          "files": {
+            "context": "12bc3732ca8c7fa6fb125d8427c1538b33412b03ae0b78ae4039450c0805ae1e",
+            "request": "db5577cd5f883572662991e264de3fae6a0ee9b34f3f19e44f3f7459bf45bb27",
+            "attempt": "7eb3de50877ccf7a7684f78c65a129f726912249495c391b41c4744596c0dbdf",
+            "response": "391aeb1d57d86405e077c2dcecc1bae164dcd86c1f196c3decc93ff0a4fd0498"
+          },
+          "model": "@cf/cloudflare/clef",
+          "request_hash": "db5577cd5f883572662991e264de3fae6a0ee9b34f3f19e44f3f7459bf45bb27",
+          "input_hash": "12bc3732ca8c7fa6fb125d8427c1538b33412b03ae0b78ae4039450c0805ae1e",
+          "fault": null
+        }
+      },
+      "evaluation": {
+        "outcome": "failed_correctness",
+        "stage": "l3",
+        "reason": "independent oracle rejected output on call 8",
+        "mean_fuel": null,
+        "median_call_ns": null,
+        "peak_linear_memory_bytes": 1048576,
+        "checked_calls": 8,
+        "output_hash": "eecfe244543fb54bb69a496c07df36fbff280eb7b67d52f62a052e49ea47b6b1"
+      },
+      "evidence": {
+        "id": "EV-9ed6fe7969c42faf879100c45d7885170956fad42e3464d1959da4e9e348a1e8",
+        "content_hash": "77d2cdb218dff7ad64bbba44659dbe7a9c8715d6fb53bfc7ab019b035a157eb5"
+      }
+    },
+    {
+      "candidate": "C-v18",
+      "split": "holdout",
+      "file": "C-v18.json",
+      "input_hash": "39e73b5f86b0fad392d21e1f9e1798c263148cbb404b89afe22242864ef8328d",
+      "judgements": {
+        "flash": {
+          "judgement": "e69e5d267112075ad7901f167310817ca3ee547972862ae5d9036c4576acc0af",
+          "files": {
+            "context": "39e73b5f86b0fad392d21e1f9e1798c263148cbb404b89afe22242864ef8328d",
+            "request": "9cc5479ec3c6f44bd1484c016d98e7491142be59c4f2a75edbf46b5c54bc9d05",
+            "attempt": "8e05c45ec8bc59714ecd96732462bc574fb6146e1f6616a6014a840e1b035c94",
+            "response": "d57ac3c7e3b101e98261e25535f8970b9405feb9b46da070e525306ef0286cf5"
+          },
+          "model": "@cf/cloudflare/clef-flash",
+          "request_hash": "9cc5479ec3c6f44bd1484c016d98e7491142be59c4f2a75edbf46b5c54bc9d05",
+          "input_hash": "39e73b5f86b0fad392d21e1f9e1798c263148cbb404b89afe22242864ef8328d",
+          "fault": null
+        },
+        "clef": {
+          "judgement": "632d13566ba05384f5bb5a6a63c9d4675cbebebc2f9725d0b76bfb5e37894165",
+          "files": {
+            "context": "39e73b5f86b0fad392d21e1f9e1798c263148cbb404b89afe22242864ef8328d",
+            "request": "13dec6d918e419b8a8d2b9b27e3c4c9428b97f6529bbfa6ab6ca52d187cc9f71",
+            "attempt": "93a163b37feab08206177b56b5ab53a7fbd394cc5fbaf182c4e9fcb47c2499b2",
+            "response": "1fd273529d1402701c999343de4cee7fb3e6433cfa29ffe462dcbc4f8fbfd2e6"
+          },
+          "model": "@cf/cloudflare/clef",
+          "request_hash": "13dec6d918e419b8a8d2b9b27e3c4c9428b97f6529bbfa6ab6ca52d187cc9f71",
+          "input_hash": "39e73b5f86b0fad392d21e1f9e1798c263148cbb404b89afe22242864ef8328d",
+          "fault": null
+        }
+      },
+      "evaluation": {
+        "outcome": "failed_correctness",
+        "stage": "l3",
+        "reason": "independent oracle rejected output on call 5",
+        "mean_fuel": null,
+        "median_call_ns": null,
+        "peak_linear_memory_bytes": 1048576,
+        "checked_calls": 5,
+        "output_hash": "d70a83410b0dd28bc31ac05a8ff95e7d99a623375e757b062b9a8b043f8d5e13"
+      },
+      "evidence": {
+        "id": "EV-30843b7252de01a2ef90154ea4a3a8a3e840e36d0a349c359321befb6b7ae00b",
+        "content_hash": "d31b189ed1939e0240031ec812e3f28ef92b32a4f614eb7df85424fd730bc633"
+      }
+    },
+    {
+      "candidate": "C-v19",
+      "split": "development",
+      "file": "C-v19.json",
+      "input_hash": "d4d4f2e56fb7d2a99de9eeb8907a5f79710cfbb6d6a630861836d711f7258e01",
+      "judgements": {
+        "flash": {
+          "judgement": "d64b85465ec5c143135c672385208c8e12dd97f0d752f41d534c4cb149082d1d",
+          "files": {
+            "context": "d4d4f2e56fb7d2a99de9eeb8907a5f79710cfbb6d6a630861836d711f7258e01",
+            "request": "8b67388d1ffdf9d8ceacf5110363b16c3485c49a2dc4c7aaece460d6112d8d45",
+            "attempt": "8332d7d36738e6ea34759d995cb9a75087955841cf502e434078107fa3431e24",
+            "response": "ec3847121d9fde198972130ee010ce08ed50ee1417632124ffb324f3ae6fc6bb"
+          },
+          "model": "@cf/cloudflare/clef-flash",
+          "request_hash": "8b67388d1ffdf9d8ceacf5110363b16c3485c49a2dc4c7aaece460d6112d8d45",
+          "input_hash": "d4d4f2e56fb7d2a99de9eeb8907a5f79710cfbb6d6a630861836d711f7258e01",
+          "fault": null
+        },
+        "clef": {
+          "judgement": "9e6c4d24e2b763ffa7d06c6a37d0cf7774f49454575960c077c9eab21639268d",
+          "files": {
+            "context": "d4d4f2e56fb7d2a99de9eeb8907a5f79710cfbb6d6a630861836d711f7258e01",
+            "request": "a78214e01d292f7fa69bfd4fbd09af505f89ed27661dc700dac87184000f8626",
+            "attempt": "67538e49c36acbdcd22a104b48a18780a5278c57e7ce8d75692329d848978688",
+            "response": "b01b77d7c29897df78bbf7d65c3c089d5f0349ab690c8739b36fa3c2d8c4ce74"
+          },
+          "model": "@cf/cloudflare/clef",
+          "request_hash": "a78214e01d292f7fa69bfd4fbd09af505f89ed27661dc700dac87184000f8626",
+          "input_hash": "d4d4f2e56fb7d2a99de9eeb8907a5f79710cfbb6d6a630861836d711f7258e01",
+          "fault": null
+        }
+      },
+      "evaluation": {
+        "outcome": "failed_correctness",
+        "stage": "l3",
+        "reason": "independent oracle rejected output on call 10",
+        "mean_fuel": null,
+        "median_call_ns": null,
+        "peak_linear_memory_bytes": 1048576,
+        "checked_calls": 10,
+        "output_hash": "81cda0020e79057725892d285496250140bbce279d0ae63a71795cfa85b12454"
+      },
+      "evidence": {
+        "id": "EV-0bf71ff610b16afa6c0b791a4b28dec0c1e4a45dcf1bea29d85a0c63751ba95d",
+        "content_hash": "6fb77d64d1bce1dd6605e1daa14ac76de3cb1ecf29ccc611a1bba38bbe216b82"
+      }
+    },
+    {
+      "candidate": "C-v20",
+      "split": "development",
+      "file": "C-v20.json",
+      "input_hash": "f725f074d723f04f831416348a0b323c0906d5ff06b897824853c0494dea679f",
+      "judgements": {
+        "flash": {
+          "judgement": "f3259222700901b93099826cbf85655ea4581d27a97dcabfc22d17f7a1700161",
+          "files": {
+            "context": "f725f074d723f04f831416348a0b323c0906d5ff06b897824853c0494dea679f",
+            "request": "3b349f8756b8528d5d20becf4c8db92638853e38d255b6b23a63c47fc6ac3c0e",
+            "attempt": "c240415299f887a61c5dadd2b7e90aefdacdf16355f53d2b8f06ccacbc741f92",
+            "response": "0225e4e73e141f7012388a1dcec5e82796225601dfcb7b8a481bb1d1d3e3a2c4"
+          },
+          "model": "@cf/cloudflare/clef-flash",
+          "request_hash": "3b349f8756b8528d5d20becf4c8db92638853e38d255b6b23a63c47fc6ac3c0e",
+          "input_hash": "f725f074d723f04f831416348a0b323c0906d5ff06b897824853c0494dea679f",
+          "fault": null
+        },
+        "clef": {
+          "judgement": "fe836dff48af37debaa7bac89c947bb219f805b576b3b555880a2fe86723963c",
+          "files": {
+            "context": "f725f074d723f04f831416348a0b323c0906d5ff06b897824853c0494dea679f",
+            "request": "48152112801110159656f85c304d324b83282f88ac7aae0d430af36aa3663e37",
+            "attempt": "4abef45b35a7eb758e2a8a71130146db26c3223ba50052ecc59f39920cd8f902",
+            "response": "36c351290531de52c5b87b5bb1f4c12b98d0d727ae6d7f59c072cdd78b53df18"
+          },
+          "model": "@cf/cloudflare/clef",
+          "request_hash": "48152112801110159656f85c304d324b83282f88ac7aae0d430af36aa3663e37",
+          "input_hash": "f725f074d723f04f831416348a0b323c0906d5ff06b897824853c0494dea679f",
+          "fault": null
+        }
+      },
+      "evaluation": {
+        "outcome": "failed_correctness",
+        "stage": "l3",
+        "reason": "independent oracle rejected output on call 4",
+        "mean_fuel": null,
+        "median_call_ns": null,
+        "peak_linear_memory_bytes": 1048576,
+        "checked_calls": 4,
+        "output_hash": "3f1ae23e19d3a29b87be34487490153e58761b9fe69ce82763773c541f079423"
+      },
+      "evidence": {
+        "id": "EV-e1a8a92fd784750580790182892b9b02bb7a75533716fb0b2cf82c7692d0c0c4",
+        "content_hash": "c29bb08cbee4424c888f55ae9afd0da15fb4fd7a35fcbca5e2e7feab79086576"
+      }
+    },
+    {
+      "candidate": "C-v21",
+      "split": "holdout",
+      "file": "C-v21.json",
+      "input_hash": "43f19316a1ae997711776e0cd94ca8c8742a0f57e680d947eab5a7fe4b9774d3",
+      "judgements": {
+        "flash": {
+          "judgement": "2de77e75188fe6048aa7af3b0bcedec3a39037b7fd4f1d63850a0b5109ee2980",
+          "files": {
+            "context": "43f19316a1ae997711776e0cd94ca8c8742a0f57e680d947eab5a7fe4b9774d3",
+            "request": "70ced72fde49f694a8c35b0b9581ea165952a8999309b66ff3855539faa74208",
+            "attempt": "5860b71cd8fb2435bdb0f04e7de387aa0886c56d14ffdef4188f7d1270b20f75",
+            "response": "0b5411935525d294d4d2e7f84fc173f813d5b795dca1436e889f4a7a545e754a"
+          },
+          "model": "@cf/cloudflare/clef-flash",
+          "request_hash": "70ced72fde49f694a8c35b0b9581ea165952a8999309b66ff3855539faa74208",
+          "input_hash": "43f19316a1ae997711776e0cd94ca8c8742a0f57e680d947eab5a7fe4b9774d3",
+          "fault": null
+        },
+        "clef": {
+          "judgement": "2c5195d8a1badeca7879c239de52b6bc0bffcbf0254346bfe01a0bf98d0e051f",
+          "files": {
+            "context": "43f19316a1ae997711776e0cd94ca8c8742a0f57e680d947eab5a7fe4b9774d3",
+            "request": "3881a201659ab59f66533004d07c74c27eebb342c331fc7d172d7279c9eb5af0",
+            "attempt": "61c3a3414ea214ebd59455041a89f05146903da8437c157e69d0ad3a72b0ce9a",
+            "response": "70a1cb23263f8acfd7cf9d263ffb6de596c53c96a4f3c98e85ef9a1ae0ad38b4"
+          },
+          "model": "@cf/cloudflare/clef",
+          "request_hash": "3881a201659ab59f66533004d07c74c27eebb342c331fc7d172d7279c9eb5af0",
+          "input_hash": "43f19316a1ae997711776e0cd94ca8c8742a0f57e680d947eab5a7fe4b9774d3",
+          "fault": null
+        }
+      },
+      "evaluation": {
+        "outcome": "failed_correctness",
+        "stage": "l3",
+        "reason": "independent oracle rejected output on call 13",
+        "mean_fuel": null,
+        "median_call_ns": null,
+        "peak_linear_memory_bytes": 1048576,
+        "checked_calls": 13,
+        "output_hash": "9700b684d3162ce38299cdc92a344f84df11bdeb6948c3653ba026787faf5275"
+      },
+      "evidence": {
+        "id": "EV-4cae3277cceb1f8acf3de7be8d0b8de2a0ff09976b22d0c215f83d5e81cd3f3d",
+        "content_hash": "fdf67c4ee4cfc795c52a6e42bfad4467d7449754ce4188b3814184c55cbac08d"
+      }
+    },
+    {
+      "candidate": "C-v22",
+      "split": "development",
+      "file": "C-v22.json",
+      "input_hash": "e0a4f7e55767cb70d10660e56951d6b4109e5762a2661fd1e6b751312520b637",
+      "judgements": {
+        "flash": {
+          "judgement": "033b9b4200e453080eff9b9a4dd88447fa8fa323bb598a19db3f9ec6a2df4459",
+          "files": {
+            "context": "e0a4f7e55767cb70d10660e56951d6b4109e5762a2661fd1e6b751312520b637",
+            "request": "0c91d326d8215db712388c8b6e2f9429a80dd17d01c86496e47cc721d3f022c0",
+            "attempt": "a4d794b449f1fefd3920a3bc6a52fb5fd93f10b7b60b83c5a05cfb9f04763661",
+            "response": "c6422a6f568e4b7fdaa5e9460075d511e5e54e0f9a6262123e5b414fad63d5f7"
+          },
+          "model": "@cf/cloudflare/clef-flash",
+          "request_hash": "0c91d326d8215db712388c8b6e2f9429a80dd17d01c86496e47cc721d3f022c0",
+          "input_hash": "e0a4f7e55767cb70d10660e56951d6b4109e5762a2661fd1e6b751312520b637",
+          "fault": null
+        },
+        "clef": {
+          "judgement": "3114c638c322249dec078f67bf95b1a0e107303e84434fbe87c560f2cd26c19a",
+          "files": {
+            "context": "e0a4f7e55767cb70d10660e56951d6b4109e5762a2661fd1e6b751312520b637",
+            "request": "32078a1604fffa31f113d6848dbe1878cd5d87fa6dcfabac8766fbc4ac73aa07",
+            "attempt": "41ed7baf63a28488ca9c1edb5c5d13823c2a80ce8c19d71108bcc0d3cb065707",
+            "response": "41725d70dc9d9969a7db2438cc4a85892b0cc6e2d80295b0e804aac8ec804a06"
+          },
+          "model": "@cf/cloudflare/clef",
+          "request_hash": "32078a1604fffa31f113d6848dbe1878cd5d87fa6dcfabac8766fbc4ac73aa07",
+          "input_hash": "e0a4f7e55767cb70d10660e56951d6b4109e5762a2661fd1e6b751312520b637",
+          "fault": null
+        }
+      },
+      "evaluation": {
+        "outcome": "failed_correctness",
+        "stage": "l3",
+        "reason": "independent oracle rejected output on call 5",
+        "mean_fuel": null,
+        "median_call_ns": null,
+        "peak_linear_memory_bytes": 1048576,
+        "checked_calls": 5,
+        "output_hash": "ade1453d45a46c9a440cdec72c78f335ec53e80cf53887e4c877d16a2089a1f1"
+      },
+      "evidence": {
+        "id": "EV-522eab6a96173ea9f833c960b34de445bb30fedea94c884be9760e162c574d1e",
+        "content_hash": "a9f2e01fd3bf539d2d819edadf4922e71b449d724529b9f77603db75b391c0b5"
+      }
+    },
+    {
+      "candidate": "C-v23",
+      "split": "development",
+      "file": "C-v23.json",
+      "input_hash": "3d50d51a4fee7ebe0d1a3061bceb41b84a69ec6bc3e00f2a953e224a1f756650",
+      "judgements": {
+        "flash": {
+          "judgement": "5ecb2a9b607e3d5aae1f5b8ea79466b44a9e01b16d5f581eb65269658f358dde",
+          "files": {
+            "context": "3d50d51a4fee7ebe0d1a3061bceb41b84a69ec6bc3e00f2a953e224a1f756650",
+            "request": "ace11476b5eb4ffc6c1b7659d764be753f575fa18a4c5df058c7efc0c2b72606",
+            "attempt": "6eddcf44c10bfe387189262e083ef3e0cdd7f1c3751dd8b3a14ce3baa3e97f14",
+            "response": "5af21eaa74053d56e457ea61b382b58d668ced22249324299db7474a1e2f86ae"
+          },
+          "model": "@cf/cloudflare/clef-flash",
+          "request_hash": "ace11476b5eb4ffc6c1b7659d764be753f575fa18a4c5df058c7efc0c2b72606",
+          "input_hash": "3d50d51a4fee7ebe0d1a3061bceb41b84a69ec6bc3e00f2a953e224a1f756650",
+          "fault": null
+        },
+        "clef": {
+          "judgement": "2a05837bcff340d0399a5174a3d0533a8ceb7a4dfb45a6fb6627ed436ce5dab4",
+          "files": {
+            "context": "3d50d51a4fee7ebe0d1a3061bceb41b84a69ec6bc3e00f2a953e224a1f756650",
+            "request": "53ec6ee338ec04704b2159ee987f69bb9e0154c4868e50d2250d5406b40b2a47",
+            "attempt": "d0499dd747783338b75f621ff0e848302c081535a9c474e48e3eb1a9fd208dac",
+            "response": "e92a7e4aba83f2e41b6441b6fb755331102a700bebcd0e5a4b3406fb970555ef"
+          },
+          "model": "@cf/cloudflare/clef",
+          "request_hash": "53ec6ee338ec04704b2159ee987f69bb9e0154c4868e50d2250d5406b40b2a47",
+          "input_hash": "3d50d51a4fee7ebe0d1a3061bceb41b84a69ec6bc3e00f2a953e224a1f756650",
+          "fault": null
+        }
+      },
+      "evaluation": {
+        "outcome": "failed_resource_limit",
+        "stage": "l3",
+        "reason": "bounded WASM execution trapped: all fuel consumed by WebAssembly",
+        "mean_fuel": null,
+        "median_call_ns": null,
+        "peak_linear_memory_bytes": 1048576,
+        "checked_calls": 1,
+        "output_hash": "15ec7bf0b50732b49f8228e07d24365338f9e3ab994b00af08e5a3bffe55fd8b"
+      },
+      "evidence": {
+        "id": "EV-f3d773012d704727af37a42e673ccd95c49cfa84cddf369c3bbfe3ffa8645366",
+        "content_hash": "f940b8d18fd0ca55a2615bba656d8d02a50eb8b245bf958083ab821175c40efd"
+      }
+    },
+    {
+      "candidate": "C-v24",
+      "split": "holdout",
+      "file": "C-v24.json",
+      "input_hash": "f611d9178eb46fb27a3fd4a0386b1c74f15ee6e4e15f453d4a3d07392e99e42b",
+      "judgements": {
+        "flash": {
+          "judgement": "3bc6394132cf6f30f9bd01b09ad896562705f5365cd16c7124701f299b36fa05",
+          "files": {
+            "context": "f611d9178eb46fb27a3fd4a0386b1c74f15ee6e4e15f453d4a3d07392e99e42b",
+            "request": "0ec85826840fd184b16fe23fd6355e8bdbc65789d0d41018318530f5756db43d",
+            "attempt": "ed4aeeb566aaad35b0dbb3671c4770dc2b992b3bebb17736608357e52e845414",
+            "response": "a81d65824a6646114b2d55e6ab3e4b55fe9026fa6d36eec412f48737f1f718ba"
+          },
+          "model": "@cf/cloudflare/clef-flash",
+          "request_hash": "0ec85826840fd184b16fe23fd6355e8bdbc65789d0d41018318530f5756db43d",
+          "input_hash": "f611d9178eb46fb27a3fd4a0386b1c74f15ee6e4e15f453d4a3d07392e99e42b",
+          "fault": null
+        },
+        "clef": {
+          "judgement": "851556e1259b4f80f26cd6e55184b9982b167d1952a067a95742a3f9fe743066",
+          "files": {
+            "context": "f611d9178eb46fb27a3fd4a0386b1c74f15ee6e4e15f453d4a3d07392e99e42b",
+            "request": "05e096b5d86f7bfda8fa7df7d3bd0531c8e39237baf9813528e6f4ea7e083bad",
+            "attempt": "5386fa6dee85e64e772f210ad3d9c2713df01c02897a07cf562ee87443a29124",
+            "response": "9e89bcbfaf149ddc3b515bff6a8748ae8ed7d0050ac7a7d45e2250c6af9a1f57"
+          },
+          "model": "@cf/cloudflare/clef",
+          "request_hash": "05e096b5d86f7bfda8fa7df7d3bd0531c8e39237baf9813528e6f4ea7e083bad",
+          "input_hash": "f611d9178eb46fb27a3fd4a0386b1c74f15ee6e4e15f453d4a3d07392e99e42b",
+          "fault": null
+        }
+      },
+      "evaluation": {
+        "outcome": "failed_resource_limit",
+        "stage": "l3",
+        "reason": "bounded WASM execution trapped: growth operation limited",
+        "mean_fuel": null,
+        "median_call_ns": null,
+        "peak_linear_memory_bytes": 1048576,
+        "checked_calls": 0,
+        "output_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "evidence": {
+        "id": "EV-88152f3abc2542d868cfe396f921b308225789235688ba804249e09a228d5d30",
+        "content_hash": "2ae074e89867a983f147d910c6367b85d54a7850661d9331aa5f06fd7f4b31df"
+      }
+    }
+  ]
+}

@@ -1,0 +1,103 @@
+{
+  "$defs": {
+    "CandidateId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "ContentHash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "EvidenceId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "ExperimentId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "FailureReference": {
+      "additionalProperties": false,
+      "properties": {
+        "content_hash": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "evidence": {
+          "$ref": "#/$defs/EvidenceId"
+        },
+        "experiment": {
+          "$ref": "#/$defs/ExperimentId"
+        }
+      },
+      "required": [
+        "experiment",
+        "evidence",
+        "content_hash"
+      ],
+      "type": "object"
+    },
+    "Text": {
+      "description": "Nonempty text; unlike identifiers this may contain spaces and Unicode.",
+      "minLength": 1,
+      "pattern": "\\S",
+      "type": "string"
+    }
+  },
+  "$id": "https://ace.org.ai/schemas/v1/judge-context.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "artifact_hash": {
+      "$ref": "#/$defs/ContentHash"
+    },
+    "candidate": {
+      "$ref": "#/$defs/CandidateId"
+    },
+    "candidate_summary": {
+      "$ref": "#/$defs/Text",
+      "description": "Caller-supplied public text, not verified compilation provenance."
+    },
+    "contract_summary": {
+      "$ref": "#/$defs/Text"
+    },
+    "experiment": {
+      "$ref": "#/$defs/ExperimentId"
+    },
+    "high_impact": {
+      "type": "boolean"
+    },
+    "intent_summary": {
+      "$ref": "#/$defs/Text"
+    },
+    "known_failures": {
+      "items": {
+        "$ref": "#/$defs/FailureReference"
+      },
+      "type": "array"
+    },
+    "schema_version": {
+      "format": "uint32",
+      "minimum": 0,
+      "type": "integer"
+    }
+  },
+  "required": [
+    "schema_version",
+    "experiment",
+    "candidate",
+    "artifact_hash",
+    "contract_summary",
+    "intent_summary",
+    "candidate_summary",
+    "high_impact",
+    "known_failures"
+  ],
+  "title": "JudgeContext",
+  "type": "object"
+}

@@ -1,0 +1,241 @@
+{
+  "$defs": {
+    "CandidateId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "CellId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "CheckName": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "ExperimentId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "Generator": {
+      "additionalProperties": false,
+      "properties": {
+        "model": {
+          "$ref": "#/$defs/Text"
+        },
+        "provider": {
+          "$ref": "#/$defs/Text"
+        },
+        "revision": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Text"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "provider",
+        "model"
+      ],
+      "type": "object"
+    },
+    "Harness": {
+      "additionalProperties": false,
+      "properties": {
+        "benchmark_rounds": {
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "benchmark_samples": {
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "entrypoint": {
+          "$ref": "#/$defs/CheckName",
+          "description": "WASM ABI: (i32, i32) -> i32, interpreted as unsigned 32-bit values."
+        },
+        "fuel_per_call": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "hidden_cases": {
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "hidden_max_input": {
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "memory_pages": {
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "oracle_seed": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "public_cases": {
+          "items": {
+            "items": {
+              "format": "uint32",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "maxItems": 2,
+            "minItems": 2,
+            "type": "array"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "entrypoint",
+        "public_cases",
+        "oracle_seed",
+        "hidden_cases",
+        "hidden_max_input",
+        "benchmark_samples",
+        "benchmark_rounds",
+        "fuel_per_call",
+        "memory_pages"
+      ],
+      "type": "object"
+    },
+    "HypothesisId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "IntentId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "ModuleSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "generator": {
+          "$ref": "#/$defs/Generator"
+        },
+        "id": {
+          "$ref": "#/$defs/CandidateId"
+        },
+        "module": {
+          "description": "Relative path beneath the experiment input directory.",
+          "type": "string"
+        },
+        "strategy": {
+          "$ref": "#/$defs/Text"
+        }
+      },
+      "required": [
+        "id",
+        "module",
+        "strategy",
+        "generator"
+      ],
+      "type": "object"
+    },
+    "Probability": {
+      "format": "double",
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "type": "number"
+    },
+    "ProjectId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "ProtocolVersion": {
+      "const": 1,
+      "type": "integer"
+    },
+    "Text": {
+      "description": "Nonempty text; unlike identifiers this may contain spaces and Unicode.",
+      "minLength": 1,
+      "pattern": "\\S",
+      "type": "string"
+    }
+  },
+  "$id": "https://ace.org.ai/schemas/v1/local-experiment.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "baseline": {
+      "$ref": "#/$defs/ModuleSpec"
+    },
+    "candidates": {
+      "items": {
+        "$ref": "#/$defs/ModuleSpec"
+      },
+      "type": "array"
+    },
+    "cell": {
+      "$ref": "#/$defs/CellId"
+    },
+    "experiment": {
+      "$ref": "#/$defs/ExperimentId"
+    },
+    "harness": {
+      "$ref": "#/$defs/Harness"
+    },
+    "hypothesis": {
+      "$ref": "#/$defs/HypothesisId"
+    },
+    "intent": {
+      "$ref": "#/$defs/IntentId"
+    },
+    "max_wall_clock_seconds": {
+      "format": "uint32",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "min_relative_improvement": {
+      "$ref": "#/$defs/Probability",
+      "description": "Mean WASMI instruction fuel is the deterministic objective; native timing\nis recorded separately and must not be mistaken for production latency."
+    },
+    "project": {
+      "$ref": "#/$defs/ProjectId"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ProtocolVersion"
+    }
+  },
+  "required": [
+    "schema_version",
+    "project",
+    "experiment",
+    "cell",
+    "intent",
+    "hypothesis",
+    "baseline",
+    "candidates",
+    "harness",
+    "min_relative_improvement",
+    "max_wall_clock_seconds"
+  ],
+  "title": "RunConfig",
+  "type": "object"
+}

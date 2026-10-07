@@ -1,0 +1,23 @@
+{
+  "dataset_hash": "8a27a6ab2b4db7de06e3f3c2e0e37287a819f68adfdebfbee814da8ce73cb104",
+  "dataset_version": "gcd-clef-flash-shadow-v1",
+  "policy_hash": "c1e3d08b917ba4aa2b650e55011490164905a386339a741b68b6784a8ff199ff",
+  "synthetic_predictions": false,
+  "rows": 25,
+  "provider_faults": 0,
+  "scored_correctness_rows": 23,
+  "regression_brier_score": 0.2803520304347826,
+  "qualified_count": 13,
+  "hypothetical_filtered_qualified": 0,
+  "qualified_recall": 1.0,
+  "winner_count": 1,
+  "hypothetical_filtered_winners": 0,
+  "winner_recall": 1.0,
+  "audited_count": 3,
+  "inference_latency_p50_ms": 177,
+  "inference_latency_p95_ms": 428,
+  "inference_input_tokens": 20672,
+  "inference_output_tokens": 0,
+  "missing_usage_rows": 0,
+  "production_filtering_authorized": false
+}

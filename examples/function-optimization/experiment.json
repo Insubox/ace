@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "project": "PRJ-local-gcd",
+  "experiment": "EXP-local-gcd",
+  "cell": "Gcd",
+  "intent": "INT-reduce-gcd-work",
+  "hypothesis": "H-replace-divisor-scan",
+  "baseline": {
+    "id": "C-baseline", "module": ".ace-build/baseline.wasm", "strategy": "divisor-scan",
+    "generator": {"provider": "manual", "model": "registered-local-wasm", "revision": null}
+  },
+  "candidates": [
+    {"id": "C-euclid", "module": ".ace-build/euclid.wasm", "strategy": "euclidean-remainder", "generator": {"provider": "manual", "model": "registered-local-wasm", "revision": null}},
+    {"id": "C-binary", "module": ".ace-build/binary.wasm", "strategy": "binary-gcd", "generator": {"provider": "manual", "model": "registered-local-wasm", "revision": null}},
+    {"id": "C-incorrect", "module": ".ace-build/incorrect.wasm", "strategy": "incorrect-addition", "generator": {"provider": "manual", "model": "registered-local-wasm", "revision": null}},
+    {"id": "C-spinning", "module": ".ace-build/spinning.wasm", "strategy": "infinite-loop", "generator": {"provider": "manual", "model": "registered-local-wasm", "revision": null}},
+    {"id": "C-memory-hog", "module": ".ace-build/memory_hog.wasm", "strategy": "excessive-memory-growth", "generator": {"provider": "manual", "model": "registered-local-wasm", "revision": null}}
+  ],
+  "harness": {
+    "entrypoint": "gcd",
+    "public_cases": [[0, 0], [0, 15], [15, 0], [15, 21], [1000, 600], [7, 13], [128, 64], [4294967295, 4294967295]],
+    "oracle_seed": 92137,
+    "hidden_cases": 64,
+    "hidden_max_input": 1024,
+    "benchmark_samples": 7,
+    "benchmark_rounds": 3,
+    "fuel_per_call": 50000,
+    "memory_pages": 32
+  },
+  "min_relative_improvement": 0.01,
+  "max_wall_clock_seconds": 60
+}

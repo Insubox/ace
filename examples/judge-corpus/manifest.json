@@ -1,0 +1,157 @@
+{
+  "schema_version": 1,
+  "version": "gcd-diverse-v1",
+  "reference": {
+    "id": "C-reference",
+    "source": "src/reference.rs",
+    "split": "reference"
+  },
+  "candidates": [
+    {
+      "id": "C-v01",
+      "source": "src/v01.rs",
+      "family": "symmetric-remainder",
+      "split": "development"
+    },
+    {
+      "id": "C-v02",
+      "source": "src/v02.rs",
+      "family": "alternating-remainder",
+      "split": "development"
+    },
+    {
+      "id": "C-v03",
+      "source": "src/v03.rs",
+      "family": "shift-loops",
+      "split": "holdout"
+    },
+    {
+      "id": "C-v04",
+      "source": "src/v04.rs",
+      "family": "min-max-binary",
+      "split": "development"
+    },
+    {
+      "id": "C-v05",
+      "source": "src/v05.rs",
+      "family": "small-tail-subtraction",
+      "split": "development"
+    },
+    {
+      "id": "C-v06",
+      "source": "src/v06.rs",
+      "family": "power-two-remainder",
+      "split": "holdout"
+    },
+    {
+      "id": "C-v07",
+      "source": "src/v07.rs",
+      "family": "bounded-subtraction",
+      "split": "development"
+    },
+    {
+      "id": "C-v08",
+      "source": "src/v08.rs",
+      "family": "divisibility-fastpaths",
+      "split": "development"
+    },
+    {
+      "id": "C-v09",
+      "source": "src/v09.rs",
+      "family": "recursive-remainder",
+      "split": "holdout"
+    },
+    {
+      "id": "C-v10",
+      "source": "src/v10.rs",
+      "family": "dual-binary",
+      "split": "development"
+    },
+    {
+      "id": "C-v11",
+      "source": "src/v11.rs",
+      "family": "bounded-divisor-search",
+      "split": "development"
+    },
+    {
+      "id": "C-v12",
+      "source": "src/v12.rs",
+      "family": "small-prime-factorization",
+      "split": "holdout"
+    },
+    {
+      "id": "C-v13",
+      "source": "src/v13.rs",
+      "family": "zero-boundary",
+      "split": "development"
+    },
+    {
+      "id": "C-v14",
+      "source": "src/v14.rs",
+      "family": "equality-boundary",
+      "split": "development"
+    },
+    {
+      "id": "C-v15",
+      "source": "src/v15.rs",
+      "family": "zero-bitwise-boundary",
+      "split": "holdout"
+    },
+    {
+      "id": "C-v16",
+      "source": "src/v16.rs",
+      "family": "signed-conversion",
+      "split": "development"
+    },
+    {
+      "id": "C-v17",
+      "source": "src/v17.rs",
+      "family": "result-width",
+      "split": "development"
+    },
+    {
+      "id": "C-v18",
+      "source": "src/v18.rs",
+      "family": "factor-scaling",
+      "split": "holdout"
+    },
+    {
+      "id": "C-v19",
+      "source": "src/v19.rs",
+      "family": "unit-boundary",
+      "split": "development"
+    },
+    {
+      "id": "C-v20",
+      "source": "src/v20.rs",
+      "family": "addition",
+      "split": "development"
+    },
+    {
+      "id": "C-v21",
+      "source": "src/v21.rs",
+      "family": "factor-three-shortcut",
+      "split": "holdout"
+    },
+    {
+      "id": "C-v22",
+      "source": "src/v22.rs",
+      "family": "factor-five-shortcut",
+      "split": "development"
+    },
+    {
+      "id": "C-v23",
+      "source": "src/v23.rs",
+      "family": "unbounded-subtraction",
+      "split": "development"
+    },
+    {
+      "id": "C-v24",
+      "source": "src/v24.rs",
+      "family": "memory-growth",
+      "split": "holdout"
+    }
+  ],
+  "routing_policy": "shadow-routing-v1-default-unchanged",
+  "selection": "Handcrafted fixed split before evaluation; no population-level statistical claim."
+}

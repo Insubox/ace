@@ -1,0 +1,83 @@
+{
+  "$defs": {
+    "CellId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "HypothesisId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "IntentId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "KnowledgeId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "Text": {
+      "description": "Nonempty text; unlike identifiers this may contain spaces and Unicode.",
+      "minLength": 1,
+      "pattern": "\\S",
+      "type": "string"
+    },
+    "Timestamp": {
+      "description": "UTC Unix seconds. The caller supplies time; the kernel has no ambient clock.",
+      "format": "uint64",
+      "minimum": 0,
+      "type": "integer"
+    }
+  },
+  "$id": "https://ace.org.ai/schemas/v1/hypothesis.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "cell": {
+      "$ref": "#/$defs/CellId"
+    },
+    "created_at": {
+      "$ref": "#/$defs/Timestamp"
+    },
+    "id": {
+      "$ref": "#/$defs/HypothesisId"
+    },
+    "intent": {
+      "$ref": "#/$defs/IntentId"
+    },
+    "parent_knowledge": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/KnowledgeId"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "statement": {
+      "$ref": "#/$defs/Text"
+    },
+    "strategy": {
+      "$ref": "#/$defs/Text"
+    }
+  },
+  "required": [
+    "id",
+    "intent",
+    "cell",
+    "statement",
+    "strategy",
+    "created_at"
+  ],
+  "title": "Hypothesis",
+  "type": "object"
+}

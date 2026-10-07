@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "payload": {
+    "kind": "composition",
+    "data": {
+      "id": "COMP-example",
+      "project": "PRJ-example",
+      "version": 1,
+      "champions": {
+        "ExampleCell": "CH-example"
+      },
+      "previous": null,
+      "created_at": 2
+    }
+  }
+}

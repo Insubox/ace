@@ -1,0 +1,58 @@
+{
+  "$defs": {
+    "JudgeRoute": {
+      "enum": [
+        "real_execution",
+        "escalate"
+      ],
+      "type": "string"
+    },
+    "RouteReason": {
+      "enum": [
+        "provider_fault",
+        "audit_holdout",
+        "high_impact",
+        "uncertain",
+        "advisory_only",
+        "second_opinion_complete"
+      ],
+      "type": "string"
+    },
+    "Text": {
+      "description": "Nonempty text; unlike identifiers this may contain spaces and Unicode.",
+      "minLength": 1,
+      "pattern": "\\S",
+      "type": "string"
+    }
+  },
+  "$id": "https://ace.org.ai/schemas/v1/judge-routing-decision.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "audit_holdout": {
+      "type": "boolean"
+    },
+    "hypothetical_filter": {
+      "description": "Recorded for calibration only; no candidate is actually filtered.",
+      "type": "boolean"
+    },
+    "policy_version": {
+      "$ref": "#/$defs/Text"
+    },
+    "reason": {
+      "$ref": "#/$defs/RouteReason"
+    },
+    "route": {
+      "$ref": "#/$defs/JudgeRoute"
+    }
+  },
+  "required": [
+    "policy_version",
+    "route",
+    "reason",
+    "audit_holdout",
+    "hypothetical_filter"
+  ],
+  "title": "RoutingDecision",
+  "type": "object"
+}

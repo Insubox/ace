@@ -1,0 +1,330 @@
+{
+  "schema_version": 1,
+  "project": "PRJ-gcd-diverse-v1",
+  "experiment": "EXP-gcd-diverse-v1",
+  "cell": "Gcd",
+  "intent": "INT-reduce-gcd-work",
+  "hypothesis": "H-diverse-gcd-algorithms",
+  "baseline": {
+    "id": "C-reference",
+    "module": ".ace-build/reference.wasm",
+    "strategy": "public-gcd-variant",
+    "generator": {
+      "provider": "manual",
+      "model": "reviewed-static-corpus-v1",
+      "revision": null
+    }
+  },
+  "candidates": [
+    {
+      "id": "C-v01",
+      "module": ".ace-build/v01.wasm",
+      "strategy": "public-gcd-variant",
+      "generator": {
+        "provider": "manual",
+        "model": "reviewed-static-corpus-v1",
+        "revision": null
+      }
+    },
+    {
+      "id": "C-v02",
+      "module": ".ace-build/v02.wasm",
+      "strategy": "public-gcd-variant",
+      "generator": {
+        "provider": "manual",
+        "model": "reviewed-static-corpus-v1",
+        "revision": null
+      }
+    },
+    {
+      "id": "C-v03",
+      "module": ".ace-build/v03.wasm",
+      "strategy": "public-gcd-variant",
+      "generator": {
+        "provider": "manual",
+        "model": "reviewed-static-corpus-v1",
+        "revision": null
+      }
+    },
+    {
+      "id": "C-v04",
+      "module": ".ace-build/v04.wasm",
+      "strategy": "public-gcd-variant",
+      "generator": {
+        "provider": "manual",
+        "model": "reviewed-static-corpus-v1",
+        "revision": null
+      }
+    },
+    {
+      "id": "C-v05",
+      "module": ".ace-build/v05.wasm",
+      "strategy": "public-gcd-variant",
+      "generator": {
+        "provider": "manual",
+        "model": "reviewed-static-corpus-v1",
+        "revision": null
+      }
+    },
+    {
+      "id": "C-v06",
+      "module": ".ace-build/v06.wasm",
+      "strategy": "public-gcd-variant",
+      "generator": {
+        "provider": "manual",
+        "model": "reviewed-static-corpus-v1",
+        "revision": null
+      }
+    },
+    {
+      "id": "C-v07",
+      "module": ".ace-build/v07.wasm",
+      "strategy": "public-gcd-variant",
+      "generator": {
+        "provider": "manual",
+        "model": "reviewed-static-corpus-v1",
+        "revision": null
+      }
+    },
+    {
+      "id": "C-v08",
+      "module": ".ace-build/v08.wasm",
+      "strategy": "public-gcd-variant",
+      "generator": {
+        "provider": "manual",
+        "model": "reviewed-static-corpus-v1",
+        "revision": null
+      }
+    },
+    {
+      "id": "C-v09",
+      "module": ".ace-build/v09.wasm",
+      "strategy": "public-gcd-variant",
+      "generator": {
+        "provider": "manual",
+        "model": "reviewed-static-corpus-v1",
+        "revision": null
+      }
+    },
+    {
+      "id": "C-v10",
+      "module": ".ace-build/v10.wasm",
+      "strategy": "public-gcd-variant",
+      "generator": {
+        "provider": "manual",
+        "model": "reviewed-static-corpus-v1",
+        "revision": null
+      }
+    },
+    {
+      "id": "C-v11",
+      "module": ".ace-build/v11.wasm",
+      "strategy": "public-gcd-variant",
+      "generator": {
+        "provider": "manual",
+        "model": "reviewed-static-corpus-v1",
+        "revision": null
+      }
+    },
+    {
+      "id": "C-v12",
+      "module": ".ace-build/v12.wasm",
+      "strategy": "public-gcd-variant",
+      "generator": {
+        "provider": "manual",
+        "model": "reviewed-static-corpus-v1",
+        "revision": null
+      }
+    },
+    {
+      "id": "C-v13",
+      "module": ".ace-build/v13.wasm",
+      "strategy": "public-gcd-variant",
+      "generator": {
+        "provider": "manual",
+        "model": "reviewed-static-corpus-v1",
+        "revision": null
+      }
+    },
+    {
+      "id": "C-v14",
+      "module": ".ace-build/v14.wasm",
+      "strategy": "public-gcd-variant",
+      "generator": {
+        "provider": "manual",
+        "model": "reviewed-static-corpus-v1",
+        "revision": null
+      }
+    },
+    {
+      "id": "C-v15",
+      "module": ".ace-build/v15.wasm",
+      "strategy": "public-gcd-variant",
+      "generator": {
+        "provider": "manual",
+        "model": "reviewed-static-corpus-v1",
+        "revision": null
+      }
+    },
+    {
+      "id": "C-v16",
+      "module": ".ace-build/v16.wasm",
+      "strategy": "public-gcd-variant",
+      "generator": {
+        "provider": "manual",
+        "model": "reviewed-static-corpus-v1",
+        "revision": null
+      }
+    },
+    {
+      "id": "C-v17",
+      "module": ".ace-build/v17.wasm",
+      "strategy": "public-gcd-variant",
+      "generator": {
+        "provider": "manual",
+        "model": "reviewed-static-corpus-v1",
+        "revision": null
+      }
+    },
+    {
+      "id": "C-v18",
+      "module": ".ace-build/v18.wasm",
+      "strategy": "public-gcd-variant",
+      "generator": {
+        "provider": "manual",
+        "model": "reviewed-static-corpus-v1",
+        "revision": null
+      }
+    },
+    {
+      "id": "C-v19",
+      "module": ".ace-build/v19.wasm",
+      "strategy": "public-gcd-variant",
+      "generator": {
+        "provider": "manual",
+        "model": "reviewed-static-corpus-v1",
+        "revision": null
+      }
+    },
+    {
+      "id": "C-v20",
+      "module": ".ace-build/v20.wasm",
+      "strategy": "public-gcd-variant",
+      "generator": {
+        "provider": "manual",
+        "model": "reviewed-static-corpus-v1",
+        "revision": null
+      }
+    },
+    {
+      "id": "C-v21",
+      "module": ".ace-build/v21.wasm",
+      "strategy": "public-gcd-variant",
+      "generator": {
+        "provider": "manual",
+        "model": "reviewed-static-corpus-v1",
+        "revision": null
+      }
+    },
+    {
+      "id": "C-v22",
+      "module": ".ace-build/v22.wasm",
+      "strategy": "public-gcd-variant",
+      "generator": {
+        "provider": "manual",
+        "model": "reviewed-static-corpus-v1",
+        "revision": null
+      }
+    },
+    {
+      "id": "C-v23",
+      "module": ".ace-build/v23.wasm",
+      "strategy": "public-gcd-variant",
+      "generator": {
+        "provider": "manual",
+        "model": "reviewed-static-corpus-v1",
+        "revision": null
+      }
+    },
+    {
+      "id": "C-v24",
+      "module": ".ace-build/v24.wasm",
+      "strategy": "public-gcd-variant",
+      "generator": {
+        "provider": "manual",
+        "model": "reviewed-static-corpus-v1",
+        "revision": null
+      }
+    }
+  ],
+  "harness": {
+    "entrypoint": "gcd",
+    "public_cases": [
+      [
+        0,
+        0
+      ],
+      [
+        0,
+        15
+      ],
+      [
+        15,
+        0
+      ],
+      [
+        15,
+        21
+      ],
+      [
+        1000,
+        600
+      ],
+      [
+        7,
+        13
+      ],
+      [
+        128,
+        64
+      ],
+      [
+        4294967295,
+        4294967295
+      ],
+      [
+        1,
+        4294967295
+      ],
+      [
+        4294967295,
+        1
+      ],
+      [
+        2147483648,
+        2147483647
+      ],
+      [
+        65536,
+        131072
+      ],
+      [
+        48,
+        18
+      ],
+      [
+        55,
+        35
+      ]
+    ],
+    "oracle_seed": 6623731750,
+    "hidden_cases": 256,
+    "hidden_max_input": 4096,
+    "benchmark_samples": 5,
+    "benchmark_rounds": 3,
+    "fuel_per_call": 100000,
+    "memory_pages": 32
+  },
+  "min_relative_improvement": 0.01,
+  "max_wall_clock_seconds": 120
+}

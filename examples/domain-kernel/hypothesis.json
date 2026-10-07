@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "payload": {
+    "kind": "hypothesis",
+    "data": {
+      "id": "H-example",
+      "intent": "INT-example",
+      "cell": "ExampleCell",
+      "statement": "Cache parsing to reduce repeated work",
+      "strategy": "local-cache",
+      "parent_knowledge": null,
+      "created_at": 1
+    }
+  }
+}

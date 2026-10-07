@@ -1,0 +1,184 @@
+{
+  "$defs": {
+    "CandidateId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "CellId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "ContentHash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "EvalSpecId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "EvidenceId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "ExperimentId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "ExperimentStatus": {
+      "enum": [
+        "created",
+        "running",
+        "stopped",
+        "completed"
+      ],
+      "type": "string"
+    },
+    "HypothesisId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "IntentId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "KnowledgeId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "OracleId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "Timestamp": {
+      "description": "UTC Unix seconds. The caller supplies time; the kernel has no ambient clock.",
+      "format": "uint64",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "VersionedEvalSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/EvalSpecId"
+        },
+        "version": {
+          "format": "uint32",
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "version"
+      ],
+      "type": "object"
+    },
+    "VersionedOracle": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/OracleId"
+        },
+        "version": {
+          "format": "uint32",
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "version"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "https://ace.org.ai/schemas/v1/experiment.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "candidates": {
+      "items": {
+        "$ref": "#/$defs/CandidateId"
+      },
+      "type": "array",
+      "uniqueItems": true
+    },
+    "cell": {
+      "$ref": "#/$defs/CellId"
+    },
+    "created_at": {
+      "$ref": "#/$defs/Timestamp"
+    },
+    "environment_hash": {
+      "$ref": "#/$defs/ContentHash"
+    },
+    "evalspec": {
+      "$ref": "#/$defs/VersionedEvalSpec"
+    },
+    "evidence": {
+      "items": {
+        "$ref": "#/$defs/EvidenceId"
+      },
+      "type": "array",
+      "uniqueItems": true
+    },
+    "hypothesis": {
+      "$ref": "#/$defs/HypothesisId"
+    },
+    "id": {
+      "$ref": "#/$defs/ExperimentId"
+    },
+    "intent": {
+      "$ref": "#/$defs/IntentId"
+    },
+    "oracle": {
+      "$ref": "#/$defs/VersionedOracle"
+    },
+    "parent_knowledge": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/KnowledgeId"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "status": {
+      "$ref": "#/$defs/ExperimentStatus"
+    }
+  },
+  "required": [
+    "id",
+    "cell",
+    "intent",
+    "hypothesis",
+    "candidates",
+    "environment_hash",
+    "evalspec",
+    "oracle",
+    "status",
+    "evidence",
+    "created_at"
+  ],
+  "title": "Experiment",
+  "type": "object"
+}

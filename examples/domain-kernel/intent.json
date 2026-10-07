@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "payload": {
+    "kind": "intent",
+    "data": {
+      "id": "INT-example",
+      "cell": "ExampleCell",
+      "objective": "Reduce p95 without changing behavior",
+      "evalspec": {
+        "id": "ES-example",
+        "version": 1,
+        "oracle": {
+          "id": "OR-example",
+          "version": 1
+        },
+        "hard_constraints": {
+          "memory_mb": {
+            "comparison": "at_most",
+            "value": 256.0,
+            "unit": "MB"
+          }
+        },
+        "required_checks": [
+          "contract",
+          "isolation"
+        ],
+        "objectives": {
+          "p95_ms": {
+            "direction": "minimize",
+            "unit": "ms"
+          }
+        }
+      },
+      "budget": {
+        "max_candidates": 100,
+        "max_wall_clock_seconds": 900,
+        "max_compute_usd": 25.0
+      },
+      "stop": {
+        "min_relative_improvement": 0.01,
+        "generations_without_material_gain": 4
+      }
+    }
+  }
+}

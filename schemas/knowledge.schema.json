@@ -1,0 +1,167 @@
+{
+  "$defs": {
+    "CellId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "Claim": {
+      "additionalProperties": false,
+      "properties": {
+        "confidence": {
+          "$ref": "#/$defs/Probability"
+        },
+        "contradicting_evidence": {
+          "items": {
+            "$ref": "#/$defs/EvidenceId"
+          },
+          "type": "array",
+          "uniqueItems": true
+        },
+        "created_at": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "environment_hash": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "id": {
+          "$ref": "#/$defs/ClaimId"
+        },
+        "scope": {
+          "$ref": "#/$defs/Text"
+        },
+        "statement": {
+          "$ref": "#/$defs/Text"
+        },
+        "status": {
+          "$ref": "#/$defs/ClaimStatus"
+        },
+        "superseded_by": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ClaimId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "supporting_evidence": {
+          "items": {
+            "$ref": "#/$defs/EvidenceId"
+          },
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "id",
+        "statement",
+        "status",
+        "supporting_evidence",
+        "contradicting_evidence",
+        "scope",
+        "confidence",
+        "environment_hash",
+        "created_at"
+      ],
+      "type": "object"
+    },
+    "ClaimId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "ClaimStatus": {
+      "enum": [
+        "open",
+        "proven",
+        "rejected",
+        "superseded"
+      ],
+      "type": "string"
+    },
+    "ContentHash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "EvidenceId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "KnowledgeId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "Probability": {
+      "format": "double",
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "type": "number"
+    },
+    "Text": {
+      "description": "Nonempty text; unlike identifiers this may contain spaces and Unicode.",
+      "minLength": 1,
+      "pattern": "\\S",
+      "type": "string"
+    },
+    "Timestamp": {
+      "description": "UTC Unix seconds. The caller supplies time; the kernel has no ambient clock.",
+      "format": "uint64",
+      "minimum": 0,
+      "type": "integer"
+    }
+  },
+  "$id": "https://ace.org.ai/schemas/v1/knowledge.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "agent_summary": {
+      "$ref": "#/$defs/Text"
+    },
+    "cell": {
+      "$ref": "#/$defs/CellId"
+    },
+    "claims": {
+      "items": {
+        "$ref": "#/$defs/Claim"
+      },
+      "type": "array"
+    },
+    "created_at": {
+      "$ref": "#/$defs/Timestamp"
+    },
+    "id": {
+      "$ref": "#/$defs/KnowledgeId"
+    },
+    "parents": {
+      "items": {
+        "$ref": "#/$defs/KnowledgeId"
+      },
+      "type": "array",
+      "uniqueItems": true
+    },
+    "version": {
+      "format": "uint32",
+      "minimum": 1,
+      "type": "integer"
+    }
+  },
+  "required": [
+    "id",
+    "cell",
+    "version",
+    "parents",
+    "claims",
+    "agent_summary",
+    "created_at"
+  ],
+  "title": "Knowledge",
+  "type": "object"
+}

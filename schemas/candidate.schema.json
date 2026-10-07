@@ -1,0 +1,165 @@
+{
+  "$defs": {
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "properties": {
+        "hash": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "location": {
+          "$ref": "#/$defs/Text"
+        }
+      },
+      "required": [
+        "location",
+        "hash"
+      ],
+      "type": "object"
+    },
+    "CandidateId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "CellId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "ChampionId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "ContentHash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "Generator": {
+      "additionalProperties": false,
+      "properties": {
+        "model": {
+          "$ref": "#/$defs/Text"
+        },
+        "provider": {
+          "$ref": "#/$defs/Text"
+        },
+        "revision": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Text"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "provider",
+        "model"
+      ],
+      "type": "object"
+    },
+    "HypothesisId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "Provenance": {
+      "additionalProperties": false,
+      "properties": {
+        "created_at": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "generator": {
+          "$ref": "#/$defs/Generator"
+        },
+        "input_hash": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "parent_candidates": {
+          "items": {
+            "$ref": "#/$defs/CandidateId"
+          },
+          "type": "array",
+          "uniqueItems": true
+        },
+        "tool_versions": {
+          "additionalProperties": false,
+          "patternProperties": {
+            "\\S": {
+              "$ref": "#/$defs/Text"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "required": [
+        "generator",
+        "input_hash",
+        "tool_versions",
+        "parent_candidates",
+        "created_at"
+      ],
+      "type": "object"
+    },
+    "Text": {
+      "description": "Nonempty text; unlike identifiers this may contain spaces and Unicode.",
+      "minLength": 1,
+      "pattern": "\\S",
+      "type": "string"
+    },
+    "Timestamp": {
+      "description": "UTC Unix seconds. The caller supplies time; the kernel has no ambient clock.",
+      "format": "uint64",
+      "minimum": 0,
+      "type": "integer"
+    }
+  },
+  "$id": "https://ace.org.ai/schemas/v1/candidate.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "base": {
+      "$ref": "#/$defs/ArtifactRef"
+    },
+    "cell": {
+      "$ref": "#/$defs/CellId"
+    },
+    "environment_hash": {
+      "$ref": "#/$defs/ContentHash"
+    },
+    "hypothesis": {
+      "$ref": "#/$defs/HypothesisId"
+    },
+    "id": {
+      "$ref": "#/$defs/CandidateId"
+    },
+    "parent": {
+      "$ref": "#/$defs/ChampionId"
+    },
+    "patch": {
+      "$ref": "#/$defs/ArtifactRef"
+    },
+    "provenance": {
+      "$ref": "#/$defs/Provenance"
+    }
+  },
+  "required": [
+    "id",
+    "parent",
+    "base",
+    "cell",
+    "hypothesis",
+    "patch",
+    "environment_hash",
+    "provenance"
+  ],
+  "title": "Candidate",
+  "type": "object"
+}
