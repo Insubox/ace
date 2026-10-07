@@ -27,6 +27,8 @@ jobs:
       - run: node examples/judge-corpus/build.mjs
       - run: cargo run --locked -p ace-cli -- run examples/judge-corpus --output /tmp/ace-corpus-ci --jobs 4
       - run: node examples/judge-corpus/check-run.mjs /tmp/ace-corpus-ci
+      - run: node scripts/check-agent-driver.mjs target/debug/ace
+      - run: node scripts/check-store-sync.mjs target/debug/ace
   cloud:
     runs-on: ubuntu-latest
     steps:

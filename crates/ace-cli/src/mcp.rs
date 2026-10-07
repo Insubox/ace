@@ -47,6 +47,12 @@ struct ReadRun {
 }
 #[derive(Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
+struct Inspect {
+    run: CheckName,
+    report: CheckName,
+}
+#[derive(Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
 struct Explain {
     run: CheckName,
     candidate: CandidateId,
@@ -70,6 +76,32 @@ struct History {
 #[derive(Deserialize)]
 #[serde(tag = "name", content = "arguments", deny_unknown_fields)]
 enum Call {
+    #[serde(rename = "ace_store_save")]
+    StoreSave(StoreSave),
+    #[serde(rename = "ace_store_log")]
+    StoreLog(ReadStore),
+    #[serde(rename = "ace_store_checkout")]
+    StoreCheckout(StoreCheckout),
+    #[serde(rename = "ace_store_clone")]
+    StoreClone(StoreClone),
+    #[serde(rename = "ace_store_commit")]
+    StoreCommit(StoreCommit),
+    #[serde(rename = "ace_store_export_git")]
+    StoreExportGit(StoreExportGit),
+    #[serde(rename = "ace_inspect")]
+    Inspect(Inspect),
+    #[serde(rename = "ace_memory")]
+    Memory(ReadMemory),
+    #[serde(rename = "ace_agent_start")]
+    AgentStart(AgentStart),
+    #[serde(rename = "ace_agent_next")]
+    AgentNext(ReadAgent),
+    #[serde(rename = "ace_agent_status")]
+    AgentStatus(ReadAgent),
+    #[serde(rename = "ace_agent_submit")]
+    AgentSubmit(AgentSubmit),
+    #[serde(rename = "ace_agent_fault")]
+    AgentFault(AgentFault),
     #[serde(rename = "ace_archive")]
     Archive(Archive),
     #[serde(rename = "ace_archive_status")]
@@ -94,6 +126,106 @@ enum Call {
     Evolve(Evolve),
     #[serde(rename = "ace_history")]
     History(History),
+}
+
+#[derive(Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+struct StoreSave {
+    run: CheckName,
+    store: CheckName,
+}
+#[derive(Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+struct ReadStore {
+    store: CheckName,
+}
+#[derive(Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+struct StoreCheckout {
+    store: CheckName,
+    version: ContentHash,
+    output: CheckName,
+}
+#[derive(Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+struct StoreClone {
+    store: CheckName,
+    destination: CheckName,
+}
+#[derive(Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+struct StoreCommit {
+    source: CheckName,
+    store: CheckName,
+    files: Vec<String>,
+    message: Text,
+    parents: Option<std::collections::BTreeSet<ContentHash>>,
+}
+#[derive(Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+struct StoreExportGit {
+    store: CheckName,
+    repository: CheckName,
+}
+
+#[derive(Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+struct ReadMemory {
+    repository: Option<CheckName>,
+    store: Option<CheckName>,
+    baseline_run: CheckName,
+    limit: Option<usize>,
+}
+#[derive(Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+struct AgentStart {
+    campaign: CheckName,
+    baseline_run: CheckName,
+    repository: Option<CheckName>,
+    store: Option<CheckName>,
+    rounds: Option<u32>,
+    candidates: Option<u32>,
+    attempts: Option<u32>,
+    patience: Option<u32>,
+    jobs: Option<u32>,
+}
+#[derive(Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+struct ReadAgent {
+    campaign: CheckName,
+}
+#[derive(Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+struct AgentSubmit {
+    campaign: CheckName,
+    submission: crate::agent::Submission,
+}
+#[derive(Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+struct AgentFault {
+    campaign: CheckName,
+    fault: crate::agent::Fault,
+}
+
+fn agent_path(root: &Path, campaign: &CheckName) -> Result<PathBuf> {
+    let directory = path(root, "agents", campaign, true)?;
+    crate::agent::check_workspace(&directory, root)?;
+    Ok(directory)
+}
+fn history_path(
+    root: &Path,
+    repository: Option<&CheckName>,
+    store: Option<&CheckName>,
+    create: bool,
+) -> Result<PathBuf> {
+    let (category, name) = match (repository, store) {
+        (Some(name), None) => ("archives", name),
+        (None, Some(name)) => ("stores", name),
+        _ => return Err("choose one native store name or optional Git repository name".into()),
+    };
+    portable_name(name.as_str())?;
+    let exists = root.join(category).join(name.as_str()).try_exists()?;
+    path(root, category, name, exists || !create)
 }
 
 #[derive(Deserialize, JsonSchema)]
@@ -161,6 +293,19 @@ fn tool<T: JsonSchema>(name: &str, description: &str, readonly: bool) -> Value {
 
 fn tools() -> Value {
     json!({"tools":[
+        tool::<StoreSave>("ace_store_save", "Save verified winner source, every evaluated version and evidence-backed learning in ACE's native version engine under stores/<store>. No Git or account required.", false),
+        tool::<ReadStore>("ace_store_log", "Verify native content objects, version parents and the ordered hash journal. Return source versions, evaluated winners/losers and generator faults.", true),
+        tool::<StoreCheckout>("ace_store_checkout", "Restore exact bytes from a native version into a fresh checkouts/<output> folder. Never runs source or replaces existing files.", false),
+        tool::<StoreClone>("ace_store_clone", "Copy verified native versions and shared content objects to a fresh stores/<destination>, without Git or network access.", false),
+        tool::<StoreCommit>("ace_store_commit", "Version explicitly listed regular files from sources/<source> in the native store. Maximum 4096 paths, 8 MiB per file, 128 MiB per version. Optional parents must already exist; no automatic source execution or merge.", false),
+        tool::<StoreExportGit>("ace_store_export_git", "Optionally export evaluated versions and faults from a native store to a fresh dedicated Git archive. Arbitrary source versions are not yet supported by this adapter. Git is required only for this export.", false),
+        tool::<Inspect>("ace_inspect", "Export a verified run as an interactive offline HTML inspector under reports/<report>/index.html. Shows candidate source, measurements, policy, evidence and retained learning; never runs source. Requires a fresh report name.", false),
+        tool::<ReadMemory>("ace_memory", "Retrieve bounded positive and negative observations and winner WAT from verified native ACE or optional Git history compatible with the chosen baseline run. Hidden Oracle cases and raw failure messages are excluded. Default 16 observations; maximum 64.", true),
+        tool::<AgentStart>("ace_agent_start", "Start a bounded agent campaign under agents/<campaign>, archiving and replaying its qualified baseline. Context includes winner source and verified learning. Defaults: 4 rounds, 2 proposals, 3 attempts, patience 2, jobs 2. Choose a native store under stores/<store>, or optional Git under archives/<repository>.", false),
+        tool::<ReadAgent>("ace_agent_next", "Freeze or return the next public generation task. The context hash binds subsequent proposals. Returns a terminal stop reason when bounds or patience are exhausted.", false),
+        tool::<ReadAgent>("ace_agent_status", "Verify campaign tasks, evaluated proposals, source snapshots, winner ancestry and Git records. Does not create another task.", true),
+        tool::<AgentSubmit>("ace_agent_submit", "Submit proposals for the pending context hash. Executes the independent Oracle and policy, archives winner source and all learning, and advances the campaign. Generator text and metadata never qualify a candidate.", false),
+        tool::<AgentFault>("ace_agent_fault", "Record an unavailable, timed-out or malformed generation attempt without assigning a candidate correctness label. Faults consume the bounded retry allowance.", false),
         tool::<Archive>("ace_archive", "Commit a verified run, winning WAT source and learning from every candidate to a dedicated local Git repository under archives/<repository>. Requires Git on PATH. Preserves existing commits; no remote push or application repository modification.", false),
         tool::<ReadArchive>("ace_archive_status", "Verify committed local Git snapshots, archived evidence and source-to-WASM identity. Requires Git on PATH.", true),
         tool::<Propose>("ace_propose", "Register agent-authored WAT programs for import-free gcd(u32,u32)->u32; gcd(0,0)=0. Default trusted reference, or a verified local Champion selected with baseline_run. 1–100 candidates, at most 32 KiB source each; entire MCP frame remains limited to 64 KiB. Provenance is caller asserted. Registration never qualifies; call ace_run next.", false),
@@ -178,6 +323,76 @@ fn tools() -> Value {
 
 fn execute(root: &Path, call: Call) -> Result<Value> {
     Ok(match call {
+        Call::StoreSave(args) => crate::store::save(
+            &path(root, "runs", &args.run, true)?,
+            &history_path(root, None, Some(&args.store), true)?,
+        )?,
+        Call::StoreLog(args) => crate::store::status(&path(root, "stores", &args.store, true)?)?,
+        Call::StoreCheckout(args) => crate::store::checkout(
+            &path(root, "stores", &args.store, true)?,
+            &args.version,
+            &path(root, "checkouts", &args.output, false)?,
+        )?,
+        Call::StoreClone(args) => crate::store::clone_store(
+            &path(root, "stores", &args.store, true)?,
+            &path(root, "stores", &args.destination, false)?,
+        )?,
+        Call::StoreCommit(args) => {
+            let destination = history_path(root, None, Some(&args.store), true)?;
+            let id = crate::store::commit_source(
+                &path(root, "sources", &args.source, true)?,
+                &destination,
+                &args.files,
+                args.message,
+                args.parents,
+            )?;
+            json!({"version":id,"store":destination,"backend":"ace-native-v1"})
+        }
+        Call::StoreExportGit(args) => crate::store::export_git(
+            &path(root, "stores", &args.store, true)?,
+            &path(root, "archives", &args.repository, false)?,
+        )?,
+        Call::Inspect(args) => crate::inspect::export(
+            &path(root, "runs", &args.run, true)?,
+            &path(root, "reports", &args.report, false)?.join("index.html"),
+        )?,
+        Call::Memory(args) => serde_json::to_value(crate::memory::query(
+            &history_path(root, args.repository.as_ref(), args.store.as_ref(), false)?,
+            &ace_runner::load_report(&path(root, "runs", &args.baseline_run, true)?)?,
+            args.limit.unwrap_or(16),
+        )?)?,
+        Call::AgentStart(args) => {
+            let destination =
+                history_path(root, args.repository.as_ref(), args.store.as_ref(), true)?;
+            serde_json::to_value(crate::agent::start(
+                &path(root, "agents", &args.campaign, false)?,
+                args.campaign,
+                &path(root, "runs", &args.baseline_run, true)?,
+                &destination,
+                crate::agent::Bounds {
+                    rounds: args.rounds.unwrap_or(4),
+                    candidates: args.candidates.unwrap_or(2),
+                    attempts: args.attempts.unwrap_or(3),
+                    patience: args.patience.unwrap_or(2),
+                    jobs: args.jobs.unwrap_or(2),
+                },
+                args.store.is_some(),
+            )?)?
+        }
+        Call::AgentNext(args) => {
+            serde_json::to_value(crate::agent::next(&agent_path(root, &args.campaign)?)?)?
+        }
+        Call::AgentStatus(args) => {
+            serde_json::to_value(crate::agent::status(&agent_path(root, &args.campaign)?)?)?
+        }
+        Call::AgentSubmit(args) => serde_json::to_value(crate::agent::submit(
+            &agent_path(root, &args.campaign)?,
+            &args.submission,
+        )?)?,
+        Call::AgentFault(args) => serde_json::to_value(crate::agent::fault(
+            &agent_path(root, &args.campaign)?,
+            &args.fault,
+        )?)?,
         Call::Archive(args) => {
             portable_name(args.repository.as_str())?;
             let exists = root

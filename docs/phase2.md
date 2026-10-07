@@ -10,9 +10,10 @@ observed results and measurement limits. New deployments still require their own
 account credentials, resources, container availability and quotas.
 
 The supported Cell remains import-free WASM GCD. This milestone distributes
-registered modules; native source compilation, AI generation, successive halving,
-multi-generation search, multi-tenant authentication and production rollout are
-future work. Clef integration belongs to Phase 3.
+registered modules. Later milestones add [bounded agent generation and search](agent-campaigns.md)
+and [private native hosting/accounts](native-hosting.md). Native candidate execution,
+successive halving, isolated tenants and production rollout remain future work.
+Clef integration belongs to Phase 3.
 
 ## Boundaries and execution
 
@@ -104,10 +105,12 @@ There is no production deployment or canonical-source replacement in this flow.
 
 ## API and MCP
 
-All routes require `Authorization: Bearer <API_TOKEN>`. A missing/short token fails
+Experiment routes require `Authorization: Bearer <API_TOKEN>` or an authorized
+ACE account session. The public dashboard, login and one-time first-account setup
+are described in [native hosting](native-hosting.md). A missing/short token fails
 closed. Use a dedicated random token of at least 32 characters for the deployment.
-One token protects one trusted project deployment; there is no tenant isolation
-or OAuth authorization server yet. Never expose coordinator or sandbox bindings as
+The operator token protects one trusted deployment. ACE account roles now
+control its shared workspace; there is no tenant isolation or OAuth server yet. Never expose coordinator or sandbox bindings as
 public execution endpoints.
 
 | Method | Route | Behavior |
@@ -160,7 +163,7 @@ image first in this environment; Wrangler's dry run can then reuse its build cac
 `npm run build:worker` builds the image and Worker without deploying or creating
 remote resources. Node 24 and Docker are needed for these checks.
 
-Verification includes 62 Rust tests and 11 Workerd tests: independent distributed
+The original Phase 2 verification included 62 Rust tests and 11 Workerd tests: independent distributed
 evaluations, 100 known registered candidates, corrupted/incomplete/stale inputs,
 Oracle rejection versus evaluator Hold, replay, authentication, upload bounds,
 exclusive leases, idempotency, real Workflow dispatch/events, immutable R2 writes
@@ -175,7 +178,7 @@ and replayed. Repeated known modules test orchestration, not AI diversity.
 placeholder. Before a real deployment, choose the Cloudflare account, provision
 D1 `ace-metadata`, R2 `ace-artifacts` and queues `ace-evaluations`,
 `ace-finalizations`, `ace-dead`; replace the D1 UUID; verify Containers/Workflows
-availability and capacity for the account; apply the D1 migration remotely; and
+availability and capacity for the account; apply all D1 migrations remotely (including native stores and accounts); and
 configure the Worker secret `API_TOKEN`. Use account-scoped deployment credentials
 through the environment's supported secret configuration, not chat messages.
 The managed environment must allow the Cloudflare API and required registry hosts.

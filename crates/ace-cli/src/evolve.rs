@@ -215,7 +215,7 @@ pub(crate) fn run_with_git(
         crate::source::freeze(&directory, &saved_run, &report)?;
         create_atomic(&saved_run.join("knowledge-linked.json"), &json(&node)?)?;
         if let Some(repository) = repository {
-            crate::archive::save(&saved_run, repository)?;
+            crate::history::save(&saved_run, repository)?;
         }
         unchanged = if receipt.improved { 0 } else { unchanged + 1 };
         campaign.steps.push(receipt);

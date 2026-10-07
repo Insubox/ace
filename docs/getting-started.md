@@ -9,8 +9,9 @@ Champion and preserve linked Knowledge.
 The local experience requires no account, API key, Cloudflare service, Docker,
 Node or candidate compiler. A downloaded native executable runs by itself.
 The built-in generator is a deterministic local grammar. Coding agents can also
-submit their own WAT through `ace_propose`. Direct vendor API adapters and arbitrary
-application Cells remain future work. Git must be installed for history commits.
+submit their own WAT through `ace_propose`. Bounded agent campaigns can also use the optional Workers AI bridge. Arbitrary
+application Cells remain future work. Native ACE history does not require Git;
+Git is needed only for the optional compatibility archive/export commands.
 
 ## Download an executable
 
@@ -29,12 +30,12 @@ application Cells remain future work. Git must be installed for history commits.
 
 ```sh
 # Linux
-sha256sum -c ace-0.2.0-x86_64-unknown-linux-musl.tar.gz.sha256
+sha256sum -c ace-0.3.0-x86_64-unknown-linux-musl.tar.gz.sha256
 # macOS (use your downloaded filename)
-shasum -a 256 -c ace-0.2.0-aarch64-apple-darwin.tar.gz.sha256
+shasum -a 256 -c ace-0.3.0-aarch64-apple-darwin.tar.gz.sha256
 ```
 
-On Windows, run `Get-FileHash .\ace-0.2.0-x86_64-pc-windows-msvc.zip -Algorithm SHA256`
+On Windows, run `Get-FileHash .\ace-0.3.0-x86_64-pc-windows-msvc.zip -Algorithm SHA256`
 in PowerShell and compare it with the text in the downloaded `.sha256` file.
 These hashes detect changed downloads; they are not a code-signing certificate.
 
@@ -46,6 +47,7 @@ These hashes detect changed downloads; they are not a code-signing certificate.
 ./ace demo
 ./ace status ace-demo/run
 ./ace knowledge ace-demo/run
+./ace inspect ace-demo/run --output ace-report.html
 ```
 
 On Windows use PowerShell:
@@ -55,6 +57,7 @@ On Windows use PowerShell:
 .\ace.exe demo
 .\ace.exe status ace-demo/run
 .\ace.exe knowledge ace-demo/run
+.\ace.exe inspect ace-demo/run --output ace-report.html
 ```
 
 The demo evaluates 12 candidates and a baseline. Nine generated candidates and
@@ -173,10 +176,23 @@ args = ["mcp", "--workspace", "/absolute/path/to/ace-workspace"]
 ```
 
 On Windows use the absolute path to `ace.exe` and escape backslashes in JSON.
-The client starts ACE, performs the MCP handshake and discovers twelve tools:
+The client starts ACE, performs the MCP handshake and discovers twenty-five tools:
 
 | Tool | Purpose |
 | --- | --- |
+| `ace_store_save` | Retain winner source, evidence and all learning in native ACE versions |
+| `ace_store_log` | Verify native objects, version ancestry and ordered history |
+| `ace_store_checkout` | Restore exact files from a version into a fresh folder |
+| `ace_store_clone` | Copy native history without Git or network access |
+| `ace_store_commit` | Version explicitly listed source files |
+| `ace_store_export_git` | Optionally export evaluated history to Git |
+| `ace_inspect` | Export an interactive offline HTML view of a verified run |
+| `ace_memory` | Retrieve compatible verified winning source and learning from ACE history |
+| `ace_agent_start` | Start a bounded agent campaign with a verified baseline |
+| `ace_agent_next` | Freeze the next public task and learning context |
+| `ace_agent_submit` | Independently evaluate agent proposals and save all outcomes |
+| `ace_agent_fault` | Retain a generator fault without inventing candidate outcomes |
+| `ace_agent_status` | Verify campaign receipts, budgets and archived runs |
 | `ace_propose` | Assemble and register agent-authored WAT; still requires evaluation |
 | `ace_proposal_status` | Verify the proposal batch and source-to-WASM hashes |
 | `ace_archive` | Commit winner source and all learning under `archives/<name>` |
@@ -204,9 +220,24 @@ expose a shell or a native compiler, and it does not deploy the Champion.
 The archive tools invoke installed Git with fixed arguments to save local history.
 The server is a local process controlled by your MCP client, not an HTTP service.
 Your chosen agent may have its own account requirements; ACE's local tools have
-none. Vendor API adapters and an IDE extension remain separate unfinished work.
+none. Additional vendor adapters and an IDE extension remain unfinished.
 
-## Keep winner code and all learning in Git
+## Keep winner code and all learning in native ACE
+
+```sh
+./ace store save ace-demo/run --store ace-history
+./ace store log ace-history
+./ace memory ace-history --baseline-run ace-demo/run
+./ace store clone ace-history copied-history
+```
+
+These commands retain source, every evaluated result and learning without Git.
+Use `./ace evolve my-native-search --generations 4 --store my-native-history` to
+save every generation automatically. Read [native versions](https://github.com/Insubox/ace/blob/main/docs/native-versions.md)
+for arbitrary source files and restoration. The optional [native hosting guide](https://github.com/Insubox/ace/blob/main/docs/native-hosting.md)
+explains ACE account login, remote push/pull and the private browser workspace.
+
+## Optional Git compatibility history
 
 1. Install Git if `git --version` does not work.
 2. Choose fresh folder names, then run:
@@ -237,3 +268,25 @@ ACE preserves application repositories and pending changes. These commands save
 locally; to publish the history, configure a remote and use ordinary Git commands.
 See [agent proposals and Git history](https://github.com/Insubox/ace/blob/main/docs/agents-and-git.md)
 for the proposal contract and the complete snapshot format.
+
+## Let agents reuse what ACE learned
+
+Follow [agent campaigns](https://github.com/Insubox/ace/blob/main/docs/agent-campaigns.md)
+to feed a verified winner and positive/negative learning back into your coding agent.
+The campaign commands work with the downloaded executable without Git.
+The optional Qwen/Llama bridge also needs Node 24 and your configured Cloudflare
+Worker; it performs paid inference under separate bounded budgets.
+
+## Inspect a run in your browser
+
+`ace inspect <run-folder> --output ace-report.html` verifies the saved run and
+available frozen sources, then writes a fresh self-contained HTML file. Open that
+file in a browser to filter the leaderboard and inspect each candidate's source,
+evaluation, evidence, policy and retained Knowledge. The view makes no network
+requests and never executes the candidate source. It is a snapshot verified at
+export; re-run ACE to verify the original evidence later. Existing outputs are
+preserved. Some managed browsers block local files; use your normal browser or a
+local static file server according to your organization's browser policy.
+
+Read [native versions](https://github.com/Insubox/ace/blob/main/docs/native-versions.md)
+to save arbitrary source files, restore versions and copy ACE history without Git.

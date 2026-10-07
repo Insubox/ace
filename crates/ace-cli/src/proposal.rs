@@ -200,7 +200,8 @@ pub(crate) fn register(
         files.insert("sources/C-baseline.wat".into(), source.into_bytes());
     }
     for proposal in &batch.candidates {
-        let bytes = wat::parse_str(&proposal.wat)?;
+        let bytes = wat::parse_str(&proposal.wat)
+            .map_err(|error| format!("invalid WAT proposal: {error}"))?;
         if bytes.len() > 1_048_576 {
             return Err("assembled WASM exceeds 1 MiB".into());
         }

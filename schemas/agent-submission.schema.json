@@ -1,0 +1,171 @@
+{
+  "$defs": {
+    "Batch": {
+      "additionalProperties": false,
+      "properties": {
+        "candidates": {
+          "items": {
+            "$ref": "#/$defs/Proposal"
+          },
+          "maxItems": 100,
+          "minItems": 1,
+          "type": "array"
+        },
+        "cell": {
+          "$ref": "#/$defs/CellId"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/ProtocolVersion"
+        }
+      },
+      "required": [
+        "schema_version",
+        "cell",
+        "candidates"
+      ],
+      "type": "object"
+    },
+    "CandidateId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "CellId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "ContentHash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "Generator": {
+      "additionalProperties": false,
+      "properties": {
+        "model": {
+          "$ref": "#/$defs/Text"
+        },
+        "provider": {
+          "$ref": "#/$defs/Text"
+        },
+        "revision": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Text"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "provider",
+        "model"
+      ],
+      "type": "object"
+    },
+    "Proposal": {
+      "additionalProperties": false,
+      "properties": {
+        "generator": {
+          "$ref": "#/$defs/Generator"
+        },
+        "id": {
+          "$ref": "#/$defs/CandidateId"
+        },
+        "strategy": {
+          "$ref": "#/$defs/Text"
+        },
+        "wat": {
+          "maxLength": 32768,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "wat",
+        "strategy",
+        "generator"
+      ],
+      "type": "object"
+    },
+    "ProtocolVersion": {
+      "const": 1,
+      "type": "integer"
+    },
+    "ProviderReceipt": {
+      "additionalProperties": false,
+      "properties": {
+        "generation": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "input_hash": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "model": {
+          "$ref": "#/$defs/Text"
+        },
+        "provider": {
+          "$ref": "#/$defs/Text"
+        },
+        "request_hash": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "response_hash": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ContentHash"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "provider",
+        "model",
+        "generation",
+        "input_hash",
+        "request_hash"
+      ],
+      "type": "object"
+    },
+    "Text": {
+      "description": "Nonempty text; unlike identifiers this may contain spaces and Unicode.",
+      "minLength": 1,
+      "pattern": "\\S",
+      "type": "string"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "context_hash": {
+      "$ref": "#/$defs/ContentHash"
+    },
+    "proposals": {
+      "$ref": "#/$defs/Batch"
+    },
+    "provider_receipt": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ProviderReceipt"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "context_hash",
+    "proposals"
+  ],
+  "title": "Submission",
+  "type": "object"
+}

@@ -1,0 +1,99 @@
+{
+  "$defs": {
+    "ContentHash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "FaultKind": {
+      "enum": [
+        "unavailable",
+        "timeout",
+        "invalid_response",
+        "invalid_proposal",
+        "duplicate_proposal",
+        "budget_exhausted"
+      ],
+      "type": "string"
+    },
+    "ProviderReceipt": {
+      "additionalProperties": false,
+      "properties": {
+        "generation": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "input_hash": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "model": {
+          "$ref": "#/$defs/Text"
+        },
+        "provider": {
+          "$ref": "#/$defs/Text"
+        },
+        "request_hash": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "response_hash": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ContentHash"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "provider",
+        "model",
+        "generation",
+        "input_hash",
+        "request_hash"
+      ],
+      "type": "object"
+    },
+    "Text": {
+      "description": "Nonempty text; unlike identifiers this may contain spaces and Unicode.",
+      "minLength": 1,
+      "pattern": "\\S",
+      "type": "string"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "compiler_diagnostic": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Text"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "context_hash": {
+      "$ref": "#/$defs/ContentHash"
+    },
+    "fault": {
+      "$ref": "#/$defs/FaultKind"
+    },
+    "provider_receipt": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ProviderReceipt"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "context_hash",
+    "fault"
+  ],
+  "title": "Fault",
+  "type": "object"
+}

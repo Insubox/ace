@@ -1,0 +1,48 @@
+{
+  "$defs": {
+    "ContentHash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "ProtocolVersion": {
+      "const": 1,
+      "type": "integer"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "content_hash": {
+      "$ref": "#/$defs/ContentHash"
+    },
+    "previous": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ContentHash"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ProtocolVersion"
+    },
+    "sequence": {
+      "format": "uint32",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "version": {
+      "$ref": "#/$defs/ContentHash"
+    }
+  },
+  "required": [
+    "schema_version",
+    "sequence",
+    "version",
+    "content_hash"
+  ],
+  "title": "Entry",
+  "type": "object"
+}

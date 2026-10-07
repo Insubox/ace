@@ -1,7 +1,7 @@
 import { defineConfig } from 'vitest/config';
 import { cloudflareTest } from '@cloudflare/vitest-pool-workers';
 export default defineConfig({
-  plugins: [cloudflareTest({
+  plugins: [{name:'ace-html-text',enforce:'pre',transform(source,id){if(id.endsWith('.html'))return `export default ${JSON.stringify(source)};`;}},cloudflareTest({
     main: './cloud/src/worker.ts',
     miniflare: {
       compatibilityDate: '2026-10-05', compatibilityFlags: ['nodejs_compat'],

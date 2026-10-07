@@ -62,6 +62,8 @@ pub(crate) fn freeze(input: &Path, run: &Path, report: &RunReport) -> Result<Sou
         ("registration.json", "proposal-registration.json"),
         ("proposals.json", "proposal-batch.json"),
         ("generation.json", "generation.json"),
+        ("agent-task.json", "agent-task.json"),
+        ("agent-submission.json", "agent-submission.json"),
     ] {
         let path = input.join(input_name);
         if path.try_exists()? {
@@ -102,6 +104,8 @@ pub(crate) fn verify(run: &Path, report: &RunReport) -> Result<Sources> {
             "proposal-registration.json",
             "proposal-batch.json",
             "generation.json",
+            "agent-task.json",
+            "agent-submission.json",
         ]
         .contains(&name.as_str())
         {

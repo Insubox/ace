@@ -62,6 +62,10 @@ def main():
         if len(demo["candidates"]) != 13 or sum(c["outcome"] == "qualified" for c in demo["candidates"]) != 10:
             raise ValueError("offline demo did not evaluate the expected complete workload")
         json.loads(run("status", "demo/run"))
+        view = json.loads(run("inspect", "demo/run", "--output", "report.html"))
+        exported = (root / "report.html").read_text(encoding="utf-8")
+        if not view["verified_at_export"] or view["report_hash"] not in exported or "__ACE_DATA__" in exported:
+            raise ValueError("packaged offline inspector did not export verified evidence")
         replay = json.loads(run("replay", "demo/run", demo["champion"]))
         if not replay["matched"]:
             raise ValueError("packaged Champion replay changed its observations")
@@ -84,6 +88,54 @@ def main():
             {"id": "C-agent-add", "wat": '(module (func (export "gcd") (param i32 i32) (result i32) local.get 0 local.get 1 i32.add))',
              "strategy": "incorrect-addition", "generator": {"provider": "manual-fixture-b", "model": "package-test"}},
         ]}
+        state = json.loads(run("agent-start", "agent-campaign", "--campaign", "package-test",
+                               "--baseline-run", "demo/run", "--store", "agent-history",
+                               "--rounds", "2", "--candidates", "2", "--attempts", "2"))
+        submission_file = root / "submission.json"
+        bad = json.loads(json.dumps(proposals))
+        bad["candidates"] = [dict(bad["candidates"][0], wat="(module (func (br $missing)))")]
+        submission_file.write_text(json.dumps({"context_hash": state["task"]["context_hash"],
+                                              "proposals": bad, "provider_receipt": None}))
+        failed = subprocess.run([str(executable), "agent-submit", "agent-campaign", str(submission_file)],
+                                cwd=root, env=environment, text=True, capture_output=True, timeout=120)
+        if failed.returncode == 0 or "invalid WAT proposal" not in failed.stderr:
+            raise ValueError("invalid generated WAT was not rejected before evaluation")
+        fault_file = root / "fault.json"
+        fault_file.write_text(json.dumps({"context_hash": state["task"]["context_hash"],
+                                         "fault": "invalid_proposal", "provider_receipt": None}))
+        run("agent-fault", "agent-campaign", str(fault_file))
+        state = json.loads(run("agent-next", "agent-campaign"))
+        if state["task"]["context"]["previous_fault"] != "invalid_proposal":
+            raise ValueError("generator failure feedback was not retained")
+        submission_file.write_text(json.dumps({"context_hash": state["task"]["context_hash"],
+                                              "proposals": proposals, "provider_receipt": None}))
+        state = json.loads(run("agent-submit", "agent-campaign", str(submission_file)))
+        if state["winner"]["candidate"] != "C-agent-recursive":
+            raise ValueError("agent campaign did not retain its improved source")
+        state = json.loads(run("agent-next", "agent-campaign"))
+        if not any(o["outcome"] == "failed_correctness" for o in state["task"]["context"]["memory"]["observations"]):
+            raise ValueError("agent campaign lost negative learning between rounds")
+        submission_file.write_text(json.dumps({"context_hash": state["task"]["context_hash"],
+                                              "proposals": dict(proposals, candidates=[proposals["candidates"][1]]),
+                                              "provider_receipt": None}))
+        state = json.loads(run("agent-submit", "agent-campaign", str(submission_file)))
+        if state["stop_reason"] != "round_budget" or state["completed_rounds"] != 2:
+            raise ValueError("packaged agent campaign exceeded its bound")
+        if json.loads(run("agent-status", "agent-campaign")) != state:
+            raise ValueError("agent campaign status changed after completion")
+        learned = json.loads(run("memory", "agent-history", "--baseline-run", "demo/run"))
+        if learned["compatible_runs"] != 3 or learned["winner"]["artifact_hash"] != state["winner"]["artifact_hash"]:
+            raise ValueError("packaged native memory failed to recover evaluated winner")
+        saved = json.loads(run("store", "log", "agent-history"))
+        if len(saved["generator_faults"]) != 1 or saved["generator_faults"][0]["candidate_evaluation_performed"]:
+            raise ValueError("generator fault became a candidate correctness conclusion")
+        native_clone = json.loads(run("store", "clone", "agent-history", "native-copy"))
+        if native_clone["versions"] != saved["versions"] or native_clone["tip"] != saved["tip"]:
+            raise ValueError("native clone changed version identities or learning")
+        winner_version = learned["winner"]["commit"]
+        run("store", "checkout", winner_version, "--store", "native-copy", "--output", "native-checkout")
+        if (root / "native-checkout/winner.wat").read_text() != learned["winner"]["wat"]:
+            raise ValueError("native checkout changed the winning source")
         requests = [
             {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"protocolVersion": "2025-06-18"}},
             {"jsonrpc": "2.0", "id": 2, "method": "tools/list"},
@@ -99,7 +151,7 @@ def main():
                                 cwd=root, env=environment, input=stream, text=True,
                                 capture_output=True, check=True, timeout=120)
         responses = [json.loads(line) for line in output.stdout.splitlines()]
-        if len(responses) != 8 or len(responses[1]["result"]["tools"]) != 12 or any(response["result"]["isError"] for response in responses[2:]):
+        if len(responses) != 8 or len(responses[1]["result"]["tools"]) != 25 or any(response["result"]["isError"] for response in responses[2:]):
             raise ValueError("packaged local MCP agent experience did not verify")
         agent_run = responses[7]["result"]["structuredContent"]
         if agent_run["champion"] != "C-agent-recursive" or not any(c["id"] == "C-agent-add" and c["outcome"] == "failed_correctness" for c in agent_run["candidates"]):
@@ -114,8 +166,9 @@ def main():
                       "source_commit": metadata["source_commit"], "target": metadata["target"],
                       "demo_programs": 13, "qualified": 10, "diagnostic_failures": 3,
                       "generations": len(evolution["steps"]), "history_verified": True,
-                      "mcp_tools": 12, "mcp_experiment_verified": True,
-                      "agent_proposals_verified": True, "git_snapshots": len(git_history["snapshots"]),
+                      "mcp_tools": 25, "mcp_experiment_verified": True,
+                      "agent_proposals_verified": True, "offline_inspector_verified": True, "agent_rounds": 2, "native_memory_verified": True, "native_versions": 4, "native_clone_verified": True,
+                      "generator_fault_verified": True, "git_snapshots": len(git_history["snapshots"]),
                       "git_clone_verified": True, "git_provider_credentials": "absent",
                       "external_tool_path": "empty", "provider_credentials": "absent"}))
 

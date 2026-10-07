@@ -1,0 +1,370 @@
+{
+  "$defs": {
+    "CandidateId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "CandidateOutcome": {
+      "enum": [
+        "qualified",
+        "failed_correctness",
+        "failed_contract",
+        "failed_resource_limit",
+        "invalid_module",
+        "budget_exhausted",
+        "evaluator_error"
+      ],
+      "type": "string"
+    },
+    "CellId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "ContentHash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "Decision": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "action": {
+              "const": "kill",
+              "type": "string"
+            },
+            "reason": {
+              "$ref": "#/$defs/KillReason"
+            }
+          },
+          "required": [
+            "action",
+            "reason"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "action": {
+              "const": "advance",
+              "type": "string"
+            },
+            "stage": {
+              "$ref": "#/$defs/EvaluationStage"
+            }
+          },
+          "required": [
+            "action",
+            "stage"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "action": {
+              "const": "hold",
+              "type": "string"
+            },
+            "reason": {
+              "$ref": "#/$defs/HoldReason"
+            }
+          },
+          "required": [
+            "action",
+            "reason"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "action": {
+              "const": "elite",
+              "type": "string"
+            }
+          },
+          "required": [
+            "action"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Reserved for a separate privileged promotion decision.",
+          "properties": {
+            "action": {
+              "const": "champion",
+              "type": "string"
+            }
+          },
+          "required": [
+            "action"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "EvaluationStage": {
+      "enum": [
+        "l0",
+        "l1",
+        "l2",
+        "l3"
+      ],
+      "type": "string"
+    },
+    "EvidenceId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "ExperimentId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "HoldReason": {
+      "enum": [
+        "context_mismatch",
+        "incomplete_evidence",
+        "evaluation_error",
+        "oracle_error",
+        "future_evidence"
+      ],
+      "type": "string"
+    },
+    "IntentId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "KillReason": {
+      "enum": [
+        "hard_check_failed",
+        "hard_constraint_failed",
+        "oracle_failed",
+        "evaluation_failed"
+      ],
+      "type": "string"
+    },
+    "KnowledgeId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "Observation": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_hash": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "candidate": {
+          "$ref": "#/$defs/CandidateId"
+        },
+        "checked_calls": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "commit": {
+          "type": "string"
+        },
+        "decision": {
+          "$ref": "#/$defs/Decision"
+        },
+        "evidence": {
+          "$ref": "#/$defs/EvidenceId"
+        },
+        "evidence_hash": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "experiment": {
+          "$ref": "#/$defs/ExperimentId"
+        },
+        "is_champion": {
+          "type": "boolean"
+        },
+        "knowledge": {
+          "$ref": "#/$defs/KnowledgeId"
+        },
+        "mean_fuel": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "outcome": {
+          "$ref": "#/$defs/CandidateOutcome"
+        },
+        "scope": {
+          "type": "string"
+        },
+        "strategy": {
+          "$ref": "#/$defs/Text"
+        }
+      },
+      "required": [
+        "experiment",
+        "candidate",
+        "artifact_hash",
+        "strategy",
+        "outcome",
+        "decision",
+        "checked_calls",
+        "evidence",
+        "evidence_hash",
+        "knowledge",
+        "is_champion",
+        "scope",
+        "commit"
+      ],
+      "type": "object"
+    },
+    "ProjectId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "ProtocolVersion": {
+      "const": 1,
+      "type": "integer"
+    },
+    "Text": {
+      "description": "Nonempty text; unlike identifiers this may contain spaces and Unicode.",
+      "minLength": 1,
+      "pattern": "\\S",
+      "type": "string"
+    },
+    "Winner": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_hash": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "candidate": {
+          "$ref": "#/$defs/CandidateId"
+        },
+        "commit": {
+          "type": "string"
+        },
+        "evidence": {
+          "$ref": "#/$defs/EvidenceId"
+        },
+        "evidence_hash": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "experiment": {
+          "$ref": "#/$defs/ExperimentId"
+        },
+        "mean_fuel": {
+          "description": "Decimal text avoids cross-client floating-point formatting differences.",
+          "type": "string"
+        },
+        "report_hash": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "source_hash": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "strategy": {
+          "$ref": "#/$defs/Text"
+        },
+        "wat": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "experiment",
+        "candidate",
+        "report_hash",
+        "artifact_hash",
+        "source_hash",
+        "wat",
+        "mean_fuel",
+        "strategy",
+        "evidence",
+        "evidence_hash",
+        "commit"
+      ],
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "cell": {
+      "$ref": "#/$defs/CellId"
+    },
+    "compatible_runs": {
+      "format": "uint",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "environment_hash": {
+      "$ref": "#/$defs/ContentHash"
+    },
+    "evalspec_hash": {
+      "$ref": "#/$defs/ContentHash"
+    },
+    "excluded_runs": {
+      "format": "uint",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "intent": {
+      "$ref": "#/$defs/IntentId"
+    },
+    "observations": {
+      "items": {
+        "$ref": "#/$defs/Observation"
+      },
+      "type": "array"
+    },
+    "project": {
+      "$ref": "#/$defs/ProjectId"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ProtocolVersion"
+    },
+    "seen_artifacts": {
+      "items": {
+        "$ref": "#/$defs/ContentHash"
+      },
+      "type": "array",
+      "uniqueItems": true
+    },
+    "truncated": {
+      "type": "boolean"
+    },
+    "winner": {
+      "$ref": "#/$defs/Winner"
+    }
+  },
+  "required": [
+    "schema_version",
+    "project",
+    "cell",
+    "intent",
+    "environment_hash",
+    "evalspec_hash",
+    "compatible_runs",
+    "excluded_runs",
+    "winner",
+    "observations",
+    "seen_artifacts",
+    "truncated"
+  ],
+  "title": "Memory",
+  "type": "object"
+}

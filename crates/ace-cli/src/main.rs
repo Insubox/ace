@@ -11,12 +11,21 @@ use std::{
 
 type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
+fn parse_content_hash(value: &str) -> std::result::Result<ContentHash, String> {
+    ContentHash::try_from(value.to_owned()).map_err(|e| e.to_string())
+}
+
+mod agent;
 mod archive;
 mod evolve;
 mod generate;
+mod history;
+mod inspect;
 mod mcp;
+mod memory;
 mod proposal;
 mod source;
+mod store;
 
 #[derive(Parser)]
 #[command(
@@ -31,6 +40,59 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Command {
+    /// ACE's native version engine: capture, verify, restore and copy source/learning.
+    Store {
+        #[command(subcommand)]
+        command: StoreCommand,
+    },
+    /// Export a verified run as an interactive offline HTML inspector.
+    Inspect {
+        run: PathBuf,
+        #[arg(long)]
+        output: PathBuf,
+    },
+    /// Retrieve bounded, verified positive and negative learning for an exact run profile.
+    Memory {
+        repository: PathBuf,
+        #[arg(long)]
+        baseline_run: PathBuf,
+        #[arg(long, default_value_t = 16)]
+        limit: usize,
+    },
+    /// Start a bounded campaign for an external agent; validates and archives its baseline.
+    AgentStart {
+        directory: PathBuf,
+        #[arg(long)]
+        campaign: CheckName,
+        #[arg(long)]
+        baseline_run: PathBuf,
+        #[arg(long, conflicts_with = "store", required_unless_present = "store")]
+        repository: Option<PathBuf>,
+        #[arg(
+            long,
+            conflicts_with = "repository",
+            required_unless_present = "repository"
+        )]
+        store: Option<PathBuf>,
+        #[arg(long, default_value_t = 4)]
+        rounds: u32,
+        #[arg(long, default_value_t = 2)]
+        candidates: u32,
+        #[arg(long, default_value_t = 3)]
+        attempts: u32,
+        #[arg(long, default_value_t = 2)]
+        patience: u32,
+        #[arg(long, default_value_t = 2)]
+        jobs: u32,
+    },
+    /// Freeze the next public task, including winner source and evidence-linked learning.
+    AgentNext { directory: PathBuf },
+    /// Evaluate proposals for the frozen task, archive all learning and advance the campaign.
+    AgentSubmit { directory: PathBuf, file: PathBuf },
+    /// Record a generator fault without assigning a candidate correctness label.
+    AgentFault { directory: PathBuf, file: PathBuf },
+    /// Verify an agent campaign's task, evidence, source and ancestry receipts.
+    AgentStatus { directory: PathBuf },
     /// Commit a verified run, winner source and all learning to a dedicated local Git repository.
     Archive {
         run: PathBuf,
@@ -73,8 +135,11 @@ enum Command {
         #[arg(long)]
         json: bool,
         /// Archive each completed generation in a dedicated local Git repository.
-        #[arg(long)]
+        #[arg(long, conflicts_with = "store")]
         git_repository: Option<PathBuf>,
+        /// Retain each evaluated generation in ACE's native version engine.
+        #[arg(long, conflicts_with = "git_repository")]
+        store: Option<PathBuf>,
     },
     /// Verify an evolution campaign's run evidence, Champion lineage and Knowledge graph.
     History { directory: PathBuf },
@@ -159,6 +224,50 @@ enum Command {
     Evidence {
         #[command(subcommand)]
         command: EvidenceCommand,
+    },
+}
+
+#[derive(Subcommand)]
+enum StoreCommand {
+    /// Save a verified evaluated version, its source and learning without Git.
+    Save {
+        run: PathBuf,
+        #[arg(long)]
+        store: PathBuf,
+    },
+    /// Capture explicitly listed regular files in a native source version.
+    Commit {
+        source: PathBuf,
+        #[arg(long)]
+        store: PathBuf,
+        #[arg(long)]
+        files: PathBuf,
+        #[arg(long)]
+        message: String,
+        #[arg(long, value_parser = parse_content_hash)]
+        parent: Vec<ContentHash>,
+    },
+    /// Verify native objects, version ancestry, journal, winner source and learning.
+    Log { store: PathBuf },
+    /// Restore an exact native version into a fresh directory.
+    Checkout {
+        #[arg(value_parser = parse_content_hash)]
+        version: ContentHash,
+        #[arg(long)]
+        store: PathBuf,
+        #[arg(long)]
+        output: PathBuf,
+    },
+    /// Copy verified native history and content objects into a fresh store.
+    Clone {
+        source: PathBuf,
+        destination: PathBuf,
+    },
+    /// Optionally export evaluated versions/faults to a fresh dedicated Git repository.
+    ExportGit {
+        store: PathBuf,
+        #[arg(long)]
+        repository: PathBuf,
     },
 }
 
@@ -282,6 +391,102 @@ fn evidence_path(project: &Path, id: &EvidenceId) -> PathBuf {
 
 fn run(cli: Cli) -> Result<()> {
     match cli.command {
+        Command::Store { command } => match command {
+            StoreCommand::Save {
+                run,
+                store: destination,
+            } => print(&store::save(&run, &destination)?)?,
+            StoreCommand::Log { store: destination } => print(&store::status(&destination)?)?,
+            StoreCommand::Checkout {
+                version,
+                store: destination,
+                output,
+            } => print(&store::checkout(&destination, &version, &output)?)?,
+            StoreCommand::Clone {
+                source,
+                destination,
+            } => print(&store::clone_store(&source, &destination)?)?,
+            StoreCommand::ExportGit {
+                store: source,
+                repository,
+            } => print(&store::export_git(&source, &repository)?)?,
+            StoreCommand::Commit {
+                source,
+                store: destination,
+                files,
+                message,
+                parent,
+            } => {
+                let names: Vec<String> = serde_json::from_value(ace_protocol::parse_json(
+                    &bounded_bytes(&files, 1_048_576)?,
+                )?)?;
+                let parents = if parent.is_empty() {
+                    None
+                } else {
+                    Some(parent.into_iter().collect())
+                };
+                let id = store::commit_source(
+                    &source,
+                    &destination,
+                    &names,
+                    Text::new(message)?,
+                    parents,
+                )?;
+                print(
+                    &serde_json::json!({"version":id,"store":destination,"backend":"ace-native-v1"}),
+                )?;
+            }
+        },
+        Command::Inspect { run, output } => print(&inspect::export(&run, &output)?)?,
+        Command::Memory {
+            repository,
+            baseline_run,
+            limit,
+        } => print(&memory::query(
+            &repository,
+            &ace_runner::load_report(&baseline_run)?,
+            limit,
+        )?)?,
+        Command::AgentStart {
+            directory,
+            campaign,
+            baseline_run,
+            repository,
+            store,
+            rounds,
+            candidates,
+            attempts,
+            patience,
+            jobs,
+        } => print(&agent::start(
+            &directory,
+            campaign,
+            &baseline_run,
+            store
+                .as_deref()
+                .or(repository.as_deref())
+                .ok_or("choose native --store or optional Git --repository")?,
+            agent::Bounds {
+                rounds,
+                candidates,
+                attempts,
+                patience,
+                jobs,
+            },
+            store.is_some(),
+        )?)?,
+        Command::AgentNext { directory } => print(&agent::next(&directory)?)?,
+        Command::AgentStatus { directory } => print(&agent::status(&directory)?)?,
+        Command::AgentSubmit { directory, file } => {
+            let submission =
+                serde_json::from_value(ace_protocol::parse_json(&bounded_bytes(&file, 262144)?)?)?;
+            print(&agent::submit(&directory, &submission)?)?;
+        }
+        Command::AgentFault { directory, file } => {
+            let fault =
+                serde_json::from_value(ace_protocol::parse_json(&bounded_bytes(&file, 262144)?)?)?;
+            print(&agent::fault(&directory, &fault)?)?;
+        }
         Command::Archive { run, repository } => print(&archive::save(&run, &repository)?)?,
         Command::ArchiveStatus { repository } => print(&archive::status(&repository)?)?,
         Command::Propose {
@@ -309,7 +514,11 @@ fn run(cli: Cli) -> Result<()> {
             patience,
             json,
             git_repository,
+            store,
         } => {
+            if let Some(destination) = &store {
+                crate::store::init(destination)?;
+            }
             let campaign = evolve::run_with_git(
                 &directory,
                 seed,
@@ -317,7 +526,7 @@ fn run(cli: Cli) -> Result<()> {
                 generations,
                 jobs,
                 patience,
-                git_repository.as_deref(),
+                store.as_deref().or(git_repository.as_deref()),
             )?;
             if json {
                 print(&campaign)?;
@@ -495,6 +704,34 @@ fn run(cli: Cli) -> Result<()> {
             let mut schemas = ace_protocol::schemas()?;
             schemas.extend(ace_runner::runner_schemas()?);
             schemas.extend(ace_eval::schemas()?);
+            schemas.insert(
+                "native-version.schema.json".into(),
+                serde_json::to_value(schemars::schema_for!(store::Version))?,
+            );
+            schemas.insert(
+                "native-journal-entry.schema.json".into(),
+                serde_json::to_value(schemars::schema_for!(store::Entry))?,
+            );
+            schemas.insert(
+                "memory.schema.json".into(),
+                serde_json::to_value(schemars::schema_for!(memory::Memory))?,
+            );
+            schemas.insert(
+                "agent-task.schema.json".into(),
+                serde_json::to_value(schemars::schema_for!(agent::Task))?,
+            );
+            schemas.insert(
+                "agent-submission.schema.json".into(),
+                serde_json::to_value(schemars::schema_for!(agent::Submission))?,
+            );
+            schemas.insert(
+                "agent-fault.schema.json".into(),
+                serde_json::to_value(schemars::schema_for!(agent::Fault))?,
+            );
+            schemas.insert(
+                "agent-status.schema.json".into(),
+                serde_json::to_value(schemars::schema_for!(agent::Status))?,
+            );
             schemas.insert(
                 "sources.schema.json".into(),
                 serde_json::to_value(schemars::schema_for!(source::Sources))?,

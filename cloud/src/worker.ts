@@ -3,18 +3,14 @@ import { type Env, type ExperimentState, type FinalizeJob, HttpError, coordinate
   strictJson, limitedBody, immutablePut, sha256, json } from './contracts';
 import { consumeEvaluation, consumeFinalization, failExperiment } from './pipeline';
 import { judge, readJudgement } from './judge';
+import { generate, readGeneration, type Selector } from './generator';
+import * as nativeStores from './native-store';
+import dashboard from './dashboard.html';
+import * as accounts from './accounts';
 export { ExperimentCoordinator } from './coordinator';
 export { EvaluationSandbox } from './sandbox';
 export { ExperimentWorkflow } from './workflow';
 
-async function authenticate(request: Request, env: Env): Promise<void> {
-  if (!env.API_TOKEN || env.API_TOKEN.length < 32) throw new HttpError(503, 'API authentication is not configured');
-  const provided = request.headers.get('authorization') ?? '';
-  // Hash equal-length inputs before comparison; never log or forward the bearer.
-  const [actual, expected] = await Promise.all([sha256(new TextEncoder().encode(provided)), sha256(new TextEncoder().encode(`Bearer ${env.API_TOKEN}`))]);
-  let different = 0; for (let i = 0; i < actual.length; i++) different |= actual.charCodeAt(i) ^ expected.charCodeAt(i);
-  if (different) throw new HttpError(401, 'unauthorized');
-}
 async function status(env: Env, id: string): Promise<ExperimentState> {
   identifier.parse(id); return await coordinate(env, id, 'status') as ExperimentState;
 }
@@ -77,7 +73,7 @@ async function mcp(request: Request, env: Env): Promise<Response> {
     return new Response(null, { status: 202 });
   }
   const reply = (result: unknown) => json({ jsonrpc: '2.0', id: body.id, result });
-  if (body.method === 'initialize') return reply({ protocolVersion: '2025-03-26', capabilities: { tools: {} }, serverInfo: { name: 'ace', version: '0.1.0' } });
+  if (body.method === 'initialize') return reply({ protocolVersion: '2025-03-26', capabilities: { tools: {} }, serverInfo: { name: 'ace', version: '0.3.0' } });
   if (body.method === 'ping') return reply({});
   if (body.method === 'tools/list') return reply({ tools });
   if (body.method === 'tools/call') {
@@ -94,9 +90,30 @@ async function mcp(request: Request, env: Env): Promise<Response> {
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     try {
-      await authenticate(request, env);
+      if(request.method==='GET'&&['/','/setup'].includes(new URL(request.url).pathname))return new Response(dashboard,{headers:{'content-type':'text/html; charset=utf-8',
+        'content-security-policy':"default-src 'none'; script-src 'nonce-ace-native-dashboard-v1'; style-src 'nonce-ace-native-dashboard-v1'; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+        'cache-control':'no-store','x-content-type-options':'nosniff','referrer-policy':'no-referrer'}});
       const url = new URL(request.url);
+      if(url.pathname==='/v1/auth/setup'&&request.method==='POST')return await accounts.setup(env,await limitedBody(request,16384));
+      if(url.pathname==='/v1/auth/login'&&request.method==='POST')return await accounts.login(request,env,await limitedBody(request,16384));
+      const current=await accounts.identity(request,env);accounts.authorize(request,current);
+      if(url.pathname==='/v1/auth/me'&&request.method==='GET')return json(current);
+      if(url.pathname==='/v1/auth/setup-ticket'&&request.method==='POST')return await accounts.setupTicket(env,current);
+      if(url.pathname==='/v1/auth/logout'&&request.method==='POST')return await accounts.logout(request,env,current);
+      if(url.pathname==='/v1/users'&&request.method==='POST')return await accounts.createUser(env,current,await limitedBody(request,16384));
+      if(url.pathname==='/v1/users'&&request.method==='GET')return await accounts.users(env,current);
+      if(url.pathname==='/v1/stores'&&request.method==='GET')return await nativeStores.listStores(env);
+      const native=/^\/v1\/stores\/([A-Za-z0-9][A-Za-z0-9_-]{0,63})(?:\/(objects|versions)\/([0-9a-f]{64})|\/(journal))?$/.exec(url.pathname);
+      if(native){const name=native[1]!,kind=native[2] as 'objects'|'versions'|undefined,id=native[3];
+        if(request.method==='GET'){if(kind&&id)return await nativeStores.readFile(env,name,kind,id);if(!native[4])return await nativeStores.readStore(env,name);}
+        if(request.method==='PUT'&&kind&&id){const bytes=await limitedBody(request,kind==='objects'?8388608:1048576);return kind==='objects'?await nativeStores.putObject(env,name,id,bytes):await nativeStores.putVersion(env,name,id,bytes);}
+        if(request.method==='POST'&&native[4])return await nativeStores.appendEntry(env,name,await limitedBody(request,8192),current.username);
+      }
       if (url.pathname === '/mcp' && request.method === 'POST') return await mcp(request, env);
+      const generationRoute = /^\/v1\/generate\/(qwen|llama)$/.exec(url.pathname);
+      if (generationRoute && request.method === 'POST') return await generate(env, await limitedBody(request, 98304), generationRoute[1] as Selector);
+      const generation = /^\/v1\/generations\/([0-9a-f]{64})(?:\/(context|request|response|attempt))?$/.exec(url.pathname);
+      if (generation && request.method === 'GET') return await readGeneration(env, generation[1]!, generation[2]);
       const judgeRoute = /^\/v1\/judge\/(flash|clef)$/.exec(url.pathname);
       if (judgeRoute && request.method === 'POST') return await judge(env, await limitedBody(request, 32_768), judgeRoute[1] as 'flash' | 'clef');
       const judgement = /^\/v1\/judgements\/([0-9a-f]{64})(?:\/(context|request|response|attempt))?$/.exec(url.pathname);

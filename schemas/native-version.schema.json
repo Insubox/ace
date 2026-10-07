@@ -1,0 +1,104 @@
+{
+  "$defs": {
+    "ContentHash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "Kind": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "source",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "evaluation",
+              "type": "string"
+            },
+            "report_hash": {
+              "$ref": "#/$defs/ContentHash"
+            }
+          },
+          "required": [
+            "kind",
+            "report_hash"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "context_hash": {
+              "$ref": "#/$defs/ContentHash"
+            },
+            "kind": {
+              "const": "generator_fault",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "context_hash"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "ProtocolVersion": {
+      "const": 1,
+      "type": "integer"
+    },
+    "Text": {
+      "description": "Nonempty text; unlike identifiers this may contain spaces and Unicode.",
+      "minLength": 1,
+      "pattern": "\\S",
+      "type": "string"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "files": {
+      "additionalProperties": {
+        "$ref": "#/$defs/ContentHash"
+      },
+      "type": "object"
+    },
+    "kind": {
+      "$ref": "#/$defs/Kind"
+    },
+    "message": {
+      "$ref": "#/$defs/Text"
+    },
+    "parents": {
+      "items": {
+        "$ref": "#/$defs/ContentHash"
+      },
+      "type": "array",
+      "uniqueItems": true
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ProtocolVersion"
+    }
+  },
+  "required": [
+    "schema_version",
+    "parents",
+    "kind",
+    "message",
+    "files"
+  ],
+  "title": "Version",
+  "type": "object"
+}

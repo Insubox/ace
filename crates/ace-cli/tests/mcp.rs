@@ -75,6 +75,70 @@ fn agents_submit_their_own_sources_and_inspect_real_outcomes() {
 }
 
 #[test]
+fn human_reports_are_verified_exported_and_preserved_inside_the_workspace() {
+    let temp = tempfile::tempdir().unwrap();
+    let responses = rpc(
+        temp.path(),
+        &[
+            call(1, "ace_generate", json!({"experiment":"first"})),
+            call(2, "ace_run", json!({"experiment":"first","run":"first"})),
+            call(3, "ace_inspect", json!({"run":"first","report":"first"})),
+            call(4, "ace_inspect", json!({"run":"first","report":"first"})),
+            call(
+                5,
+                "ace_inspect",
+                json!({"run":"first","report":"../escape"}),
+            ),
+        ],
+    );
+    assert_eq!(value(&responses[2])["verified_at_export"], true);
+    assert_eq!(responses[3]["result"]["isError"], true);
+    assert_eq!(responses[4]["result"]["isError"], true);
+    let html = fs::read_to_string(temp.path().join("reports/first/index.html")).unwrap();
+    assert!(html.contains(value(&responses[2])["report_hash"].as_str().unwrap()));
+    assert!(!html.contains("__ACE_DATA__"));
+}
+
+#[test]
+fn agents_use_native_history_campaigns_and_clones_without_git_on_the_path() {
+    let temp = tempfile::tempdir().unwrap();
+    let responses = rpc(
+        temp.path(),
+        &[
+            call(1, "ace_generate", json!({"experiment":"first"})),
+            call(2, "ace_run", json!({"experiment":"first","run":"first"})),
+            call(3, "ace_store_save", json!({"run":"first","store":"main"})),
+            call(
+                4,
+                "ace_store_clone",
+                json!({"store":"main","destination":"copy"}),
+            ),
+            call(
+                5,
+                "ace_memory",
+                json!({"store":"copy","baseline_run":"first"}),
+            ),
+            call(
+                6,
+                "ace_agent_start",
+                json!({"campaign":"agent","baseline_run":"first","store":"main","rounds":1}),
+            ),
+            call(7, "ace_agent_status", json!({"campaign":"agent"})),
+            call(8, "ace_store_log", json!({"store":"main"})),
+        ],
+    );
+    assert_eq!(value(&responses[2])["backend"], "ace-native-v1");
+    assert_eq!(
+        value(&responses[3])["versions"].as_array().unwrap().len(),
+        1
+    );
+    assert_eq!(value(&responses[4])["compatible_runs"], 1);
+    assert_eq!(value(&responses[5]), value(&responses[6]));
+    assert_eq!(value(&responses[7])["verified"], true);
+    assert!(!temp.path().join("stores/main/.git").exists());
+}
+
+#[test]
 fn git_tools_commit_learning_and_winner_sources_inside_the_selected_workspace() {
     let temp = tempfile::tempdir().unwrap();
     let responses = rpc_with_path(
@@ -104,6 +168,69 @@ fn git_tools_commit_learning_and_winner_sources_inside_the_selected_workspace() 
     assert_eq!(status["verified"], true);
     assert_eq!(status["snapshots"][0]["commit"], saved["commit"]);
     assert_eq!(responses[4]["result"]["isError"], true);
+}
+
+#[test]
+fn mcp_agents_receive_learning_submit_proposals_and_advance_a_bounded_campaign() {
+    let temp = tempfile::tempdir().unwrap();
+    let tool_path = std::env::var("PATH").unwrap();
+    let initial = rpc_with_path(
+        temp.path(),
+        &[
+            call(1, "ace_generate", json!({"experiment":"seed"})),
+            call(2, "ace_run", json!({"experiment":"seed","run":"seed"})),
+            call(
+                3,
+                "ace_agent_start",
+                json!({"campaign":"agents","baseline_run":"seed","repository":"history","rounds":2}),
+            ),
+            call(
+                4,
+                "ace_memory",
+                json!({"repository":"history","baseline_run":"seed"}),
+            ),
+            call(5, "ace_agent_next", json!({"campaign":"agents"})),
+        ],
+        &tool_path,
+    );
+    let start = value(&initial[2]);
+    assert_eq!(value(&initial[4])["task"], start["task"]);
+    assert!(
+        value(&initial[3])["observations"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|o| o["outcome"] == "failed_correctness")
+    );
+    let fixture: Value = serde_json::from_str(include_str!(
+        "../../../examples/agent-proposals/proposals.json"
+    ))
+    .unwrap();
+    let batch = json!({"schema_version":1,"cell":"Gcd","candidates":fixture["candidates"].as_array().unwrap()[..2].to_vec()});
+    let result = rpc_with_path(
+        temp.path(),
+        &[
+            call(
+                6,
+                "ace_agent_submit",
+                json!({"campaign":"agents","submission":{"context_hash":start["task"]["context_hash"],"proposals":batch,"provider_receipt":null}}),
+            ),
+            call(7, "ace_agent_next", json!({"campaign":"agents"})),
+            call(8, "ace_agent_status", json!({"campaign":"agents"})),
+        ],
+        &tool_path,
+    );
+    assert_eq!(value(&result[0])["completed_rounds"], 1);
+    let next = value(&result[1]);
+    assert_eq!(next, value(&result[2]));
+    assert_eq!(next["task"]["context"]["round"], 2);
+    assert!(
+        next["task"]["context"]["memory"]["observations"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|o| o["candidate"] == "C-agent-add")
+    );
 }
 fn call(id: u32, name: &str, arguments: Value) -> Value {
     json!({"jsonrpc":"2.0","id":id,"method":"tools/call","params":{"name":name,"arguments":arguments}})
@@ -141,7 +268,7 @@ fn local_agents_generate_evaluate_and_inspect_real_evidence_over_stdio() {
     assert_eq!(responses[0]["id"], "hello");
     assert_eq!(
         responses[1]["result"]["tools"].as_array().unwrap().len(),
-        12
+        25
     );
     value(&responses[2]);
     let report = value(&responses[3]);

@@ -20,6 +20,101 @@ pub(crate) struct Snapshot {
     pub files: BTreeMap<String, ContentHash>,
 }
 
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct FaultRecord {
+    schema_version: ace_protocol::ProtocolVersion,
+    pub(crate) task: crate::agent::Task,
+    pub(crate) fault: crate::agent::Fault,
+    pub(crate) submission: Option<crate::agent::Submission>,
+    pub(crate) content_hash: ContentHash,
+}
+pub(crate) fn verify_fault(path: &Path) -> Result<FaultRecord> {
+    let record: FaultRecord = serde_json::from_value(ace_protocol::parse_json(
+        &crate::bounded_bytes(path, 262144)?,
+    )?)?;
+    record.fault.validate()?;
+    if record.content_hash
+        != ContentHash::of_json(&(&record.task, &record.fault, &record.submission))?
+        || record.task.context_hash != ContentHash::of_json(&record.task.context)?
+        || record.fault.context_hash != record.task.context_hash
+        || record
+            .submission
+            .as_ref()
+            .is_some_and(|s| s.context_hash != record.task.context_hash)
+    {
+        return Err("archived generator fault identity changed".into());
+    }
+    Ok(record)
+}
+
+pub(crate) fn fault_record(
+    task: &crate::agent::Task,
+    fault: &crate::agent::Fault,
+    submission: Option<&crate::agent::Submission>,
+) -> Result<FaultRecord> {
+    fault.validate()?;
+    let content_hash = ContentHash::of_json(&(task, fault, submission))?;
+    let record = FaultRecord {
+        schema_version: ace_protocol::ProtocolVersion,
+        task: task.clone(),
+        fault: fault.clone(),
+        submission: submission.cloned(),
+        content_hash,
+    };
+    Ok(record)
+}
+
+pub(crate) fn save_fault(
+    destination: &Path,
+    task: &crate::agent::Task,
+    fault: &crate::agent::Fault,
+    submission: Option<&crate::agent::Submission>,
+) -> Result<String> {
+    let root = repository(destination, false)?;
+    let record = fault_record(task, fault, submission)?;
+    let name = format!("agent-faults/{}/event.json", task.context_hash.as_str());
+    let parent = root.join("agent-faults");
+    fs::create_dir_all(&parent)?;
+    if !parent.canonicalize()?.starts_with(&root) {
+        return Err("generator fault path escapes archive".into());
+    }
+    let path = root.join(&name);
+    let event_parent = path.parent().ok_or("missing fault directory")?;
+    if event_parent.symlink_metadata().is_ok() && !event_parent.canonicalize()?.starts_with(&root) {
+        return Err("generator fault path escapes archive".into());
+    }
+    if path.try_exists()? {
+        if !path.canonicalize()?.starts_with(&root) || verify_fault(&path)? != record {
+            return Err("generator fault already archived with different content".into());
+        }
+    } else {
+        let lock = fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(root.join(".git/ace-archive.lock"))?;
+        let result = (|| -> Result<()> {
+            create_atomic(&path, &json(&record)?)?;
+            verify_fault(&path)?;
+            git(&root, &["add", "--", &name])?;
+            git(
+                &root,
+                &[
+                    "commit",
+                    "--no-verify",
+                    "-m",
+                    "ACE: retain generator fault; no candidate correctness conclusion",
+                ],
+            )?;
+            Ok(())
+        })();
+        drop(lock);
+        fs::remove_file(root.join(".git/ace-archive.lock"))?;
+        result?;
+    }
+    git(&root, &["log", "-1", "--format=%H", "--", &name])
+}
+
 fn git(repository: &Path, arguments: &[&str]) -> Result<String> {
     let mut command = Command::new("git");
     // Prevent inherited Git routing, alternate indexes, config injections and hooks.
@@ -115,7 +210,7 @@ fn insert(files: &mut BTreeMap<String, Vec<u8>>, run: &Path, name: &str) -> Resu
     Ok(())
 }
 
-pub(crate) fn save(run: &Path, destination: &Path) -> Result<Value> {
+pub(crate) fn snapshot_files(run: &Path) -> Result<(Snapshot, BTreeMap<String, Vec<u8>>)> {
     let report = ace_runner::load_report(run)?;
     let sources = source::verify(run, &report)?;
     let mut files = BTreeMap::new();
@@ -197,6 +292,12 @@ pub(crate) fn save(run: &Path, destination: &Path) -> Result<Value> {
             .map(|(n, b)| (n.clone(), ContentHash::of_bytes(b)))
             .collect(),
     };
+    Ok((snapshot, files))
+}
+
+pub(crate) fn save(run: &Path, destination: &Path) -> Result<Value> {
+    let report = ace_runner::load_report(run)?;
+    let (snapshot, files) = snapshot_files(run)?;
     let name = format!("runs/{}", snapshot.report_hash.as_str());
     let root = repository(destination, true)?;
     fs::create_dir_all(root.join("runs"))?;
@@ -264,7 +365,7 @@ pub(crate) fn save(run: &Path, destination: &Path) -> Result<Value> {
     Ok(value!({"repository":root,"commit":commit,"snapshot":snapshot,"remote_push":false}))
 }
 
-fn verify_snapshot(root: &Path) -> Result<Snapshot> {
+pub(crate) fn verify_snapshot(root: &Path) -> Result<Snapshot> {
     let snapshot: Snapshot = serde_json::from_value(ace_protocol::parse_json(
         &crate::bounded_bytes(&root.join("manifest.json"), 262144)?,
     )?)?;
@@ -320,6 +421,9 @@ pub(crate) fn status(destination: &Path) -> Result<Value> {
     }
     let mut snapshots = Vec::new();
     for entry in fs::read_dir(root.join("runs"))? {
+        if snapshots.len() >= 256 {
+            return Err("archive scan exceeds 256 snapshots; select a smaller archive".into());
+        }
         let entry = entry?;
         if !entry.file_type()?.is_dir() {
             return Err("unexpected archive entry".into());
@@ -333,5 +437,39 @@ pub(crate) fn status(destination: &Path) -> Result<Value> {
         snapshots.push(value!({"snapshot":snapshot,"commit":commit}));
     }
     snapshots.sort_by_key(|s| s["snapshot"]["experiment"].as_str().unwrap().to_owned());
-    Ok(value!({"repository":root,"snapshots":snapshots,"verified":true,"remote_push":false}))
+    let mut faults = Vec::new();
+    if root.join("agent-faults").try_exists()? {
+        let parent = root.join("agent-faults").canonicalize()?;
+        if !parent.starts_with(&root) {
+            return Err("generator fault path escapes archive".into());
+        }
+        for entry in fs::read_dir(parent)? {
+            if faults.len() >= 256 {
+                return Err("generator fault scan exceeds 256 events".into());
+            }
+            let entry = entry?;
+            if !entry.file_type()?.is_dir() {
+                return Err("unexpected generator fault entry".into());
+            }
+            let event = entry.path().join("event.json");
+            if !event.canonicalize()?.starts_with(&root) {
+                return Err("generator fault event escapes archive".into());
+            }
+            let record = verify_fault(&event)?;
+            let name = format!(
+                "agent-faults/{}/event.json",
+                record.task.context_hash.as_str()
+            );
+            let commit = git(&root, &["log", "-1", "--format=%H", "--", &name])?;
+            if commit.is_empty() {
+                return Err("generator fault was not committed".into());
+            }
+            faults.push(value!({"context_hash":record.task.context_hash,"fault":record.fault.fault,"commit":commit,
+                "candidate_evaluation_performed":false}));
+        }
+    }
+    faults.sort_by_key(|f| f["context_hash"].as_str().unwrap().to_owned());
+    Ok(
+        value!({"repository":root,"snapshots":snapshots,"generator_faults":faults,"verified":true,"remote_push":false}),
+    )
 }
