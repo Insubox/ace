@@ -11,9 +11,12 @@ use std::{
 
 type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
+mod archive;
 mod evolve;
 mod generate;
 mod mcp;
+mod proposal;
+mod source;
 
 #[derive(Parser)]
 #[command(
@@ -28,6 +31,25 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Command {
+    /// Commit a verified run, winner source and all learning to a dedicated local Git repository.
+    Archive {
+        run: PathBuf,
+        #[arg(long)]
+        repository: PathBuf,
+    },
+    /// Verify committed archive snapshots, winner sources and evidence-backed learning.
+    ArchiveStatus { repository: PathBuf },
+    /// Assemble and register agent-authored WAT proposals; does not qualify them.
+    Propose {
+        file: PathBuf,
+        #[arg(long)]
+        output: PathBuf,
+        /// Use a verified previous Champion as baseline and preserve its evaluation profile.
+        #[arg(long)]
+        baseline_run: Option<PathBuf>,
+    },
+    /// Verify registered agent proposals and their source-to-WASM hashes.
+    ProposalStatus { directory: PathBuf },
     /// Serve local ACE tools over MCP stdio inside an explicit workspace.
     Mcp {
         #[arg(long)]
@@ -50,6 +72,9 @@ enum Command {
         patience: u32,
         #[arg(long)]
         json: bool,
+        /// Archive each completed generation in a dedicated local Git repository.
+        #[arg(long)]
+        git_repository: Option<PathBuf>,
     },
     /// Verify an evolution campaign's run evidence, Champion lineage and Knowledge graph.
     History { directory: PathBuf },
@@ -257,6 +282,23 @@ fn evidence_path(project: &Path, id: &EvidenceId) -> PathBuf {
 
 fn run(cli: Cli) -> Result<()> {
     match cli.command {
+        Command::Archive { run, repository } => print(&archive::save(&run, &repository)?)?,
+        Command::ArchiveStatus { repository } => print(&archive::status(&repository)?)?,
+        Command::Propose {
+            file,
+            output,
+            baseline_run,
+        } => {
+            let batch: proposal::Batch = serde_json::from_value(ace_protocol::parse_json(
+                &bounded_bytes(&file, 3_145_728)?,
+            )?)?;
+            print(&proposal::register(
+                &output,
+                &batch,
+                baseline_run.as_deref(),
+            )?)?;
+        }
+        Command::ProposalStatus { directory } => print(&proposal::verify(&directory)?)?,
         Command::Mcp { workspace } => mcp::serve(&workspace)?,
         Command::Evolve {
             directory,
@@ -266,8 +308,17 @@ fn run(cli: Cli) -> Result<()> {
             jobs,
             patience,
             json,
+            git_repository,
         } => {
-            let campaign = evolve::run(&directory, seed, candidates, generations, jobs, patience)?;
+            let campaign = evolve::run_with_git(
+                &directory,
+                seed,
+                candidates,
+                generations,
+                jobs,
+                patience,
+                git_repository.as_deref(),
+            )?;
             if json {
                 print(&campaign)?;
             } else {
@@ -297,6 +348,7 @@ fn run(cli: Cli) -> Result<()> {
             if report != verified {
                 return Err("demo output failed independent saved-run verification".into());
             }
+            source::freeze(&directory, &output, &verified)?;
             if json {
                 print_summary(&output, &verified)?;
             } else {
@@ -380,6 +432,7 @@ fn run(cli: Cli) -> Result<()> {
             output,
             jobs,
         } => {
+            let registration = proposal::verify_if_present(&directory)?;
             let output = output.unwrap_or_else(|| {
                 PathBuf::from(".ace/runs").join(format!(
                     "run-{}",
@@ -390,6 +443,10 @@ fn run(cli: Cli) -> Result<()> {
                 ))
             });
             let report = ace_runner::run(&directory, &output, jobs)?;
+            if let Some(record) = registration {
+                proposal::verify_run(&directory, &record, &report)?;
+            }
+            source::freeze(&directory, &output, &report)?;
             print_summary(&output, &report)?;
         }
         Command::Status { run } => print_summary(&run, &ace_runner::load_report(&run)?)?,
@@ -438,6 +495,22 @@ fn run(cli: Cli) -> Result<()> {
             let mut schemas = ace_protocol::schemas()?;
             schemas.extend(ace_runner::runner_schemas()?);
             schemas.extend(ace_eval::schemas()?);
+            schemas.insert(
+                "sources.schema.json".into(),
+                serde_json::to_value(schemars::schema_for!(source::Sources))?,
+            );
+            schemas.insert(
+                "git-snapshot.schema.json".into(),
+                serde_json::to_value(schemars::schema_for!(archive::Snapshot))?,
+            );
+            schemas.insert(
+                "proposal-batch.schema.json".into(),
+                serde_json::to_value(schemars::schema_for!(proposal::Batch))?,
+            );
+            schemas.insert(
+                "proposal-registration.schema.json".into(),
+                serde_json::to_value(schemars::schema_for!(proposal::Registration))?,
+            );
             schemas.insert(
                 "generation.schema.json".into(),
                 serde_json::to_value(schemars::schema_for!(generate::Generation))?,

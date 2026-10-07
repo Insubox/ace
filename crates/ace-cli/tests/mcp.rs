@@ -7,11 +7,14 @@ use std::{
 };
 
 fn rpc(root: &Path, requests: &[Value]) -> Vec<Value> {
+    rpc_with_path(root, requests, "")
+}
+fn rpc_with_path(root: &Path, requests: &[Value], tool_path: &str) -> Vec<Value> {
     let mut command = Command::new(env!("CARGO_BIN_EXE_ace"));
     command
         .args(["mcp", "--workspace", root.to_str().unwrap()])
         .env_clear()
-        .env("PATH", "")
+        .env("PATH", tool_path)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
@@ -35,6 +38,72 @@ fn rpc(root: &Path, requests: &[Value]) -> Vec<Value> {
         .lines()
         .map(|line| serde_json::from_str(line).unwrap())
         .collect()
+}
+
+#[test]
+fn agents_submit_their_own_sources_and_inspect_real_outcomes() {
+    let temp = tempfile::tempdir().unwrap();
+    let proposals: Value = serde_json::from_str(include_str!(
+        "../../../examples/agent-proposals/proposals.json"
+    ))
+    .unwrap();
+    let responses = rpc(
+        temp.path(),
+        &[
+            call(
+                1,
+                "ace_propose",
+                json!({"experiment":"agents","proposals":proposals}),
+            ),
+            call(2, "ace_proposal_status", json!({"experiment":"agents"})),
+            call(3, "ace_run", json!({"experiment":"agents","run":"agents"})),
+            call(4, "ace_knowledge", json!({"run":"agents"})),
+            call(
+                5,
+                "ace_explain",
+                json!({"run":"agents","candidate":"C-agent-add"}),
+            ),
+        ],
+    );
+    assert_eq!(value(&responses[0]), value(&responses[1]));
+    assert_eq!(value(&responses[2])["champion"], "C-agent-recursive");
+    assert_eq!(value(&responses[3])["claims"].as_array().unwrap().len(), 5);
+    assert_eq!(
+        value(&responses[4])["evaluation"]["outcome"],
+        "failed_correctness"
+    );
+}
+
+#[test]
+fn git_tools_commit_learning_and_winner_sources_inside_the_selected_workspace() {
+    let temp = tempfile::tempdir().unwrap();
+    let responses = rpc_with_path(
+        temp.path(),
+        &[
+            call(1, "ace_generate", json!({"experiment":"first"})),
+            call(2, "ace_run", json!({"experiment":"first","run":"first"})),
+            call(
+                3,
+                "ace_archive",
+                json!({"run":"first","repository":"history"}),
+            ),
+            call(4, "ace_archive_status", json!({"repository":"history"})),
+            call(
+                5,
+                "ace_archive",
+                json!({"run":"first","repository":"../outside"}),
+            ),
+        ],
+        &std::env::var("PATH").unwrap(),
+    );
+    value(&responses[0]);
+    value(&responses[1]);
+    let saved = value(&responses[2]);
+    assert!(!saved["commit"].as_str().unwrap().is_empty());
+    let status = value(&responses[3]);
+    assert_eq!(status["verified"], true);
+    assert_eq!(status["snapshots"][0]["commit"], saved["commit"]);
+    assert_eq!(responses[4]["result"]["isError"], true);
 }
 fn call(id: u32, name: &str, arguments: Value) -> Value {
     json!({"jsonrpc":"2.0","id":id,"method":"tools/call","params":{"name":name,"arguments":arguments}})
@@ -70,7 +139,10 @@ fn local_agents_generate_evaluate_and_inspect_real_evidence_over_stdio() {
     );
     assert_eq!(responses.len(), 8);
     assert_eq!(responses[0]["id"], "hello");
-    assert_eq!(responses[1]["result"]["tools"].as_array().unwrap().len(), 8);
+    assert_eq!(
+        responses[1]["result"]["tools"].as_array().unwrap().len(),
+        12
+    );
     value(&responses[2]);
     let report = value(&responses[3]);
     assert_eq!(report["candidates"].as_array().unwrap().len(), 13);

@@ -18,7 +18,7 @@ From a source checkout with Git and Rust installed:
 git clone https://github.com/Insubox/ace.git
 cd ace
 cargo run --locked -p ace-cli -- demo
-cargo run --locked -p ace-cli -- evolve ace-evolution --generations 4
+cargo run --locked -p ace-cli -- evolve ace-evolution --generations 4 --git-repository ace-history
 cargo test --workspace --locked
 ```
 
@@ -26,12 +26,15 @@ cargo test --workspace --locked
 controls, verifies the saved evidence and prints the Champion. `evolve` carries
 qualified Champions and linked Knowledge across generations, with bounded
 stopping rules. `ace history` checks the entire campaign. Generation uses a local
-deterministic GCD grammar. External coding-agent integrations, additional Cells,
+deterministic GCD grammar. Direct vendor API adapters, additional Cells,
 the IDE extension and production promotion remain unfinished. This is a working
 local technical preview of ACE; development continues toward the architecture.
-The same executable exposes eight [local MCP tools](docs/getting-started.md#connect-a-development-agent-through-mcp)
+The same executable exposes twelve [local MCP tools](docs/getting-started.md#connect-a-development-agent-through-mcp)
 so development agents can generate populations, run experiments and inspect
-verified evidence inside an explicitly selected workspace.
+verified evidence inside an explicitly selected workspace. Agents can submit their own
+WAT through `ace_propose`; the declared provider metadata remains caller asserted.
+ACE can commit verified winner source and learning from all evaluated versions
+to a dedicated Git repository. See [agent proposals and Git history](docs/agents-and-git.md).
 The [local delivery record](docs/local-delivery.md) distinguishes tested behavior
 from the remaining architecture and remote platform checks.
 
@@ -59,8 +62,9 @@ See its [real cloud results and model comparison](docs/diverse-validation.md).
 - `ace-cli`: project initialization, document validation/hashing, evidence sealing
   and immutable local storage, schema generation, policy evaluation, experiments,
   status, Champion, knowledge, explanations and replay, plus offline generation,
-  self-contained demos and successive-generation campaigns. Two additional
-  schemas describe generation and evolution, bringing the total to 33.
+  self-contained demos and successive-generation campaigns. Six additional
+  schemas describe generation, evolution, proposals, frozen sources and Git snapshots,
+  bringing the total to 37.
 - `ace-runner`: import-free WASM execution with fuel and linear-memory limits,
   an independent host Oracle, real measurements, Pareto elites, conservative local
   Champion selection and frozen artifacts for reproduction. Additional
@@ -135,6 +139,7 @@ Champion is materialized as `champion.wasm`; canonical source files are not chan
 Read [Phase 0's format](docs/phase0.md) and [Phase 1's execution and reproduction
 contract](docs/phase1.md), and [Phase 2's distributed execution and deployment
 instructions](docs/phase2.md), and [Phase 3's advisory judge and calibration](docs/phase3.md).
-Native candidate execution and provider-generated
-candidates are not implemented yet. The built-in grammar generates bounded
+Native candidate execution and direct vendor API generation
+are not implemented yet. Agent-authored WAT proposals are accepted through CLI/MCP.
+The built-in grammar generates bounded
 WASM candidates without compiling or starting generated native code.

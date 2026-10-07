@@ -8,8 +8,9 @@ Champion and preserve linked Knowledge.
 
 The local experience requires no account, API key, Cloudflare service, Docker,
 Node or candidate compiler. A downloaded native executable runs by itself.
-The generator is a deterministic local grammar; external coding-agent providers
-and arbitrary application Cells remain future work.
+The built-in generator is a deterministic local grammar. Coding agents can also
+submit their own WAT through `ace_propose`. Direct vendor API adapters and arbitrary
+application Cells remain future work. Git must be installed for history commits.
 
 ## Download an executable
 
@@ -28,12 +29,12 @@ and arbitrary application Cells remain future work.
 
 ```sh
 # Linux
-sha256sum -c ace-0.1.0-x86_64-unknown-linux-musl.tar.gz.sha256
+sha256sum -c ace-0.2.0-x86_64-unknown-linux-musl.tar.gz.sha256
 # macOS (use your downloaded filename)
-shasum -a 256 -c ace-0.1.0-aarch64-apple-darwin.tar.gz.sha256
+shasum -a 256 -c ace-0.2.0-aarch64-apple-darwin.tar.gz.sha256
 ```
 
-On Windows, run `Get-FileHash .\ace-0.1.0-x86_64-pc-windows-msvc.zip -Algorithm SHA256`
+On Windows, run `Get-FileHash .\ace-0.2.0-x86_64-pc-windows-msvc.zip -Algorithm SHA256`
 in PowerShell and compare it with the text in the downloaded `.sha256` file.
 These hashes detect changed downloads; they are not a code-signing certificate.
 
@@ -172,10 +173,14 @@ args = ["mcp", "--workspace", "/absolute/path/to/ace-workspace"]
 ```
 
 On Windows use the absolute path to `ace.exe` and escape backslashes in JSON.
-The client starts ACE, performs the MCP handshake and discovers eight tools:
+The client starts ACE, performs the MCP handshake and discovers twelve tools:
 
 | Tool | Purpose |
 | --- | --- |
+| `ace_propose` | Assemble and register agent-authored WAT; still requires evaluation |
+| `ace_proposal_status` | Verify the proposal batch and source-to-WASM hashes |
+| `ace_archive` | Commit winner source and all learning under `archives/<name>` |
+| `ace_archive_status` | Verify saved Git snapshots |
 | `ace_generate` | Create a fresh local population under `experiments/<name>` |
 | `ace_run` | Evaluate a registered population and save evidence under `runs/<name>` |
 | `ace_status` | Verify and summarize a run |
@@ -196,6 +201,39 @@ Agents can prepare other import-free GCD WASM populations in that workspace
 using the `experiment.json` runner contract and then call `ace_run`. Every
 candidate must pass the independent Oracle and resource gates. MCP does not
 expose a shell or a native compiler, and it does not deploy the Champion.
+The archive tools invoke installed Git with fixed arguments to save local history.
 The server is a local process controlled by your MCP client, not an HTTP service.
 Your chosen agent may have its own account requirements; ACE's local tools have
 none. Vendor API adapters and an IDE extension remain separate unfinished work.
+
+## Keep winner code and all learning in Git
+
+1. Install Git if `git --version` does not work.
+2. Choose fresh folder names, then run:
+
+```sh
+./ace evolve my-search --generations 4 --git-repository my-history
+./ace archive-status my-history
+git -C my-history log --oneline
+```
+
+Use `.\ace.exe` in PowerShell. ACE creates a separate Git repository on the
+`ace-history` branch, with one commit for each completed generation. Every
+snapshot under `my-history/runs/<report-hash>/` contains `winner.wat`,
+`winner.wasm`, `learning.json`, frozen source, and a complete verifiable run.
+Learning includes correct alternatives, incorrect candidates and resource failures.
+The current implementation retains available losing source as well.
+
+For a single completed demo or agent run:
+
+```sh
+./ace archive ace-demo/run --repository my-demo-history
+./ace archive-status my-demo-history
+```
+
+The repository path must be fresh on first use. Later saves reuse only a clean
+ACE archive repository. Repeating the same save returns its existing commit.
+ACE preserves application repositories and pending changes. These commands save
+locally; to publish the history, configure a remote and use ordinary Git commands.
+See [agent proposals and Git history](https://github.com/Insubox/ace/blob/main/docs/agents-and-git.md)
+for the proposal contract and the complete snapshot format.

@@ -1,7 +1,7 @@
 //! Local stdio tools. The operator selects the workspace; all tool paths are
 //! category + validated IDs under that root. No shell, network or native source
 //! execution is exposed. Tool errors are separate from candidate failures.
-use crate::{Result, evolve, generate, summary};
+use crate::{Result, evolve, generate, proposal, summary};
 use ace_core::*;
 use schemars::JsonSchema;
 use serde::Deserialize;
@@ -18,6 +18,20 @@ struct Generate {
     experiment: CheckName,
     seed: Option<generate::Seed>,
     candidates: Option<u32>,
+}
+
+#[derive(Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+struct Propose {
+    experiment: CheckName,
+    proposals: proposal::Batch,
+    baseline_run: Option<CheckName>,
+}
+
+#[derive(Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+struct ReadProposals {
+    experiment: CheckName,
 }
 #[derive(Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
@@ -56,6 +70,14 @@ struct History {
 #[derive(Deserialize)]
 #[serde(tag = "name", content = "arguments", deny_unknown_fields)]
 enum Call {
+    #[serde(rename = "ace_archive")]
+    Archive(Archive),
+    #[serde(rename = "ace_archive_status")]
+    ArchiveStatus(ReadArchive),
+    #[serde(rename = "ace_propose")]
+    Propose(Propose),
+    #[serde(rename = "ace_proposal_status")]
+    ProposalStatus(ReadProposals),
     #[serde(rename = "ace_generate")]
     Generate(Generate),
     #[serde(rename = "ace_run")]
@@ -74,10 +96,21 @@ enum Call {
     History(History),
 }
 
-fn path(root: &Path, category: &str, id: &CheckName, existing: bool) -> Result<PathBuf> {
+#[derive(Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+struct Archive {
+    run: CheckName,
+    repository: CheckName,
+}
+#[derive(Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+struct ReadArchive {
+    repository: CheckName,
+}
+
+pub(crate) fn portable_name(name: &str) -> Result<()> {
     // Domain IDs permit ':' for cloud identities; local filenames use a narrower
     // portable set, reject dot components and Windows device names.
-    let name = id.as_str();
     let reserved = [
         "CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8",
         "COM9", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
@@ -92,6 +125,12 @@ fn path(root: &Path, category: &str, id: &CheckName, existing: bool) -> Result<P
             "use a portable experiment/run name containing letters, digits, '-' or '_'".into(),
         );
     }
+    Ok(())
+}
+
+fn path(root: &Path, category: &str, id: &CheckName, existing: bool) -> Result<PathBuf> {
+    let name = id.as_str();
+    portable_name(name)?;
     let parent = root.join(category);
     if !existing {
         fs::create_dir_all(&parent)?;
@@ -122,6 +161,10 @@ fn tool<T: JsonSchema>(name: &str, description: &str, readonly: bool) -> Value {
 
 fn tools() -> Value {
     json!({"tools":[
+        tool::<Archive>("ace_archive", "Commit a verified run, winning WAT source and learning from every candidate to a dedicated local Git repository under archives/<repository>. Requires Git on PATH. Preserves existing commits; no remote push or application repository modification.", false),
+        tool::<ReadArchive>("ace_archive_status", "Verify committed local Git snapshots, archived evidence and source-to-WASM identity. Requires Git on PATH.", true),
+        tool::<Propose>("ace_propose", "Register agent-authored WAT programs for import-free gcd(u32,u32)->u32; gcd(0,0)=0. Default trusted reference, or a verified local Champion selected with baseline_run. 1–100 candidates, at most 32 KiB source each; entire MCP frame remains limited to 64 KiB. Provenance is caller asserted. Registration never qualifies; call ace_run next.", false),
+        tool::<ReadProposals>("ace_proposal_status", "Verify the frozen proposal batch, source-to-WASM hashes, registered generator metadata and baseline identity before evaluation.", true),
         tool::<Generate>("ace_generate", "Create a fresh bounded GCD population, including three diagnostic controls. Defaults: seed 42, 12 candidates; maximum 100.", false),
         tool::<Run>("ace_run", "Execute a registered population with independent correctness checks and fuel/memory limits. Inputs are experiments/<experiment>; fresh outputs are runs/<run>. Defaults: 2 jobs; maximum 8.", false),
         tool::<ReadRun>("ace_status", "Verify a sealed run and report candidate outcomes and its qualified Champion.", true),
@@ -135,6 +178,37 @@ fn tools() -> Value {
 
 fn execute(root: &Path, call: Call) -> Result<Value> {
     Ok(match call {
+        Call::Archive(args) => {
+            portable_name(args.repository.as_str())?;
+            let exists = root
+                .join("archives")
+                .join(args.repository.as_str())
+                .try_exists()?;
+            crate::archive::save(
+                &path(root, "runs", &args.run, true)?,
+                &path(root, "archives", &args.repository, exists)?,
+            )?
+        }
+        Call::ArchiveStatus(args) => {
+            crate::archive::status(&path(root, "archives", &args.repository, true)?)?
+        }
+        Call::Propose(args) => {
+            let baseline = args
+                .baseline_run
+                .map(|id| path(root, "runs", &id, true))
+                .transpose()?;
+            serde_json::to_value(proposal::register(
+                &path(root, "experiments", &args.experiment, false)?,
+                &args.proposals,
+                baseline.as_deref(),
+            )?)?
+        }
+        Call::ProposalStatus(args) => serde_json::to_value(proposal::verify(&path(
+            root,
+            "experiments",
+            &args.experiment,
+            true,
+        )?)?)?,
         Call::Generate(args) => serde_json::to_value(generate::population(
             &path(root, "experiments", &args.experiment, false)?,
             args.seed.map(generate::Seed::get).unwrap_or(42),
@@ -143,11 +217,16 @@ fn execute(root: &Path, call: Call) -> Result<Value> {
         Call::Run(args) => {
             let input = path(root, "experiments", &args.experiment, true)?;
             let output = path(root, "runs", &args.run, false)?;
+            let registration = proposal::verify_if_present(&input)?;
             let report = ace_runner::run(&input, &output, args.jobs.unwrap_or(2))?;
             let verified = ace_runner::load_report(&output)?;
             if report != verified {
                 return Err("saved run verification differed".into());
             }
+            if let Some(record) = registration {
+                proposal::verify_run(&input, &record, &verified)?;
+            }
+            crate::source::freeze(&input, &output, &verified)?;
             summary(&output, &verified)
         }
         Call::Status(args) => {

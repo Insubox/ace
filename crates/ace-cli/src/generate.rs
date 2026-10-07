@@ -93,7 +93,7 @@ fn program(body: &str) -> String {
     )
 }
 
-fn baseline() -> String {
+pub(crate) fn baseline() -> String {
     program(&format!(
         "{ZERO_GUARDS} local.get $a local.get $b i32.lt_u (if (result i32) (then local.get $a) (else local.get $b)) local.set $s\n local.get $s i32.const 1024 i32.le_u (if (then i32.const 1 local.set $d i32.const 1 local.set $r\n (block $end (loop $scan local.get $d local.get $s i32.gt_u br_if $end local.get $a local.get $d i32.rem_u i32.eqz local.get $b local.get $d i32.rem_u i32.eqz i32.and (if (then local.get $d local.set $r)) local.get $d i32.const 1 i32.add local.set $d br $scan)) local.get $r return))\n{REMAINDER}"
     ))
@@ -248,15 +248,42 @@ pub(crate) fn population_with_base(
         files.push((format!("sources/{id}.wat"), source.into_bytes()));
         files.push((module, bytes));
     }
-    let config = RunConfig {
+    let config = config(modules.remove(0), modules)?;
+    config.validate()?;
+    let generation = Generation {
+        schema_version: ace_protocol::ProtocolVersion,
+        generator_version: VERSION.into(),
+        seed: seed.into(),
+        requested_candidates: candidates,
+        config_hash: ContentHash::of_json(&config)?,
+        artifacts,
+        parent_experiment: inherited.map(|b| b.parent_experiment.clone()),
+        parent_evidence_hash: inherited.map(|b| b.evidence_hash.clone()),
+    };
+    // Assemble everything before touching the user's filesystem; reject any
+    // existing destination, including symlinks, and never replace user files.
+    if let Some(parent) = directory.parent().filter(|p| !p.as_os_str().is_empty()) {
+        fs::create_dir_all(parent)?;
+    }
+    fs::create_dir(directory)?;
+    for (path, bytes) in files {
+        create_atomic(&directory.join(path), &bytes)?;
+    }
+    create_atomic(&directory.join("generation.json"), &json(&generation)?)?;
+    create_atomic(&directory.join("experiment.json"), &json(&config)?)?;
+    Ok(generation)
+}
+
+pub(crate) fn config(baseline: ModuleSpec, candidates: Vec<ModuleSpec>) -> Result<RunConfig> {
+    Ok(RunConfig {
         schema_version: ace_protocol::ProtocolVersion,
         project: ProjectId::new("PRJ-generated-gcd")?,
         experiment: ExperimentId::new("EXP-generated-gcd")?,
         cell: CellId::new("Gcd")?,
         intent: IntentId::new("INT-reduce-gcd-work")?,
         hypothesis: HypothesisId::new("H-bounded-gcd-search")?,
-        baseline: modules.remove(0),
-        candidates: modules,
+        baseline,
+        candidates,
         harness: Harness {
             entrypoint: CheckName::new("gcd")?,
             public_cases: vec![
@@ -284,30 +311,7 @@ pub(crate) fn population_with_base(
         },
         min_relative_improvement: Probability::new(0.01)?,
         max_wall_clock_seconds: 60,
-    };
-    config.validate()?;
-    let generation = Generation {
-        schema_version: ace_protocol::ProtocolVersion,
-        generator_version: VERSION.into(),
-        seed: seed.into(),
-        requested_candidates: candidates,
-        config_hash: ContentHash::of_json(&config)?,
-        artifacts,
-        parent_experiment: inherited.map(|b| b.parent_experiment.clone()),
-        parent_evidence_hash: inherited.map(|b| b.evidence_hash.clone()),
-    };
-    // Assemble everything before touching the user's filesystem; reject any
-    // existing destination, including symlinks, and never replace user files.
-    if let Some(parent) = directory.parent().filter(|p| !p.as_os_str().is_empty()) {
-        fs::create_dir_all(parent)?;
-    }
-    fs::create_dir(directory)?;
-    for (path, bytes) in files {
-        create_atomic(&directory.join(path), &bytes)?;
-    }
-    create_atomic(&directory.join("generation.json"), &json(&generation)?)?;
-    create_atomic(&directory.join("experiment.json"), &json(&config)?)?;
-    Ok(generation)
+    })
 }
 
 pub(crate) fn print_demo(path: &Path, report: &RunReport) -> Result<()> {

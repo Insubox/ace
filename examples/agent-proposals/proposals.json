@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "cell": "Gcd",
+  "candidates": [
+    {
+      "id": "C-agent-recursive",
+      "wat": "(module (func $g (export \"gcd\") (param $a i32) (param $b i32) (result i32) local.get $b i32.eqz (if (result i32) (then local.get $a) (else local.get $b local.get $a local.get $b i32.rem_u call $g))))",
+      "strategy": "recursive-euclid",
+      "generator": {
+        "provider": "manual-fixture-a",
+        "model": "manual-example-v1"
+      }
+    },
+    {
+      "id": "C-agent-add",
+      "wat": "(module (func (export \"gcd\") (param i32 i32) (result i32) local.get 0 local.get 1 i32.add))",
+      "strategy": "incorrect-addition",
+      "generator": {
+        "provider": "manual-fixture-b",
+        "model": "manual-example-v1"
+      }
+    },
+    {
+      "id": "C-agent-spin",
+      "wat": "(module (func (export \"gcd\") (param i32 i32) (result i32) (loop $forever br $forever) i32.const 0))",
+      "strategy": "fuel-exhaustion-control",
+      "generator": {
+        "provider": "manual-fixture-b",
+        "model": "manual-example-v1"
+      }
+    },
+    {
+      "id": "C-agent-import",
+      "wat": "(module (import \"host\" \"oracle\" (func $oracle (param i32 i32) (result i32))) (func (export \"gcd\") (param i32 i32) (result i32) local.get 0 local.get 1 call $oracle))",
+      "strategy": "forbidden-host-import",
+      "generator": {
+        "provider": "manual-fixture-b",
+        "model": "manual-example-v1"
+      }
+    }
+  ]
+}

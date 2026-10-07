@@ -1,0 +1,68 @@
+{
+  "$defs": {
+    "CandidateId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "ContentHash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "ProtocolVersion": {
+      "const": 1,
+      "type": "integer"
+    },
+    "Source": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_hash": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "candidate": {
+          "$ref": "#/$defs/CandidateId"
+        },
+        "source_hash": {
+          "$ref": "#/$defs/ContentHash"
+        }
+      },
+      "required": [
+        "candidate",
+        "source_hash",
+        "artifact_hash"
+      ],
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "metadata": {
+      "additionalProperties": {
+        "$ref": "#/$defs/ContentHash"
+      },
+      "type": "object"
+    },
+    "report_hash": {
+      "$ref": "#/$defs/ContentHash"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ProtocolVersion"
+    },
+    "sources": {
+      "items": {
+        "$ref": "#/$defs/Source"
+      },
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "report_hash",
+    "sources",
+    "metadata"
+  ],
+  "title": "Sources",
+  "type": "object"
+}

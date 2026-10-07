@@ -63,7 +63,7 @@ jobs:
             exit 1
           fi
           python scripts/package-release.py --binary target/${{ matrix.target }}/release/${{ matrix.binary }} --target ${{ matrix.target }} --version "$version" --commit "$GITHUB_SHA" --out dist
-      - name: Verify extracted package without provider credentials or external tools
+      - name: Verify extracted package, agent proposals and Git history without provider credentials
         shell: bash
         run: |
           set -euo pipefail

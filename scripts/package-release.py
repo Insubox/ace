@@ -42,7 +42,8 @@ def main():
         shutil.copyfile(root / "docs/getting-started.md", package / "GETTING_STARTED.md")
         metadata = {"schema_version": 1, "version": args.version, "source_commit": args.commit,
                     "target": args.target, "binary_sha256": hashlib.sha256(executable.read_bytes()).hexdigest(),
-                    "offline_demo": True, "candidate_generator": "gcd-grammar-v1"}
+                    "offline_demo": True, "candidate_generator": "gcd-grammar-v1",
+                    "agent_wat_proposals": True, "local_git_history": True}
         (package / "BUILD.json").write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf-8")
         # Build privately, then publish complete files without replacing an output.
         staged = Path(temporary) / archive_name

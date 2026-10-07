@@ -135,6 +135,26 @@ pub(crate) fn run(
     jobs: u32,
     patience: u32,
 ) -> Result<Campaign> {
+    run_with_git(
+        root,
+        seed,
+        candidates,
+        max_generations,
+        jobs,
+        patience,
+        None,
+    )
+}
+
+pub(crate) fn run_with_git(
+    root: &Path,
+    seed: u64,
+    candidates: u32,
+    max_generations: u32,
+    jobs: u32,
+    patience: u32,
+    repository: Option<&Path>,
+) -> Result<Campaign> {
     if !(4..=100).contains(&candidates)
         || !(1..=16).contains(&max_generations)
         || !(1..=8).contains(&jobs)
@@ -191,6 +211,12 @@ pub(crate) fn run(
         });
         create_atomic(&directory.join("knowledge-linked.json"), &json(&node)?)?;
         create_atomic(&directory.join("receipt.json"), &json(&receipt)?)?;
+        let saved_run = directory.join("run");
+        crate::source::freeze(&directory, &saved_run, &report)?;
+        create_atomic(&saved_run.join("knowledge-linked.json"), &json(&node)?)?;
+        if let Some(repository) = repository {
+            crate::archive::save(&saved_run, repository)?;
+        }
         unchanged = if receipt.improved { 0 } else { unchanged + 1 };
         campaign.steps.push(receipt);
         if unchanged >= patience {

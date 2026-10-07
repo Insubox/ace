@@ -1,0 +1,147 @@
+{
+  "$defs": {
+    "CandidateId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "ChampionId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "ContentHash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "EvidenceId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "ExperimentId": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "type": "string"
+    },
+    "Parent": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_hash": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "candidate": {
+          "$ref": "#/$defs/CandidateId"
+        },
+        "champion": {
+          "$ref": "#/$defs/ChampionId"
+        },
+        "environment_hash": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "evidence": {
+          "$ref": "#/$defs/EvidenceId"
+        },
+        "evidence_hash": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "experiment": {
+          "$ref": "#/$defs/ExperimentId"
+        }
+      },
+      "required": [
+        "experiment",
+        "champion",
+        "candidate",
+        "artifact_hash",
+        "evidence",
+        "evidence_hash",
+        "environment_hash"
+      ],
+      "type": "object"
+    },
+    "ProtocolVersion": {
+      "const": 1,
+      "type": "integer"
+    },
+    "Source": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_hash": {
+          "$ref": "#/$defs/ContentHash"
+        },
+        "candidate": {
+          "$ref": "#/$defs/CandidateId"
+        },
+        "source_hash": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ContentHash"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "candidate",
+        "artifact_hash"
+      ],
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "artifacts": {
+      "items": {
+        "$ref": "#/$defs/Source"
+      },
+      "type": "array"
+    },
+    "assembler": {
+      "type": "string"
+    },
+    "config_hash": {
+      "$ref": "#/$defs/ContentHash"
+    },
+    "parent": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Parent"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "proposal_hash": {
+      "$ref": "#/$defs/ContentHash"
+    },
+    "provenance_caller_asserted": {
+      "type": "boolean"
+    },
+    "real_evaluation_required": {
+      "type": "boolean"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ProtocolVersion"
+    }
+  },
+  "required": [
+    "schema_version",
+    "assembler",
+    "proposal_hash",
+    "config_hash",
+    "provenance_caller_asserted",
+    "real_evaluation_required",
+    "artifacts"
+  ],
+  "title": "Registration",
+  "type": "object"
+}

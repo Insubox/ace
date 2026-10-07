@@ -48,8 +48,11 @@ def main():
         if "SystemRoot" in os.environ:
             environment["SystemRoot"] = os.environ["SystemRoot"]
 
-        def run(*arguments):
-            output = subprocess.run([str(executable), *arguments], cwd=root, env=environment,
+        git_environment = dict(environment, PATH=os.environ.get("PATH", ""))
+
+        def run(*arguments, with_git=False):
+            output = subprocess.run([str(executable), *arguments], cwd=root,
+                                    env=git_environment if with_git else environment,
                                     text=True, capture_output=True, check=True, timeout=120)
             return output.stdout
 
@@ -65,25 +68,55 @@ def main():
         evolution = json.loads(run("evolve", "evolution", "--generations", "3", "--json"))
         if json.loads(run("history", "evolution")) != evolution:
             raise ValueError("packaged evolution history did not verify")
+        for step in evolution["steps"]:
+            run("archive", f"evolution/generation-{step['generation']:03}/run",
+                "--repository", "git-history", with_git=True)
+        git_history = json.loads(run("archive-status", "git-history", with_git=True))
+        if not git_history["verified"] or len(git_history["snapshots"]) != len(evolution["steps"]):
+            raise ValueError("packaged Git archive did not preserve every generation")
+        subprocess.run(["git", "clone", str(root / "git-history"), str(root / "git-clone")],
+                       cwd=root, env=git_environment, text=True, capture_output=True, check=True, timeout=120)
+        if json.loads(run("archive-status", "git-clone", with_git=True))["snapshots"] != git_history["snapshots"]:
+            raise ValueError("Git clone changed archived winner sources or learning")
+        proposals = {"schema_version": 1, "cell": "Gcd", "candidates": [
+            {"id": "C-agent-recursive", "wat": '(module (func $g (export "gcd") (param $a i32) (param $b i32) (result i32) local.get $b i32.eqz (if (result i32) (then local.get $a) (else local.get $b local.get $a local.get $b i32.rem_u call $g))))',
+             "strategy": "recursive-euclid", "generator": {"provider": "manual-fixture-a", "model": "package-test"}},
+            {"id": "C-agent-add", "wat": '(module (func (export "gcd") (param i32 i32) (result i32) local.get 0 local.get 1 i32.add))',
+             "strategy": "incorrect-addition", "generator": {"provider": "manual-fixture-b", "model": "package-test"}},
+        ]}
         requests = [
             {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"protocolVersion": "2025-06-18"}},
             {"jsonrpc": "2.0", "id": 2, "method": "tools/list"},
             {"jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": {"name": "ace_generate", "arguments": {"experiment": "first"}}},
             {"jsonrpc": "2.0", "id": 4, "method": "tools/call", "params": {"name": "ace_run", "arguments": {"experiment": "first", "run": "first"}}},
             {"jsonrpc": "2.0", "id": 5, "method": "tools/call", "params": {"name": "ace_knowledge", "arguments": {"run": "first"}}},
+            {"jsonrpc": "2.0", "id": 6, "method": "tools/call", "params": {"name": "ace_propose", "arguments": {"experiment": "agents", "proposals": proposals}}},
+            {"jsonrpc": "2.0", "id": 7, "method": "tools/call", "params": {"name": "ace_proposal_status", "arguments": {"experiment": "agents"}}},
+            {"jsonrpc": "2.0", "id": 8, "method": "tools/call", "params": {"name": "ace_run", "arguments": {"experiment": "agents", "run": "agents"}}},
         ]
         stream = "".join(json.dumps(request) + "\n" for request in requests)
         output = subprocess.run([str(executable), "mcp", "--workspace", str(root / "mcp-workspace")],
                                 cwd=root, env=environment, input=stream, text=True,
                                 capture_output=True, check=True, timeout=120)
         responses = [json.loads(line) for line in output.stdout.splitlines()]
-        if len(responses) != 5 or len(responses[1]["result"]["tools"]) != 8 or any(response["result"]["isError"] for response in responses[2:]):
+        if len(responses) != 8 or len(responses[1]["result"]["tools"]) != 12 or any(response["result"]["isError"] for response in responses[2:]):
             raise ValueError("packaged local MCP agent experience did not verify")
+        agent_run = responses[7]["result"]["structuredContent"]
+        if agent_run["champion"] != "C-agent-recursive" or not any(c["id"] == "C-agent-add" and c["outcome"] == "failed_correctness" for c in agent_run["candidates"]):
+            raise ValueError("packaged agent proposals did not receive real correctness evaluation")
+        archive_call = {"jsonrpc": "2.0", "id": 9, "method": "tools/call", "params": {"name": "ace_archive", "arguments": {"run": "agents", "repository": "agents"}}}
+        output = subprocess.run([str(executable), "mcp", "--workspace", str(root / "mcp-workspace")],
+                                cwd=root, env=git_environment, input=json.dumps(archive_call) + "\n",
+                                text=True, capture_output=True, check=True, timeout=120)
+        if json.loads(output.stdout)["result"]["isError"]:
+            raise ValueError("packaged MCP Git archive failed")
     print(json.dumps({"archive": str(args.archive), "sha256": digest,
                       "source_commit": metadata["source_commit"], "target": metadata["target"],
                       "demo_programs": 13, "qualified": 10, "diagnostic_failures": 3,
                       "generations": len(evolution["steps"]), "history_verified": True,
-                      "mcp_tools": 8, "mcp_experiment_verified": True,
+                      "mcp_tools": 12, "mcp_experiment_verified": True,
+                      "agent_proposals_verified": True, "git_snapshots": len(git_history["snapshots"]),
+                      "git_clone_verified": True, "git_provider_credentials": "absent",
                       "external_tool_path": "empty", "provider_credentials": "absent"}))
 
 
