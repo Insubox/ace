@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Try ACE locally — getting started</title><meta name="description" content="Download the verified Linux ACE preview, verify its checksum and run your first offline experiment."><link rel="canonical" href="https://ace.org.ai/getting-started.html"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="/site.css"></head>
+<body style="font-family:'Geist Mono',monospace">
+<nav style="border-bottom:1px solid #DDD8CB;padding:24px clamp(20px,4vw,48px)"><a href="/" style="font-family:Newsreader,serif;font-style:italic;font-size:32px">ace<span style="color:#D2461C">.</span></a><a href="https://ace-control-plane.nex-insure.workers.dev/" style="float:right;padding-top:10px">Open Observatory →</a></nav>
+<main style="max-width:900px;margin:auto;padding:48px clamp(20px,4vw,48px);line-height:1.75">
+<p style="font-size:12px;color:#D2461C;letter-spacing:.12em">LINUX X86-64 · VERIFIED TESTING PREVIEW</p>
+<h1 style="font-family:Newsreader,serif;font-weight:300;font-size:clamp(40px,6vw,72px);line-height:1.05">Run your first ACE experiment.</h1>
+<p>The native CLI demo runs offline. It needs no account, API key, Cloudflare service, Node or Docker. ACE preserves source and learning in its own version engine; Git is optional for compatibility.</p>
+<p style="padding:18px;border:1px solid #D2461C;border-radius:8px"><strong>Repository access is required.</strong> Insubox/ace is currently private. Sign in to GitHub with an account that has access before downloading. This release includes Linux Intel/AMD 64-bit only; matching Windows and macOS packages are not verified for this source.</p>
+<h2 style="font-family:Newsreader,serif;font-size:32px">1. Download the package and checksum</h2>
+<p>Open the <a href="https://github.com/Insubox/ace/releases/tag/ace-0.4.0-linux-candidate-20261008" style="text-decoration:underline">ACE 0.4.0 Linux candidate release</a>. Under <strong>Assets</strong>, download both files into the same folder:</p>
+<ul><li><code>ace-0.4.0-x86_64-unknown-linux-musl.tar.gz</code></li><li><code>ace-0.4.0-x86_64-unknown-linux-musl.tar.gz.sha256</code></li></ul>
+<h2 style="font-family:Newsreader,serif;font-size:32px">2. Verify and extract</h2>
+<pre style="background:#1A1915;color:#F3F1EA;padding:24px;border-radius:12px;font-size:13px">sha256sum -c ace-0.4.0-x86_64-unknown-linux-musl.tar.gz.sha256
+tar -xzf ace-0.4.0-x86_64-unknown-linux-musl.tar.gz
+cd ace-0.4.0-x86_64-unknown-linux-musl</pre>
+<p>The checksum check should report <strong>OK</strong>. The package contains <code>ace</code>, <code>GETTING_STARTED.md</code> and <code>BUILD.json</code>, which records the source commit and executable hash.</p>
+<h2 style="font-family:Newsreader,serif;font-size:32px">3. Run the offline demo</h2>
+<pre style="background:#1A1915;color:#F3F1EA;padding:24px;border-radius:12px;font-size:13px">./ace --version
+./ace demo
+./ace status ace-demo/run
+./ace knowledge ace-demo/run
+./ace inspect ace-demo/run --output report.html</pre>
+<p>Expect 13 programs: a baseline and 12 candidates. Ten qualify; three deliberate diagnostic controls exercise incorrect code, fuel exhaustion and memory limits. ACE retains the inputs, source, results and champion in <code>ace-demo</code>. The terminal prints the command to replay the champion independently. Open <code>report.html</code> to inspect the exported evidence.</p>
+<h2 style="font-family:Newsreader,serif;font-size:32px">4. Keep improving across generations</h2>
+<pre style="background:#1A1915;color:#F3F1EA;padding:24px;border-radius:12px;font-size:13px">./ace evolve ace-evolution --generations 3 --json
+./ace history ace-evolution</pre>
+<p>Generations preserve linked evidence and previous champions. MCP integration exposes 30 local tools for proposals, execution, native source history and collaboration. Consult the packaged guide or <a href="https://github.com/Insubox/ace/blob/main/docs/getting-started.md" style="text-decoration:underline">repository documentation</a> for agent campaigns, replay, clone and checkout.</p>
+<h2 style="font-family:Newsreader,serif;font-size:32px">Work with complete applications</h2>
+<p>Hello World, TicTacToe and Calculator compile and test as complete projects under protected dependencies and suites. These campaigns require repository access, Rust, Node and Docker. They are separate from the standalone binary demo.</p>
+<pre style="background:#1A1915;color:#F3F1EA;padding:24px;border-radius:12px;font-size:13px">git clone https://github.com/Insubox/ace.git
+cd ace
+cargo build --locked -p ace-cli
+docker build -f applications/Dockerfile -t ace-applications:local .
+node scripts/check-application-tasks.mjs --output /tmp/ace-task-check</pre>
+<p>The controlled examples repair Hello World from 4/11 to 11/11, TicTacToe from 19/20 to 20/20 and Calculator from 28/29 to 29/29. They retain rejected proposals and generator faults. The learning comparison tests compatible retrieved evidence with a curated repair policy; it does not establish general model performance.</p>
+<h2 style="font-family:Newsreader,serif;font-size:32px">What is verified today?</h2>
+<p>The Linux candidate was built from <code>0b913fbaf8c41c26aa7465bd80525f18b1142528</code>, downloaded from GitHub, checksum-verified and tested from a fresh extraction. Its source passed seven isolated repository checks, including 128 Rust tests, 142 Worker tests and 38 client tests. These results cover the recorded source and workloads. Production rollout, recovery and continuous alert acceptance are tracked separately.</p>
+<p style="font-size:12px;overflow-wrap:anywhere;color:#6B675C">Archive SHA-256: <code>dd051715561c0b734f4b7fc113b7676555972d2122fec9f39b785f008ec3c511</code><br>Updated October 8, 2026.</p>
+</main><footer style="border-top:1px solid #DDD8CB;padding:24px clamp(20px,4vw,48px);font-size:12px"><a href="/">← Back to ACE</a></footer></body></html>

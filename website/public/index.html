@@ -1,0 +1,532 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ACE — native source history and evidence-linked learning</title><meta name="description" content="ACE is a platform and native version engine for developers and coding agents. Retain winning source, negative learning and independent evidence. Try the verified Linux preview."><link rel="canonical" href="https://ace.org.ai/"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="/site.css"><script src="/site.js" defer></script></head>
+<body>
+
+
+<div style="font-family:'Geist Mono',monospace;background:#F3F1EA;color:#1A1915;min-height:100vh">
+
+<nav style="position:sticky;top:0;z-index:50;background:rgba(243,241,234,.86);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid #DDD8CB">
+  <div style="max-width:1320px;margin:0 auto;padding:14px clamp(20px,4vw,48px);display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap">
+    <a href="#top" style="display:flex;align-items:flex-start;gap:6px;color:#1A1915"><span style="font-family:Newsreader,serif;font-style:italic;font-weight:300;font-size:34px;line-height:.8">ace</span><span style="width:9px;height:9px;border-radius:50%;background:#D2461C"></span></a>
+    <div style="display:flex;align-items:center;gap:clamp(14px,2.4vw,32px);font-size:13px;flex-wrap:wrap">
+      <a href="#about">About</a>
+      <a href="#loop">How it works</a>
+      <a href="#gates">Gates</a>
+      <a href="#platform">Platform</a>
+      <a href="/getting-started.html">Docs</a>
+      <a href="#start" style="background:#1A1915;color:#F3F1EA;padding:9px 16px;border-radius:999px">Get ace</a>
+    </div>
+  </div>
+</nav>
+
+<header id="top" style="position:relative;overflow:clip;border-bottom:1px solid #DDD8CB">
+  <div style="max-width:1320px;margin:0 auto;padding:clamp(40px,7vw,96px) clamp(20px,4vw,48px) clamp(32px,5vw,64px);display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,460px),1fr));gap:clamp(24px,4vw,56px);align-items:center">
+    <div style="display:flex;flex-direction:column;gap:32px;position:relative;z-index:2">
+      <div style="display:flex;gap:10px;align-items:center;font-size:12px;letter-spacing:.12em;color:#6B675C"><span style="width:8px;height:8px;border-radius:50%;background:#D2461C"></span><span>v0.4.0 · LINUX PREVIEW · NATIVE VERSION ENGINE</span></div>
+      <h1 style="margin:0;font-family:Newsreader,serif;font-weight:300;font-size:clamp(46px,6.2vw,92px);line-height:1;letter-spacing:-0.01em;text-wrap:balance">Code evolves. <span style="font-style:italic;color:#D2461C">ace</span> keeps what was learned.</h1>
+      <p style="margin:0;font-family:Newsreader,serif;font-size:clamp(19px,1.7vw,23px);line-height:1.45;color:#45423A;max-width:36ch;text-wrap:pretty">A platform and native version engine for developers and coding agents. Preserve winning source, retain what failed, test every proposal and review the exact version before promotion.</p>
+      <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center">
+        <button style="display:flex;align-items:center;gap:16px;background:#1A1915;color:#F3F1EA;border:0;border-radius:999px;padding:14px 14px 14px 22px;font-family:'Geist Mono',monospace;font-size:14px;cursor:pointer" class="hover-28" id="copy-demo" type="button" aria-label="Copy the local ACE demo command">
+          <span><span style="color:#D2461C">$</span> <code id="demo-command" style="font-family:inherit">./ace demo</code></span>
+          <span style="background:#F3F1EA;color:#1A1915;border-radius:999px;padding:5px 12px;font-size:11px;letter-spacing:.08em">COPY</span>
+        </button>
+        <a href="https://ace-control-plane.nex-insure.workers.dev/" style="padding:14px 20px;border:1px solid #1A1915;border-radius:999px;font-size:14px" class="hover-33" rel="noopener noreferrer">Open Observatory →</a>
+      </div>
+      <div style="display:flex;gap:28px;flex-wrap:wrap;font-size:12px;color:#6B675C;padding-top:8px;border-top:1px solid #DDD8CB"><span>Native ACE history · Git optional</span><span>Local CLI · MCP · Cloudflare hosting</span></div>
+    </div>
+
+    <div style="position:relative;height:clamp(440px,52vw,640px)" data-scene="hero">
+      <div style="position:absolute;left:50%;top:60%;width:0;height:0;transform-style:preserve-3d;transform:translateY(calc(var(--sy,0) * -60px)) scale(var(--k,1)) rotateX(calc(60deg - var(--my,0) * 6deg)) rotateZ(calc(45deg + var(--mx,0) * 9deg));transition:transform .6s cubic-bezier(.2,.8,.2,1)">
+        <div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(-230px,-230px,0px)">
+            <div style="position:absolute;left:0;top:0;width:460px;height:460px;background:linear-gradient(#E4DFD3 1px,transparent 1px) 0 0/23px 23px,linear-gradient(90deg,#E4DFD3 1px,transparent 1px) 0 0/23px 23px,#F7F5EF;border:1px solid #1A1915;box-sizing:border-box;transform:translateZ(14px)"></div>
+            <div style="position:absolute;left:0;top:0;width:14px;height:460px;background:#E3DED2;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateX(460px) rotateY(-90deg)"></div>
+            <div style="position:absolute;left:0;top:0;width:460px;height:14px;background:#CDC7B8;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateY(460px) rotateX(90deg)"></div>
+          </div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(-200px,-200px,14px)">
+            <div style="position:absolute;left:0;top:0;width:34px;height:34px;background:#EFEBE2;border:1px solid #A9A397;box-sizing:border-box;transform:translateZ(6px)"></div>
+            <div style="position:absolute;left:0;top:0;width:6px;height:34px;background:#E2DDD1;border:1px solid #A9A397;box-sizing:border-box;transform-origin:0 0;transform:translateX(34px) rotateY(-90deg)"></div>
+            <div style="position:absolute;left:0;top:0;width:34px;height:6px;background:#D6D0C2;border:1px solid #A9A397;box-sizing:border-box;transform-origin:0 0;transform:translateY(34px) rotateX(90deg)"></div>
+          </div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(-150px,-200px,14px)">
+            <div style="position:absolute;left:0;top:0;width:34px;height:34px;background:#EFEBE2;border:1px solid #A9A397;box-sizing:border-box;transform:translateZ(6px)"></div>
+            <div style="position:absolute;left:0;top:0;width:6px;height:34px;background:#E2DDD1;border:1px solid #A9A397;box-sizing:border-box;transform-origin:0 0;transform:translateX(34px) rotateY(-90deg)"></div>
+            <div style="position:absolute;left:0;top:0;width:34px;height:6px;background:#D6D0C2;border:1px solid #A9A397;box-sizing:border-box;transform-origin:0 0;transform:translateY(34px) rotateX(90deg)"></div>
+          </div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(-100px,-200px,14px)">
+            <div style="position:absolute;left:0;top:0;width:34px;height:34px;background:#FBFAF6;border:1px solid #1A1915;box-sizing:border-box;transform:translateZ(24px)"></div>
+            <div style="position:absolute;left:0;top:0;width:24px;height:34px;background:#E3DED2;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateX(34px) rotateY(-90deg)"></div>
+            <div style="position:absolute;left:0;top:0;width:34px;height:24px;background:#CDC7B8;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateY(34px) rotateX(90deg)"></div>
+          </div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(-50px,-200px,14px)">
+            <div style="position:absolute;left:0;top:0;width:34px;height:34px;background:#FBFAF6;border:1px solid #1A1915;box-sizing:border-box;transform:translateZ(30px)"></div>
+            <div style="position:absolute;left:0;top:0;width:30px;height:34px;background:#E3DED2;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateX(34px) rotateY(-90deg)"></div>
+            <div style="position:absolute;left:0;top:0;width:34px;height:30px;background:#CDC7B8;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateY(34px) rotateX(90deg)"></div>
+          </div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(0px,-200px,14px)">
+            <div style="position:absolute;left:0;top:0;width:34px;height:34px;background:#FBFAF6;border:1px solid #1A1915;box-sizing:border-box;transform:translateZ(36px)"></div>
+            <div style="position:absolute;left:0;top:0;width:36px;height:34px;background:#E3DED2;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateX(34px) rotateY(-90deg)"></div>
+            <div style="position:absolute;left:0;top:0;width:34px;height:36px;background:#CDC7B8;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateY(34px) rotateX(90deg)"></div>
+          </div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(-200px,-150px,14px)">
+            <div style="position:absolute;left:0;top:0;width:34px;height:34px;background:#FBFAF6;border:1px solid #1A1915;box-sizing:border-box;transform:translateZ(42px)"></div>
+            <div style="position:absolute;left:0;top:0;width:42px;height:34px;background:#E3DED2;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateX(34px) rotateY(-90deg)"></div>
+            <div style="position:absolute;left:0;top:0;width:34px;height:42px;background:#CDC7B8;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateY(34px) rotateX(90deg)"></div>
+          </div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(-150px,-150px,14px)">
+            <div style="position:absolute;left:0;top:0;width:34px;height:34px;background:#EFEBE2;border:1px solid #A9A397;box-sizing:border-box;transform:translateZ(6px)"></div>
+            <div style="position:absolute;left:0;top:0;width:6px;height:34px;background:#E2DDD1;border:1px solid #A9A397;box-sizing:border-box;transform-origin:0 0;transform:translateX(34px) rotateY(-90deg)"></div>
+            <div style="position:absolute;left:0;top:0;width:34px;height:6px;background:#D6D0C2;border:1px solid #A9A397;box-sizing:border-box;transform-origin:0 0;transform:translateY(34px) rotateX(90deg)"></div>
+          </div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(-100px,-150px,14px)">
+            <div style="position:absolute;left:0;top:0;width:34px;height:34px;background:#EFEBE2;border:1px solid #A9A397;box-sizing:border-box;transform:translateZ(6px)"></div>
+            <div style="position:absolute;left:0;top:0;width:6px;height:34px;background:#E2DDD1;border:1px solid #A9A397;box-sizing:border-box;transform-origin:0 0;transform:translateX(34px) rotateY(-90deg)"></div>
+            <div style="position:absolute;left:0;top:0;width:34px;height:6px;background:#D6D0C2;border:1px solid #A9A397;box-sizing:border-box;transform-origin:0 0;transform:translateY(34px) rotateX(90deg)"></div>
+          </div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(-50px,-150px,14px)">
+            <div style="position:absolute;left:0;top:0;width:34px;height:34px;background:#F8E6DC;border:1px solid #D2461C;box-sizing:border-box;transform:translateZ(52px)"></div>
+            <div style="position:absolute;left:0;top:0;width:52px;height:34px;background:#EDB49C;border:1px solid #D2461C;box-sizing:border-box;transform-origin:0 0;transform:translateX(34px) rotateY(-90deg)"></div>
+            <div style="position:absolute;left:0;top:0;width:34px;height:52px;background:#DD9273;border:1px solid #D2461C;box-sizing:border-box;transform-origin:0 0;transform:translateY(34px) rotateX(90deg)"></div>
+          </div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(0px,-150px,14px)">
+            <div style="position:absolute;left:0;top:0;width:34px;height:34px;background:#FBFAF6;border:1px solid #1A1915;box-sizing:border-box;transform:translateZ(30px)"></div>
+            <div style="position:absolute;left:0;top:0;width:30px;height:34px;background:#E3DED2;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateX(34px) rotateY(-90deg)"></div>
+            <div style="position:absolute;left:0;top:0;width:34px;height:30px;background:#CDC7B8;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateY(34px) rotateX(90deg)"></div>
+          </div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(-200px,-100px,14px)">
+            <div style="position:absolute;left:0;top:0;width:34px;height:34px;background:#FBFAF6;border:1px solid #1A1915;box-sizing:border-box;transform:translateZ(36px)"></div>
+            <div style="position:absolute;left:0;top:0;width:36px;height:34px;background:#E3DED2;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateX(34px) rotateY(-90deg)"></div>
+            <div style="position:absolute;left:0;top:0;width:34px;height:36px;background:#CDC7B8;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateY(34px) rotateX(90deg)"></div>
+          </div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(-150px,-100px,14px)">
+            <div style="position:absolute;left:0;top:0;width:34px;height:34px;background:#FBFAF6;border:1px solid #1A1915;box-sizing:border-box;transform:translateZ(42px)"></div>
+            <div style="position:absolute;left:0;top:0;width:42px;height:34px;background:#E3DED2;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateX(34px) rotateY(-90deg)"></div>
+            <div style="position:absolute;left:0;top:0;width:34px;height:42px;background:#CDC7B8;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateY(34px) rotateX(90deg)"></div>
+          </div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(-100px,-100px,14px)">
+            <div style="position:absolute;left:0;top:0;width:34px;height:34px;background:#EFEBE2;border:1px solid #A9A397;box-sizing:border-box;transform:translateZ(6px)"></div>
+            <div style="position:absolute;left:0;top:0;width:6px;height:34px;background:#E2DDD1;border:1px solid #A9A397;box-sizing:border-box;transform-origin:0 0;transform:translateX(34px) rotateY(-90deg)"></div>
+            <div style="position:absolute;left:0;top:0;width:34px;height:6px;background:#D6D0C2;border:1px solid #A9A397;box-sizing:border-box;transform-origin:0 0;transform:translateY(34px) rotateX(90deg)"></div>
+          </div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(-50px,-100px,14px)">
+            <div style="position:absolute;left:0;top:0;width:34px;height:34px;background:#EFEBE2;border:1px solid #A9A397;box-sizing:border-box;transform:translateZ(6px)"></div>
+            <div style="position:absolute;left:0;top:0;width:6px;height:34px;background:#E2DDD1;border:1px solid #A9A397;box-sizing:border-box;transform-origin:0 0;transform:translateX(34px) rotateY(-90deg)"></div>
+            <div style="position:absolute;left:0;top:0;width:34px;height:6px;background:#D6D0C2;border:1px solid #A9A397;box-sizing:border-box;transform-origin:0 0;transform:translateY(34px) rotateX(90deg)"></div>
+          </div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(0px,-100px,14px)">
+            <div style="position:absolute;left:0;top:0;width:34px;height:34px;background:#FBFAF6;border:1px solid #1A1915;box-sizing:border-box;transform:translateZ(24px)"></div>
+            <div style="position:absolute;left:0;top:0;width:24px;height:34px;background:#E3DED2;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateX(34px) rotateY(-90deg)"></div>
+            <div style="position:absolute;left:0;top:0;width:34px;height:24px;background:#CDC7B8;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateY(34px) rotateX(90deg)"></div>
+          </div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(-200px,-50px,14px)">
+            <div style="position:absolute;left:0;top:0;width:34px;height:34px;background:#FBFAF6;border:1px solid #1A1915;box-sizing:border-box;transform:translateZ(30px)"></div>
+            <div style="position:absolute;left:0;top:0;width:30px;height:34px;background:#E3DED2;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateX(34px) rotateY(-90deg)"></div>
+            <div style="position:absolute;left:0;top:0;width:34px;height:30px;background:#CDC7B8;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateY(34px) rotateX(90deg)"></div>
+          </div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(-150px,-50px,14px)">
+            <div style="position:absolute;left:0;top:0;width:34px;height:34px;background:#F8E6DC;border:1px solid #D2461C;box-sizing:border-box;transform:translateZ(52px)"></div>
+            <div style="position:absolute;left:0;top:0;width:52px;height:34px;background:#EDB49C;border:1px solid #D2461C;box-sizing:border-box;transform-origin:0 0;transform:translateX(34px) rotateY(-90deg)"></div>
+            <div style="position:absolute;left:0;top:0;width:34px;height:52px;background:#DD9273;border:1px solid #D2461C;box-sizing:border-box;transform-origin:0 0;transform:translateY(34px) rotateX(90deg)"></div>
+          </div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(-100px,-50px,14px)">
+            <div style="position:absolute;left:0;top:0;width:34px;height:34px;background:#FBFAF6;border:1px solid #1A1915;box-sizing:border-box;transform:translateZ(42px)"></div>
+            <div style="position:absolute;left:0;top:0;width:42px;height:34px;background:#E3DED2;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateX(34px) rotateY(-90deg)"></div>
+            <div style="position:absolute;left:0;top:0;width:34px;height:42px;background:#CDC7B8;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateY(34px) rotateX(90deg)"></div>
+          </div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(-50px,-50px,14px)">
+            <div style="position:absolute;left:0;top:0;width:34px;height:34px;background:#F8E6DC;border:1px solid #D2461C;box-sizing:border-box;transform:translateZ(52px)"></div>
+            <div style="position:absolute;left:0;top:0;width:52px;height:34px;background:#EDB49C;border:1px solid #D2461C;box-sizing:border-box;transform-origin:0 0;transform:translateX(34px) rotateY(-90deg)"></div>
+            <div style="position:absolute;left:0;top:0;width:34px;height:52px;background:#DD9273;border:1px solid #D2461C;box-sizing:border-box;transform-origin:0 0;transform:translateY(34px) rotateX(90deg)"></div>
+          </div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(0px,-50px,14px)">
+            <div style="position:absolute;left:0;top:0;width:34px;height:34px;background:#EFEBE2;border:1px solid #A9A397;box-sizing:border-box;transform:translateZ(6px)"></div>
+            <div style="position:absolute;left:0;top:0;width:6px;height:34px;background:#E2DDD1;border:1px solid #A9A397;box-sizing:border-box;transform-origin:0 0;transform:translateX(34px) rotateY(-90deg)"></div>
+            <div style="position:absolute;left:0;top:0;width:34px;height:6px;background:#D6D0C2;border:1px solid #A9A397;box-sizing:border-box;transform-origin:0 0;transform:translateY(34px) rotateX(90deg)"></div>
+          </div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(-200px,0px,14px)">
+            <div style="position:absolute;left:0;top:0;width:34px;height:34px;background:#FBFAF6;border:1px solid #1A1915;box-sizing:border-box;transform:translateZ(24px)"></div>
+            <div style="position:absolute;left:0;top:0;width:24px;height:34px;background:#E3DED2;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateX(34px) rotateY(-90deg)"></div>
+            <div style="position:absolute;left:0;top:0;width:34px;height:24px;background:#CDC7B8;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateY(34px) rotateX(90deg)"></div>
+          </div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(-150px,0px,14px)">
+            <div style="position:absolute;left:0;top:0;width:34px;height:34px;background:#FBFAF6;border:1px solid #1A1915;box-sizing:border-box;transform:translateZ(30px)"></div>
+            <div style="position:absolute;left:0;top:0;width:30px;height:34px;background:#E3DED2;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateX(34px) rotateY(-90deg)"></div>
+            <div style="position:absolute;left:0;top:0;width:34px;height:30px;background:#CDC7B8;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateY(34px) rotateX(90deg)"></div>
+          </div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(-100px,0px,14px)">
+            <div style="position:absolute;left:0;top:0;width:34px;height:34px;background:#FBFAF6;border:1px solid #1A1915;box-sizing:border-box;transform:translateZ(36px)"></div>
+            <div style="position:absolute;left:0;top:0;width:36px;height:34px;background:#E3DED2;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateX(34px) rotateY(-90deg)"></div>
+            <div style="position:absolute;left:0;top:0;width:34px;height:36px;background:#CDC7B8;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateY(34px) rotateX(90deg)"></div>
+          </div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(-50px,0px,14px)">
+            <div style="position:absolute;left:0;top:0;width:34px;height:34px;background:#FBFAF6;border:1px solid #1A1915;box-sizing:border-box;transform:translateZ(42px)"></div>
+            <div style="position:absolute;left:0;top:0;width:42px;height:34px;background:#E3DED2;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateX(34px) rotateY(-90deg)"></div>
+            <div style="position:absolute;left:0;top:0;width:34px;height:42px;background:#CDC7B8;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateY(34px) rotateX(90deg)"></div>
+          </div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(0px,0px,14px)">
+            <div style="position:absolute;left:0;top:0;width:34px;height:34px;background:#EFEBE2;border:1px solid #A9A397;box-sizing:border-box;transform:translateZ(6px)"></div>
+            <div style="position:absolute;left:0;top:0;width:6px;height:34px;background:#E2DDD1;border:1px solid #A9A397;box-sizing:border-box;transform-origin:0 0;transform:translateX(34px) rotateY(-90deg)"></div>
+            <div style="position:absolute;left:0;top:0;width:34px;height:6px;background:#D6D0C2;border:1px solid #A9A397;box-sizing:border-box;transform-origin:0 0;transform:translateY(34px) rotateX(90deg)"></div>
+          </div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(100px,100px,14px)">
+            <div style="position:absolute;left:0;top:0;width:80px;height:80px;background:#D2461C;border:1px solid #1A1915;box-sizing:border-box;transform:translateZ(150px)"></div>
+            <div style="position:absolute;left:0;top:0;width:150px;height:80px;background:#B33A16;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateX(80px) rotateY(-90deg)"></div>
+            <div style="position:absolute;left:0;top:0;width:80px;height:150px;background:#902E11;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateY(80px) rotateX(90deg)"></div>
+          </div><div style="position:absolute;left:-200px;top:52px;transform:translateZ(15px);font-size:11px;letter-spacing:.1em;color:#6B675C;white-space:nowrap">LOCAL DEMO · 13 PROGRAMS</div>
+        <div style="position:absolute;left:96px;top:192px;transform:translateZ(15px);font-size:11px;letter-spacing:.1em;color:#D2461C;white-space:nowrap">VERIFIED CHAMPION</div>
+
+        <div style="position:absolute;left:-146px;top:-28px;width:0;height:calc(116px + var(--sy,0) * 140px);border-left:1px dashed #A9A397;transform-origin:0 0;transform:translateZ(14px) rotateX(90deg)"></div>
+        <div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(-230px,-60px,calc(130px + var(--sy,0) * 140px))">
+          <div style="position:absolute;left:0;top:0;width:168px;height:64px;background:#FBFAF6;border:1px solid #1A1915;box-sizing:border-box;transform:translateZ(6px);padding:9px 11px;display:flex;flex-direction:column;gap:5px"><span style="font-size:9px;letter-spacing:.1em;color:#6B675C">✕ RETAINED FAILURE</span><span style="font-family:Newsreader,serif;font-size:14px;line-height:1.15">Incorrect code keeps its source and test evidence.</span></div>
+          <div style="position:absolute;left:0;top:0;width:6px;height:64px;background:#E3DED2;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateX(168px) rotateY(-90deg)"></div>
+          <div style="position:absolute;left:0;top:0;width:168px;height:6px;background:#CDC7B8;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateY(64px) rotateX(90deg)"></div>
+        </div>
+
+        <div style="position:absolute;left:-146px;top:-198px;width:0;height:calc(176px + var(--sy,0) * 200px);border-left:1px dashed #A9A397;transform-origin:0 0;transform:translateZ(14px) rotateX(90deg)"></div>
+        <div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(-230px,-230px,calc(190px + var(--sy,0) * 200px))">
+          <div style="position:absolute;left:0;top:0;width:168px;height:64px;background:#FBFAF6;border:1px solid #1A1915;box-sizing:border-box;transform:translateZ(6px);padding:9px 11px;display:flex;flex-direction:column;gap:5px"><span style="font-size:9px;letter-spacing:.1em;color:#6B675C">✓ REPAIRED · 29/29</span><span style="font-family:Newsreader,serif;font-size:14px;line-height:1.15">Calculator: 28/29 → 29/29 passing cases.</span></div>
+          <div style="position:absolute;left:0;top:0;width:6px;height:64px;background:#E3DED2;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateX(168px) rotateY(-90deg)"></div>
+          <div style="position:absolute;left:0;top:0;width:168px;height:6px;background:#CDC7B8;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateY(64px) rotateX(90deg)"></div>
+        </div>
+
+        <div style="position:absolute;left:104px;top:-108px;width:0;height:calc(236px + var(--sy,0) * 260px);border-left:1px dashed #D2461C;transform-origin:0 0;transform:translateZ(14px) rotateX(90deg)"></div>
+        <div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(20px,-140px,calc(250px + var(--sy,0) * 260px))">
+          <div style="position:absolute;left:0;top:0;width:168px;height:64px;background:#FBFAF6;border:1px solid #D2461C;box-sizing:border-box;transform:translateZ(6px);padding:9px 11px;display:flex;flex-direction:column;gap:5px"><span style="font-size:9px;letter-spacing:.1em;color:#D2461C">? NEXT · OPERATIONS</span><span style="font-family:Newsreader,serif;font-size:14px;line-height:1.15">Validate rollout, recovery and continuous alerts.</span></div>
+          <div style="position:absolute;left:0;top:0;width:6px;height:64px;background:#F1D5C8;border:1px solid #D2461C;box-sizing:border-box;transform-origin:0 0;transform:translateX(168px) rotateY(-90deg)"></div>
+          <div style="position:absolute;left:0;top:0;width:168px;height:6px;background:#E7B7A3;border:1px solid #D2461C;box-sizing:border-box;transform-origin:0 0;transform:translateY(64px) rotateX(90deg)"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section id="about" style="border-bottom:1px solid #DDD8CB">
+  <div style="max-width:1320px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr))">
+    <a href="#about-primitives" style="display:flex;flex-direction:column;gap:14px;padding:32px clamp(20px,3vw,40px);border-right:1px solid #DDD8CB" class="hover-172"><span style="font-size:12px;letter-spacing:.12em;color:#D2461C">01 · ABOUT</span><span style="font-family:Newsreader,serif;font-size:24px;line-height:1.2">Trials, gates and the knowledge tree — the ideas behind ace.</span><span style="font-size:13px;color:#6B675C">→</span></a>
+    <a href="/getting-started.html" style="display:flex;flex-direction:column;gap:14px;padding:32px clamp(20px,3vw,40px);border-right:1px solid #DDD8CB" class="hover-176"><span style="font-size:12px;letter-spacing:.12em;color:#D2461C">02 · DOCUMENTATION</span><span style="font-family:Newsreader,serif;font-size:24px;line-height:1.2">A practical guide to the CLI, native history and local testing.</span><span style="font-size:13px;color:#6B675C">→</span></a>
+    <a href="#start" style="display:flex;flex-direction:column;gap:14px;padding:32px clamp(20px,3vw,40px);border-right:1px solid #DDD8CB" class="hover-180"><span style="font-size:12px;letter-spacing:.12em;color:#D2461C">03 · DOWNLOADS</span><span style="font-family:Newsreader,serif;font-size:24px;line-height:1.2">Verified Linux x86-64 package. Repository access required.</span><span style="font-size:13px;color:#6B675C">→</span></a>
+    <a href="https://ace-control-plane.nex-insure.workers.dev/" style="display:flex;flex-direction:column;gap:14px;padding:32px clamp(20px,3vw,40px)" class="hover-184" rel="noopener noreferrer"><span style="font-size:12px;letter-spacing:.12em;color:#D2461C">04 · OBSERVATORY</span><span style="font-family:Newsreader,serif;font-size:24px;line-height:1.2">Compare source, discuss changes, approve reviews and merge branches.</span><span style="font-size:13px;color:#6B675C">→</span></a>
+  </div>
+</section>
+
+<section id="about-primitives" style="max-width:1320px;margin:0 auto;padding:clamp(72px,10vw,140px) clamp(20px,4vw,48px);display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:clamp(40px,6vw,96px)">
+  <div style="display:flex;flex-direction:column;gap:28px">
+    <span style="font-size:12px;letter-spacing:.14em;color:#6B675C">NEW PRIMITIVES</span>
+    <h2 style="margin:0;font-family:Newsreader,serif;font-weight:300;font-size:clamp(38px,4.6vw,68px);line-height:1.04;text-wrap:balance">Agents propose. Evidence tells us <span style="font-style:italic">what to keep.</span></h2>
+    <p style="margin:0;font-family:Newsreader,serif;font-size:21px;line-height:1.45;color:#45423A;max-width:38ch">ACE combines its own content-addressed history with bounded experiments. Source, independent checks and learning stay linked. Git is optional for compatibility; native ACE branches and reviews support collaboration.</p>
+  </div>
+  <div style="display:flex;flex-direction:column;border-top:2px solid #1A1915;align-self:end">
+    <div style="display:grid;grid-template-columns:minmax(0,.8fr) 32px minmax(0,1.4fr);gap:12px;padding:16px 0;border-bottom:1px solid #1A1915;font-size:11px;letter-spacing:.12em;color:#6B675C"><span>DEVELOPER WORKFLOW</span><span></span><span>ACE CAPABILITIES</span></div>
+    <div style="display:grid;grid-template-columns:minmax(0,.8fr) 32px minmax(0,1.4fr);gap:12px;padding:22px 0;border-bottom:1px solid #DDD8CB;align-items:baseline;font-family:Newsreader,serif;font-size:clamp(20px,2vw,27px)" class="hover-199"><span style="color:#6B675C">Branch</span><span style="font-family:'Geist Mono',monospace;font-size:14px;color:#D2461C">→</span><span>Native branches and bounded proposals</span></div>
+    <div style="display:grid;grid-template-columns:minmax(0,.8fr) 32px minmax(0,1.4fr);gap:12px;padding:22px 0;border-bottom:1px solid #DDD8CB;align-items:baseline;font-family:Newsreader,serif;font-size:clamp(20px,2vw,27px)" class="hover-203"><span style="color:#6B675C">Pull request</span><span style="font-family:'Geist Mono',monospace;font-size:14px;color:#D2461C">→</span><span>Compare, approve and merge exact source</span></div>
+    <div style="display:grid;grid-template-columns:minmax(0,.8fr) 32px minmax(0,1.4fr);gap:12px;padding:22px 0;border-bottom:1px solid #DDD8CB;align-items:baseline;font-family:Newsreader,serif;font-size:clamp(20px,2vw,27px)" class="hover-207"><span style="color:#6B675C">Commit log</span><span style="font-family:'Geist Mono',monospace;font-size:14px;color:#D2461C">→</span><span>Winning source and evidence-linked learning</span></div>
+    <div style="display:grid;grid-template-columns:minmax(0,.8fr) 32px minmax(0,1.4fr);gap:12px;padding:22px 0;border-bottom:1px solid #DDD8CB;align-items:baseline;font-family:Newsreader,serif;font-size:clamp(20px,2vw,27px)" class="hover-211"><span style="color:#6B675C">Code review</span><span style="font-family:'Geist Mono',monospace;font-size:14px;color:#D2461C">→</span><span>Independent review before release</span></div>
+  </div>
+</section>
+
+<section id="loop" style="background:#ECE9E0;border-top:1px solid #DDD8CB;border-bottom:1px solid #DDD8CB">
+  <div style="max-width:1320px;margin:0 auto;padding:0 clamp(20px,4vw,48px);display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:clamp(24px,4vw,64px)">
+    <div style="position:sticky;top:64px;z-index:2;background:#ECE9E0;align-self:start;height:clamp(380px,60vw,calc(100vh - 64px))" data-scene="loop">
+      <div style="position:absolute;left:24px;top:32px;font-size:12px;letter-spacing:.14em;color:#6B675C">THE LOOP · EXPLODED VIEW</div>
+      <div style="position:absolute;left:50%;top:74%;width:0;height:0;transform-style:preserve-3d;transform:scale(var(--k,1)) rotateX(60deg) rotateZ(calc(45deg - var(--p,0) * 10deg))">
+        <div style="position:absolute;left:-130px;top:-130px;width:260px;height:260px;transform-style:preserve-3d">
+          <div style="position:absolute;left:0;top:0;width:10px;height:260px;background:#E3DED2;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateX(260px) rotateY(-90deg)"></div>
+          <div style="position:absolute;left:0;top:0;width:260px;height:10px;background:#CDC7B8;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateY(260px) rotateX(90deg)"></div>
+          <div style="position:absolute;left:0;top:0;width:260px;height:260px;transform:translateZ(10px);background:color-mix(in srgb,#D2461C calc(var(--s0,0) * 12%),#FBFAF6);border:1px solid color-mix(in srgb,#D2461C calc(var(--s0,0) * 100%),#1A1915);box-sizing:border-box;transition:background-color .4s,border-color .4s;padding:14px 16px;display:flex;flex-direction:column;gap:2px"><span style="font-size:10px;letter-spacing:.1em;color:#D2461C">MEMORY</span><span style="font-family:Newsreader,serif;font-size:24px;line-height:1">Knowledge</span></div>
+          <div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translateZ(10px)">
+            <div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(160px,26px,0px)">
+                <div style="position:absolute;left:0;top:0;width:30px;height:30px;background:#45423A;border:1px solid #1A1915;box-sizing:border-box;transform:translateZ(16px)"></div>
+                <div style="position:absolute;left:0;top:0;width:16px;height:30px;background:#2E2C26;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateX(30px) rotateY(-90deg)"></div>
+                <div style="position:absolute;left:0;top:0;width:30px;height:16px;background:#1A1915;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateY(30px) rotateX(90deg)"></div>
+              </div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(80px,110px,0px)">
+                <div style="position:absolute;left:0;top:0;width:30px;height:30px;background:#45423A;border:1px solid #1A1915;box-sizing:border-box;transform:translateZ(16px)"></div>
+                <div style="position:absolute;left:0;top:0;width:16px;height:30px;background:#2E2C26;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateX(30px) rotateY(-90deg)"></div>
+                <div style="position:absolute;left:0;top:0;width:30px;height:16px;background:#1A1915;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateY(30px) rotateX(90deg)"></div>
+              </div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(190px,110px,0px)">
+                <div style="position:absolute;left:0;top:0;width:30px;height:30px;background:#EFEBE2;border:1px solid #A9A397;box-sizing:border-box;transform:translateZ(6px)"></div>
+                <div style="position:absolute;left:0;top:0;width:6px;height:30px;background:#E2DDD1;border:1px solid #A9A397;box-sizing:border-box;transform-origin:0 0;transform:translateX(30px) rotateY(-90deg)"></div>
+                <div style="position:absolute;left:0;top:0;width:30px;height:6px;background:#D6D0C2;border:1px solid #A9A397;box-sizing:border-box;transform-origin:0 0;transform:translateY(30px) rotateX(90deg)"></div>
+              </div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(30px,196px,0px)">
+                <div style="position:absolute;left:0;top:0;width:30px;height:30px;background:#EFEBE2;border:1px solid #A9A397;box-sizing:border-box;transform:translateZ(6px)"></div>
+                <div style="position:absolute;left:0;top:0;width:6px;height:30px;background:#E2DDD1;border:1px solid #A9A397;box-sizing:border-box;transform-origin:0 0;transform:translateX(30px) rotateY(-90deg)"></div>
+                <div style="position:absolute;left:0;top:0;width:30px;height:6px;background:#D6D0C2;border:1px solid #A9A397;box-sizing:border-box;transform-origin:0 0;transform:translateY(30px) rotateX(90deg)"></div>
+              </div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(110px,196px,0px)">
+                <div style="position:absolute;left:0;top:0;width:30px;height:30px;background:#D2461C;border:1px solid #1A1915;box-sizing:border-box;transform:translateZ(26px)"></div>
+                <div style="position:absolute;left:0;top:0;width:26px;height:30px;background:#B33A16;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateX(30px) rotateY(-90deg)"></div>
+                <div style="position:absolute;left:0;top:0;width:30px;height:26px;background:#902E11;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateY(30px) rotateX(90deg)"></div>
+              </div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(196px,196px,0px)">
+                <div style="position:absolute;left:0;top:0;width:30px;height:30px;background:#45423A;border:1px solid #1A1915;box-sizing:border-box;transform:translateZ(16px)"></div>
+                <div style="position:absolute;left:0;top:0;width:16px;height:30px;background:#2E2C26;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateX(30px) rotateY(-90deg)"></div>
+                <div style="position:absolute;left:0;top:0;width:30px;height:16px;background:#1A1915;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateY(30px) rotateX(90deg)"></div>
+              </div></div>
+        </div>
+
+        <div style="position:absolute;left:-130px;top:-130px;width:260px;height:260px;transform-style:preserve-3d;transform:translateZ(calc(24px + var(--p,0) * 100px))">
+          <div style="position:absolute;left:0;top:0;width:10px;height:260px;background:#E3DED2;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateX(260px) rotateY(-90deg)"></div>
+          <div style="position:absolute;left:0;top:0;width:260px;height:10px;background:#CDC7B8;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateY(260px) rotateX(90deg)"></div>
+          <div style="position:absolute;left:0;top:0;width:260px;height:260px;transform:translateZ(10px);background:color-mix(in srgb,#D2461C calc(var(--s1,0) * 12%),#FBFAF6);border:1px solid color-mix(in srgb,#D2461C calc(var(--s1,0) * 100%),#1A1915);box-sizing:border-box;transition:background-color .4s,border-color .4s;padding:14px 16px;display:flex;flex-direction:column;gap:2px"><span style="font-size:10px;letter-spacing:.1em;color:#D2461C">OBJECTIVE</span><span style="font-family:Newsreader,serif;font-size:24px;line-height:1">Objective</span><span style="margin-top:auto;font-family:Newsreader,serif;font-style:italic;font-size:22px;line-height:1.15;color:#45423A">“Improve passing cases without regressions.”</span></div>
+        </div>
+
+        <div style="position:absolute;left:-130px;top:-130px;width:260px;height:260px;transform-style:preserve-3d;transform:translateZ(calc(48px + var(--p,0) * 200px))">
+          <div style="position:absolute;left:0;top:0;width:10px;height:260px;background:#E3DED2;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateX(260px) rotateY(-90deg)"></div>
+          <div style="position:absolute;left:0;top:0;width:260px;height:10px;background:#CDC7B8;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateY(260px) rotateX(90deg)"></div>
+          <div style="position:absolute;left:0;top:0;width:260px;height:260px;transform:translateZ(10px);background:color-mix(in srgb,#D2461C calc(var(--s2,0) * 12%),#FBFAF6);border:1px solid color-mix(in srgb,#D2461C calc(var(--s2,0) * 100%),#1A1915);box-sizing:border-box;transition:background-color .4s,border-color .4s;padding:14px 16px;display:flex;flex-direction:column;gap:2px"><span style="font-size:10px;letter-spacing:.1em;color:#D2461C">CAMPAIGN</span><span style="font-family:Newsreader,serif;font-size:24px;line-height:1">Trial</span></div>
+          <div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translateZ(10px)">
+            <div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(30px,80px,0px)">
+                <div style="position:absolute;left:0;top:0;width:24px;height:24px;background:#EFEBE2;border:1px solid #A9A397;box-sizing:border-box;transform:translateZ(4px)"></div>
+                <div style="position:absolute;left:0;top:0;width:4px;height:24px;background:#E2DDD1;border:1px solid #A9A397;box-sizing:border-box;transform-origin:0 0;transform:translateX(24px) rotateY(-90deg)"></div>
+                <div style="position:absolute;left:0;top:0;width:24px;height:4px;background:#D6D0C2;border:1px solid #A9A397;box-sizing:border-box;transform-origin:0 0;transform:translateY(24px) rotateX(90deg)"></div>
+              </div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(72px,80px,0px)">
+                <div style="position:absolute;left:0;top:0;width:24px;height:24px;background:#FBFAF6;border:1px solid #1A1915;box-sizing:border-box;transform:translateZ(28px)"></div>
+                <div style="position:absolute;left:0;top:0;width:28px;height:24px;background:#E3DED2;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateX(24px) rotateY(-90deg)"></div>
+                <div style="position:absolute;left:0;top:0;width:24px;height:28px;background:#CDC7B8;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateY(24px) rotateX(90deg)"></div>
+              </div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(114px,80px,0px)">
+                <div style="position:absolute;left:0;top:0;width:24px;height:24px;background:#FBFAF6;border:1px solid #1A1915;box-sizing:border-box;transform:translateZ(20px)"></div>
+                <div style="position:absolute;left:0;top:0;width:20px;height:24px;background:#E3DED2;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateX(24px) rotateY(-90deg)"></div>
+                <div style="position:absolute;left:0;top:0;width:24px;height:20px;background:#CDC7B8;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateY(24px) rotateX(90deg)"></div>
+              </div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(156px,80px,0px)">
+                <div style="position:absolute;left:0;top:0;width:24px;height:24px;background:#EFEBE2;border:1px solid #A9A397;box-sizing:border-box;transform:translateZ(4px)"></div>
+                <div style="position:absolute;left:0;top:0;width:4px;height:24px;background:#E2DDD1;border:1px solid #A9A397;box-sizing:border-box;transform-origin:0 0;transform:translateX(24px) rotateY(-90deg)"></div>
+                <div style="position:absolute;left:0;top:0;width:24px;height:4px;background:#D6D0C2;border:1px solid #A9A397;box-sizing:border-box;transform-origin:0 0;transform:translateY(24px) rotateX(90deg)"></div>
+              </div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(198px,80px,0px)">
+                <div style="position:absolute;left:0;top:0;width:24px;height:24px;background:#FBFAF6;border:1px solid #1A1915;box-sizing:border-box;transform:translateZ(32px)"></div>
+                <div style="position:absolute;left:0;top:0;width:32px;height:24px;background:#E3DED2;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateX(24px) rotateY(-90deg)"></div>
+                <div style="position:absolute;left:0;top:0;width:24px;height:32px;background:#CDC7B8;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateY(24px) rotateX(90deg)"></div>
+              </div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(30px,114px,0px)">
+                <div style="position:absolute;left:0;top:0;width:24px;height:24px;background:#FBFAF6;border:1px solid #1A1915;box-sizing:border-box;transform:translateZ(20px)"></div>
+                <div style="position:absolute;left:0;top:0;width:20px;height:24px;background:#E3DED2;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateX(24px) rotateY(-90deg)"></div>
+                <div style="position:absolute;left:0;top:0;width:24px;height:20px;background:#CDC7B8;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateY(24px) rotateX(90deg)"></div>
+              </div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(72px,114px,0px)">
+                <div style="position:absolute;left:0;top:0;width:24px;height:24px;background:#EFEBE2;border:1px solid #A9A397;box-sizing:border-box;transform:translateZ(4px)"></div>
+                <div style="position:absolute;left:0;top:0;width:4px;height:24px;background:#E2DDD1;border:1px solid #A9A397;box-sizing:border-box;transform-origin:0 0;transform:translateX(24px) rotateY(-90deg)"></div>
+                <div style="position:absolute;left:0;top:0;width:24px;height:4px;background:#D6D0C2;border:1px solid #A9A397;box-sizing:border-box;transform-origin:0 0;transform:translateY(24px) rotateX(90deg)"></div>
+              </div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(114px,114px,0px)">
+                <div style="position:absolute;left:0;top:0;width:24px;height:24px;background:#FBFAF6;border:1px solid #1A1915;box-sizing:border-box;transform:translateZ(32px)"></div>
+                <div style="position:absolute;left:0;top:0;width:32px;height:24px;background:#E3DED2;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateX(24px) rotateY(-90deg)"></div>
+                <div style="position:absolute;left:0;top:0;width:24px;height:32px;background:#CDC7B8;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateY(24px) rotateX(90deg)"></div>
+              </div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(156px,114px,0px)">
+                <div style="position:absolute;left:0;top:0;width:24px;height:24px;background:#FBFAF6;border:1px solid #1A1915;box-sizing:border-box;transform:translateZ(24px)"></div>
+                <div style="position:absolute;left:0;top:0;width:24px;height:24px;background:#E3DED2;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateX(24px) rotateY(-90deg)"></div>
+                <div style="position:absolute;left:0;top:0;width:24px;height:24px;background:#CDC7B8;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateY(24px) rotateX(90deg)"></div>
+              </div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(198px,114px,0px)">
+                <div style="position:absolute;left:0;top:0;width:24px;height:24px;background:#FBFAF6;border:1px solid #1A1915;box-sizing:border-box;transform:translateZ(16px)"></div>
+                <div style="position:absolute;left:0;top:0;width:16px;height:24px;background:#E3DED2;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateX(24px) rotateY(-90deg)"></div>
+                <div style="position:absolute;left:0;top:0;width:24px;height:16px;background:#CDC7B8;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateY(24px) rotateX(90deg)"></div>
+              </div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(30px,148px,0px)">
+                <div style="position:absolute;left:0;top:0;width:24px;height:24px;background:#FBFAF6;border:1px solid #1A1915;box-sizing:border-box;transform:translateZ(32px)"></div>
+                <div style="position:absolute;left:0;top:0;width:32px;height:24px;background:#E3DED2;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateX(24px) rotateY(-90deg)"></div>
+                <div style="position:absolute;left:0;top:0;width:24px;height:32px;background:#CDC7B8;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateY(24px) rotateX(90deg)"></div>
+              </div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(72px,148px,0px)">
+                <div style="position:absolute;left:0;top:0;width:24px;height:24px;background:#FBFAF6;border:1px solid #1A1915;box-sizing:border-box;transform:translateZ(24px)"></div>
+                <div style="position:absolute;left:0;top:0;width:24px;height:24px;background:#E3DED2;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateX(24px) rotateY(-90deg)"></div>
+                <div style="position:absolute;left:0;top:0;width:24px;height:24px;background:#CDC7B8;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateY(24px) rotateX(90deg)"></div>
+              </div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(114px,148px,0px)">
+                <div style="position:absolute;left:0;top:0;width:24px;height:24px;background:#FBFAF6;border:1px solid #1A1915;box-sizing:border-box;transform:translateZ(16px)"></div>
+                <div style="position:absolute;left:0;top:0;width:16px;height:24px;background:#E3DED2;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateX(24px) rotateY(-90deg)"></div>
+                <div style="position:absolute;left:0;top:0;width:24px;height:16px;background:#CDC7B8;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateY(24px) rotateX(90deg)"></div>
+              </div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(156px,148px,0px)">
+                <div style="position:absolute;left:0;top:0;width:24px;height:24px;background:#F8E6DC;border:1px solid #D2461C;box-sizing:border-box;transform:translateZ(40px)"></div>
+                <div style="position:absolute;left:0;top:0;width:40px;height:24px;background:#EDB49C;border:1px solid #D2461C;box-sizing:border-box;transform-origin:0 0;transform:translateX(24px) rotateY(-90deg)"></div>
+                <div style="position:absolute;left:0;top:0;width:24px;height:40px;background:#DD9273;border:1px solid #D2461C;box-sizing:border-box;transform-origin:0 0;transform:translateY(24px) rotateX(90deg)"></div>
+              </div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(198px,148px,0px)">
+                <div style="position:absolute;left:0;top:0;width:24px;height:24px;background:#FBFAF6;border:1px solid #1A1915;box-sizing:border-box;transform:translateZ(28px)"></div>
+                <div style="position:absolute;left:0;top:0;width:28px;height:24px;background:#E3DED2;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateX(24px) rotateY(-90deg)"></div>
+                <div style="position:absolute;left:0;top:0;width:24px;height:28px;background:#CDC7B8;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateY(24px) rotateX(90deg)"></div>
+              </div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(30px,182px,0px)">
+                <div style="position:absolute;left:0;top:0;width:24px;height:24px;background:#FBFAF6;border:1px solid #1A1915;box-sizing:border-box;transform:translateZ(16px)"></div>
+                <div style="position:absolute;left:0;top:0;width:16px;height:24px;background:#E3DED2;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateX(24px) rotateY(-90deg)"></div>
+                <div style="position:absolute;left:0;top:0;width:24px;height:16px;background:#CDC7B8;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateY(24px) rotateX(90deg)"></div>
+              </div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(72px,182px,0px)">
+                <div style="position:absolute;left:0;top:0;width:24px;height:24px;background:#EFEBE2;border:1px solid #A9A397;box-sizing:border-box;transform:translateZ(4px)"></div>
+                <div style="position:absolute;left:0;top:0;width:4px;height:24px;background:#E2DDD1;border:1px solid #A9A397;box-sizing:border-box;transform-origin:0 0;transform:translateX(24px) rotateY(-90deg)"></div>
+                <div style="position:absolute;left:0;top:0;width:24px;height:4px;background:#D6D0C2;border:1px solid #A9A397;box-sizing:border-box;transform-origin:0 0;transform:translateY(24px) rotateX(90deg)"></div>
+              </div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(114px,182px,0px)">
+                <div style="position:absolute;left:0;top:0;width:24px;height:24px;background:#FBFAF6;border:1px solid #1A1915;box-sizing:border-box;transform:translateZ(28px)"></div>
+                <div style="position:absolute;left:0;top:0;width:28px;height:24px;background:#E3DED2;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateX(24px) rotateY(-90deg)"></div>
+                <div style="position:absolute;left:0;top:0;width:24px;height:28px;background:#CDC7B8;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateY(24px) rotateX(90deg)"></div>
+              </div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(156px,182px,0px)">
+                <div style="position:absolute;left:0;top:0;width:24px;height:24px;background:#FBFAF6;border:1px solid #1A1915;box-sizing:border-box;transform:translateZ(20px)"></div>
+                <div style="position:absolute;left:0;top:0;width:20px;height:24px;background:#E3DED2;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateX(24px) rotateY(-90deg)"></div>
+                <div style="position:absolute;left:0;top:0;width:24px;height:20px;background:#CDC7B8;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateY(24px) rotateX(90deg)"></div>
+              </div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(198px,182px,0px)">
+                <div style="position:absolute;left:0;top:0;width:24px;height:24px;background:#EFEBE2;border:1px solid #A9A397;box-sizing:border-box;transform:translateZ(4px)"></div>
+                <div style="position:absolute;left:0;top:0;width:4px;height:24px;background:#E2DDD1;border:1px solid #A9A397;box-sizing:border-box;transform-origin:0 0;transform:translateX(24px) rotateY(-90deg)"></div>
+                <div style="position:absolute;left:0;top:0;width:24px;height:4px;background:#D6D0C2;border:1px solid #A9A397;box-sizing:border-box;transform-origin:0 0;transform:translateY(24px) rotateX(90deg)"></div>
+              </div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(30px,216px,0px)">
+                <div style="position:absolute;left:0;top:0;width:24px;height:24px;background:#FBFAF6;border:1px solid #1A1915;box-sizing:border-box;transform:translateZ(28px)"></div>
+                <div style="position:absolute;left:0;top:0;width:28px;height:24px;background:#E3DED2;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateX(24px) rotateY(-90deg)"></div>
+                <div style="position:absolute;left:0;top:0;width:24px;height:28px;background:#CDC7B8;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateY(24px) rotateX(90deg)"></div>
+              </div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(72px,216px,0px)">
+                <div style="position:absolute;left:0;top:0;width:24px;height:24px;background:#FBFAF6;border:1px solid #1A1915;box-sizing:border-box;transform:translateZ(20px)"></div>
+                <div style="position:absolute;left:0;top:0;width:20px;height:24px;background:#E3DED2;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateX(24px) rotateY(-90deg)"></div>
+                <div style="position:absolute;left:0;top:0;width:24px;height:20px;background:#CDC7B8;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateY(24px) rotateX(90deg)"></div>
+              </div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(114px,216px,0px)">
+                <div style="position:absolute;left:0;top:0;width:24px;height:24px;background:#EFEBE2;border:1px solid #A9A397;box-sizing:border-box;transform:translateZ(4px)"></div>
+                <div style="position:absolute;left:0;top:0;width:4px;height:24px;background:#E2DDD1;border:1px solid #A9A397;box-sizing:border-box;transform-origin:0 0;transform:translateX(24px) rotateY(-90deg)"></div>
+                <div style="position:absolute;left:0;top:0;width:24px;height:4px;background:#D6D0C2;border:1px solid #A9A397;box-sizing:border-box;transform-origin:0 0;transform:translateY(24px) rotateX(90deg)"></div>
+              </div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(156px,216px,0px)">
+                <div style="position:absolute;left:0;top:0;width:24px;height:24px;background:#FBFAF6;border:1px solid #1A1915;box-sizing:border-box;transform:translateZ(32px)"></div>
+                <div style="position:absolute;left:0;top:0;width:32px;height:24px;background:#E3DED2;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateX(24px) rotateY(-90deg)"></div>
+                <div style="position:absolute;left:0;top:0;width:24px;height:32px;background:#CDC7B8;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateY(24px) rotateX(90deg)"></div>
+              </div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(198px,216px,0px)">
+                <div style="position:absolute;left:0;top:0;width:24px;height:24px;background:#FBFAF6;border:1px solid #1A1915;box-sizing:border-box;transform:translateZ(24px)"></div>
+                <div style="position:absolute;left:0;top:0;width:24px;height:24px;background:#E3DED2;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateX(24px) rotateY(-90deg)"></div>
+                <div style="position:absolute;left:0;top:0;width:24px;height:24px;background:#CDC7B8;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateY(24px) rotateX(90deg)"></div>
+              </div></div>
+        </div>
+
+        <div style="position:absolute;left:-130px;top:-130px;width:260px;height:260px;transform-style:preserve-3d;transform:translateZ(calc(72px + var(--p,0) * 300px))">
+          <div style="position:absolute;left:0;top:0;width:10px;height:260px;background:#E3DED2;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateX(260px) rotateY(-90deg)"></div>
+          <div style="position:absolute;left:0;top:0;width:260px;height:10px;background:#CDC7B8;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateY(260px) rotateX(90deg)"></div>
+          <div style="position:absolute;left:0;top:0;width:260px;height:260px;transform:translateZ(10px);background:color-mix(in srgb,#D2461C calc(var(--s3,0) * 12%),#FBFAF6);border:1px solid color-mix(in srgb,#D2461C calc(var(--s3,0) * 100%),#1A1915);box-sizing:border-box;transition:background-color .4s,border-color .4s;padding:14px 16px;display:flex;flex-direction:column;gap:2px"><span style="font-size:10px;letter-spacing:.1em;color:#D2461C">WINNER</span><span style="font-family:Newsreader,serif;font-size:24px;line-height:1">Champion</span></div>
+          <div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translateZ(10px)">
+            <div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(100px,100px,0px)">
+                <div style="position:absolute;left:0;top:0;width:60px;height:60px;background:#D2461C;border:1px solid #1A1915;box-sizing:border-box;transform:translateZ(96px)"></div>
+                <div style="position:absolute;left:0;top:0;width:96px;height:60px;background:#B33A16;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateX(60px) rotateY(-90deg)"></div>
+                <div style="position:absolute;left:0;top:0;width:60px;height:96px;background:#902E11;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateY(60px) rotateX(90deg)"></div>
+              </div></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column">
+      <div style="min-height:72vh;display:flex;flex-direction:column;justify-content:center;gap:24px;opacity:calc(.28 + var(--s0,1) * .72);transition:opacity .4s">
+        <span style="font-size:13px;letter-spacing:.12em;color:#D2461C">01 · KNOWLEDGE</span>
+        <h3 style="margin:0;font-family:Newsreader,serif;font-weight:300;font-size:clamp(36px,4vw,60px);line-height:1.04">Keep the evidence. Reuse compatible lessons.</h3>
+        <p style="margin:0;font-family:Newsreader,serif;font-size:21px;line-height:1.45;color:#45423A;max-width:36ch">Native history retains winner and loser source, reports and generator faults. Reuse requires compatible contracts and fresh tests; a retrieved lesson alone does not qualify new code.</p>
+        <div style="display:flex;gap:20px;flex-wrap:wrap;font-size:12px;color:#6B675C"><span>■ proven</span><span style="color:#8A857A">□ rejected</span><span style="color:#D2461C">■ open</span></div>
+      </div>
+      <div style="min-height:72vh;display:flex;flex-direction:column;justify-content:center;gap:24px;opacity:calc(.28 + var(--s1,0) * .72);transition:opacity .4s">
+        <span style="font-size:13px;letter-spacing:.12em;color:#D2461C">02 · OBJECTIVE</span>
+        <h3 style="margin:0;font-family:Newsreader,serif;font-weight:300;font-size:clamp(36px,4vw,60px);line-height:1.04">Define what a better result means.</h3>
+        <p style="margin:0;font-family:Newsreader,serif;font-size:21px;line-height:1.45;color:#45423A;max-width:36ch">Freeze the baseline, dependencies and independent suite. Compare passing cases and resource observations, and keep previously passing cases passing.</p>
+      </div>
+      <div style="min-height:72vh;display:flex;flex-direction:column;justify-content:center;gap:24px;opacity:calc(.28 + var(--s2,0) * .72);transition:opacity .4s">
+        <span style="font-size:13px;letter-spacing:.12em;color:#D2461C">03 · TRIAL</span>
+        <h3 style="margin:0;font-family:Newsreader,serif;font-weight:300;font-size:clamp(36px,4vw,60px);line-height:1.04">Bounded proposals. Complete projects.</h3>
+        <p style="margin:0;font-family:Newsreader,serif;font-size:21px;line-height:1.45;color:#45423A;max-width:36ch">Hello World, TicTacToe and Calculator campaigns compile and test complete projects in isolated containers. Invalid generator output is recorded separately from incorrect code.</p>
+      </div>
+      <div style="min-height:72vh;display:flex;flex-direction:column;justify-content:center;gap:24px;opacity:calc(.28 + var(--s3,0) * .72);transition:opacity .4s">
+        <span style="font-size:13px;letter-spacing:.12em;color:#D2461C">04 · CHAMPION</span>
+        <h3 style="margin:0;font-family:Newsreader,serif;font-weight:300;font-size:clamp(36px,4vw,60px);line-height:1.04">A verified improvement, ready for review.</h3>
+        <p style="margin:0;font-family:Newsreader,serif;font-size:21px;line-height:1.45;color:#45423A;max-width:36ch">A native branch advances only for measured improvement without regressions. Production release additionally requires independent approval, exact-source evaluation and verified deployment.</p>
+        <span style="font-family:Newsreader,serif;font-style:italic;font-size:20px;color:#6B675C">↺ back to knowledge</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="gates" style="max-width:1320px;margin:0 auto;padding:clamp(72px,10vw,140px) clamp(20px,4vw,48px);display:flex;flex-direction:column;gap:clamp(32px,4vw,56px)">
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:32px;align-items:end">
+    <div style="display:flex;flex-direction:column;gap:24px">
+      <span style="font-size:12px;letter-spacing:.14em;color:#6B675C">CHECKS AND INDEPENDENT REVIEW</span>
+      <h2 style="margin:0;font-family:Newsreader,serif;font-weight:300;font-size:clamp(40px,5vw,76px);line-height:1.02">Seven checks. <span style="font-style:italic;color:#D2461C">One evaluated source.</span></h2>
+    </div>
+    <p style="margin:0;font-family:Newsreader,serif;font-size:21px;line-height:1.45;color:#45423A;max-width:40ch">The complete ACE source passed these isolated checks. Results describe the tested source and workload; they do not certify every future input or a production uptime guarantee.</p>
+  </div>
+  <div style="position:relative;height:clamp(320px,38vw,460px)" data-scene="gates">
+    <div style="position:absolute;left:50%;top:64%;width:0;height:0;transform-style:preserve-3d;transform:scale(var(--k,1)) rotateX(60deg) rotateZ(45deg)">
+      <div style="position:absolute;left:-300px;top:-60px;width:600px;height:170px;background:linear-gradient(#E4DFD3 1px,transparent 1px) 0 0/20px 20px,linear-gradient(90deg,#E4DFD3 1px,transparent 1px) 0 0/20px 20px,#F7F5EF;border:1px solid #1A1915;box-sizing:border-box"></div>
+      <div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(-276px,-26px,0px) scale3d(1,1,var(--g,0.02));transition:transform 1.2s cubic-bezier(.2,.8,.2,1) 0.00s">
+          <div style="position:absolute;left:0;top:0;width:52px;height:52px;background:#FBFAF6;border:1px solid #1A1915;box-sizing:border-box;transform:translateZ(12px)"></div>
+          <div style="position:absolute;left:0;top:0;width:12px;height:52px;background:#E3DED2;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateX(52px) rotateY(-90deg)"></div>
+          <div style="position:absolute;left:0;top:0;width:52px;height:12px;background:#CDC7B8;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateY(52px) rotateX(90deg)"></div>
+        </div><div style="position:absolute;left:-276px;top:52px;display:flex;flex-direction:column;gap:2px;font-size:11px;line-height:1.1;color:#6B675C;white-space:nowrap"><span style="letter-spacing:.08em">BUILD</span><span style="font-family:Newsreader,serif;font-size:20px">1</span></div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(-196px,-26px,0px) scale3d(1,1,var(--g,0.02));transition:transform 1.2s cubic-bezier(.2,.8,.2,1) 0.09s">
+          <div style="position:absolute;left:0;top:0;width:52px;height:52px;background:#FBFAF6;border:1px solid #1A1915;box-sizing:border-box;transform:translateZ(84px)"></div>
+          <div style="position:absolute;left:0;top:0;width:84px;height:52px;background:#E3DED2;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateX(52px) rotateY(-90deg)"></div>
+          <div style="position:absolute;left:0;top:0;width:52px;height:84px;background:#CDC7B8;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateY(52px) rotateX(90deg)"></div>
+        </div><div style="position:absolute;left:-196px;top:52px;display:flex;flex-direction:column;gap:2px;font-size:11px;line-height:1.1;color:#6B675C;white-space:nowrap"><span style="letter-spacing:.08em">RUST</span><span style="font-family:Newsreader,serif;font-size:20px">128</span></div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(-116px,-26px,0px) scale3d(1,1,var(--g,0.02));transition:transform 1.2s cubic-bezier(.2,.8,.2,1) 0.18s">
+          <div style="position:absolute;left:0;top:0;width:52px;height:52px;background:#FBFAF6;border:1px solid #1A1915;box-sizing:border-box;transform:translateZ(12px)"></div>
+          <div style="position:absolute;left:0;top:0;width:12px;height:52px;background:#E3DED2;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateX(52px) rotateY(-90deg)"></div>
+          <div style="position:absolute;left:0;top:0;width:52px;height:12px;background:#CDC7B8;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateY(52px) rotateX(90deg)"></div>
+        </div><div style="position:absolute;left:-116px;top:52px;display:flex;flex-direction:column;gap:2px;font-size:11px;line-height:1.1;color:#6B675C;white-space:nowrap"><span style="letter-spacing:.08em">TYPES</span><span style="font-family:Newsreader,serif;font-size:20px">1</span></div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(-36px,-26px,0px) scale3d(1,1,var(--g,0.02));transition:transform 1.2s cubic-bezier(.2,.8,.2,1) 0.27s">
+          <div style="position:absolute;left:0;top:0;width:52px;height:52px;background:#FBFAF6;border:1px solid #1A1915;box-sizing:border-box;transform:translateZ(86px)"></div>
+          <div style="position:absolute;left:0;top:0;width:86px;height:52px;background:#E3DED2;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateX(52px) rotateY(-90deg)"></div>
+          <div style="position:absolute;left:0;top:0;width:52px;height:86px;background:#CDC7B8;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateY(52px) rotateX(90deg)"></div>
+        </div><div style="position:absolute;left:-36px;top:52px;display:flex;flex-direction:column;gap:2px;font-size:11px;line-height:1.1;color:#6B675C;white-space:nowrap"><span style="letter-spacing:.08em">WORKER</span><span style="font-family:Newsreader,serif;font-size:20px">142</span></div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(44px,-26px,0px) scale3d(1,1,var(--g,0.02));transition:transform 1.2s cubic-bezier(.2,.8,.2,1) 0.36s">
+          <div style="position:absolute;left:0;top:0;width:52px;height:52px;background:#FBFAF6;border:1px solid #1A1915;box-sizing:border-box;transform:translateZ(63px)"></div>
+          <div style="position:absolute;left:0;top:0;width:63px;height:52px;background:#E3DED2;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateX(52px) rotateY(-90deg)"></div>
+          <div style="position:absolute;left:0;top:0;width:52px;height:63px;background:#CDC7B8;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateY(52px) rotateX(90deg)"></div>
+        </div><div style="position:absolute;left:44px;top:52px;display:flex;flex-direction:column;gap:2px;font-size:11px;line-height:1.1;color:#6B675C;white-space:nowrap"><span style="letter-spacing:.08em">CLIENT</span><span style="font-family:Newsreader,serif;font-size:20px">38</span></div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(124px,-26px,0px) scale3d(1,1,var(--g,0.02));transition:transform 1.2s cubic-bezier(.2,.8,.2,1) 0.45s">
+          <div style="position:absolute;left:0;top:0;width:52px;height:52px;background:#F8E6DC;border:1px solid #D2461C;box-sizing:border-box;transform:translateZ(19px)"></div>
+          <div style="position:absolute;left:0;top:0;width:19px;height:52px;background:#EDB49C;border:1px solid #D2461C;box-sizing:border-box;transform-origin:0 0;transform:translateX(52px) rotateY(-90deg)"></div>
+          <div style="position:absolute;left:0;top:0;width:52px;height:19px;background:#DD9273;border:1px solid #D2461C;box-sizing:border-box;transform-origin:0 0;transform:translateY(52px) rotateX(90deg)"></div>
+        </div><div style="position:absolute;left:124px;top:52px;display:flex;flex-direction:column;gap:2px;font-size:11px;line-height:1.1;color:#6B675C;white-space:nowrap"><span style="letter-spacing:.08em">NATIVE</span><span style="font-family:Newsreader,serif;font-size:20px">3</span></div><div style="position:absolute;left:0;top:0;transform-style:preserve-3d;transform:translate3d(204px,-26px,0px) scale3d(1,1,var(--g,0.02));transition:transform 1.2s cubic-bezier(.2,.8,.2,1) 0.54s">
+          <div style="position:absolute;left:0;top:0;width:52px;height:52px;background:#D2461C;border:1px solid #1A1915;box-sizing:border-box;transform:translateZ(12px)"></div>
+          <div style="position:absolute;left:0;top:0;width:12px;height:52px;background:#B33A16;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateX(52px) rotateY(-90deg)"></div>
+          <div style="position:absolute;left:0;top:0;width:52px;height:12px;background:#902E11;border:1px solid #1A1915;box-sizing:border-box;transform-origin:0 0;transform:translateY(52px) rotateX(90deg)"></div>
+        </div><div style="position:absolute;left:204px;top:52px;display:flex;flex-direction:column;gap:2px;font-size:11px;line-height:1.1;color:#D2461C;white-space:nowrap"><span style="letter-spacing:.08em">SCHEMAS</span><span style="font-family:Newsreader,serif;font-size:20px">1</span></div></div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr));border-top:2px solid #1A1915">
+    <div style="display:flex;flex-direction:column;gap:6px;padding:18px 16px 0 0;border-bottom:1px solid #DDD8CB;padding-bottom:18px"><span style="font-size:12px;color:#6B675C">BUILD</span><span style="font-size:13px;line-height:1.35;color:#6B675C">Rust workspace</span></div><div style="display:flex;flex-direction:column;gap:6px;padding:18px 16px 0 0;border-bottom:1px solid #DDD8CB;padding-bottom:18px"><span style="font-size:12px;color:#6B675C">RUST</span><span style="font-size:13px;line-height:1.35;color:#6B675C">Regression tests</span></div><div style="display:flex;flex-direction:column;gap:6px;padding:18px 16px 0 0;border-bottom:1px solid #DDD8CB;padding-bottom:18px"><span style="font-size:12px;color:#6B675C">TYPES</span><span style="font-size:13px;line-height:1.35;color:#6B675C">TypeScript check</span></div><div style="display:flex;flex-direction:column;gap:6px;padding:18px 16px 0 0;border-bottom:1px solid #DDD8CB;padding-bottom:18px"><span style="font-size:12px;color:#6B675C">WORKER</span><span style="font-size:13px;line-height:1.35;color:#6B675C">API and storage tests</span></div><div style="display:flex;flex-direction:column;gap:6px;padding:18px 16px 0 0;border-bottom:1px solid #DDD8CB;padding-bottom:18px"><span style="font-size:12px;color:#6B675C">CLIENT</span><span style="font-size:13px;line-height:1.35;color:#6B675C">Client and release tests</span></div><div style="display:flex;flex-direction:column;gap:6px;padding:18px 16px 0 0;border-bottom:1px solid #DDD8CB;padding-bottom:18px"><span style="font-size:12px;color:#6B675C">NATIVE</span><span style="font-size:13px;line-height:1.35;color:#6B675C">History contract checks</span></div><div style="display:flex;flex-direction:column;gap:6px;padding:18px 16px 0 0;border-bottom:1px solid #DDD8CB;padding-bottom:18px"><span style="font-size:12px;color:#D2461C">SCHEMAS</span><span style="font-size:13px;line-height:1.35;color:#6B675C">Generated schema check</span></div></div>
+</section>
+
+<section id="memory" style="background:#1A1915;color:#F3F1EA">
+  <div style="max-width:1320px;margin:0 auto;padding:clamp(72px,10vw,140px) clamp(20px,4vw,48px);display:flex;flex-direction:column;gap:clamp(40px,5vw,72px)">
+    <span style="font-size:12px;letter-spacing:.14em;color:#A9A397">LEARNING FROM LOSERS</span>
+    <div style="display:flex;flex-wrap:wrap;align-items:flex-end;gap:clamp(24px,4vw,64px)">
+      <span style="font-family:Newsreader,serif;font-weight:300;font-size:clamp(120px,20vw,300px);line-height:.8;letter-spacing:-0.02em">2</span>
+      <span style="font-family:Newsreader,serif;font-size:clamp(24px,2.6vw,38px);line-height:1.2;max-width:17ch;padding-bottom:10px;text-wrap:pretty">fresh tasks improved with compatible retained learning in a controlled comparison.</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:40px;border-top:1px solid #45423A;padding-top:32px">
+      <div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:13px;color:#A9A397">✕ NEGATIVE LEARNING</span><span style="font-family:Newsreader,serif;font-size:26px;line-height:1.25">Incorrect code keeps its source and test evidence.</span></div>
+      <div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:13px;color:#A9A397">✓ COMPLETE TASK REPAIR</span><span style="font-family:Newsreader,serif;font-size:26px;line-height:1.25">Calculator: 28/29 → 29/29 passing cases.</span></div>
+      <div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:13px;color:#D2461C">? OPERATIONAL ACCEPTANCE</span><span style="font-family:Newsreader,serif;font-size:26px;line-height:1.25">Validate rollout, recovery and continuous alerts.</span></div>
+    </div>
+  <p style="max-width:70ch;font-size:13px;line-height:1.6;color:#A9A397">Controlled retrieval: Hello World 10/11 → 11/11 and Calculator 28/29 → 29/29. Both alternatives used the same baseline, suite and image, with one proposal each. This measured a curated repair policy, not general LLM performance.</p></div>
+</section>
+
+<section id="trust" style="max-width:1320px;margin:0 auto;padding:clamp(72px,10vw,140px) clamp(20px,4vw,48px);display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,440px),1fr));gap:clamp(56px,7vw,112px)">
+  <div style="display:flex;flex-direction:column;gap:28px">
+    <span style="font-size:12px;letter-spacing:.14em;color:#6B675C">COLLABORATION IN OBSERVATORY</span>
+    <h2 style="margin:0;font-family:Newsreader,serif;font-weight:300;font-size:clamp(36px,4vw,58px);line-height:1.04">Make the next action clear.</h2>
+    <div style="display:flex;flex-direction:column;border-top:2px solid #1A1915">
+      <div style="display:flex;flex-direction:column;gap:6px;padding:18px 0;border-bottom:1px solid #DDD8CB"><span style="font-size:12px;letter-spacing:.1em;color:#D2461C">PROMOTION</span><span style="font-family:Newsreader,serif;font-size:22px">Approve the exact source, then merge the reviewed branch.</span></div>
+      <div style="display:flex;flex-direction:column;gap:6px;padding:18px 0;border-bottom:1px solid #DDD8CB"><span style="font-size:12px;letter-spacing:.1em;color:#D2461C">DIFF AND COMMENTS</span><span style="font-family:Newsreader,serif;font-size:22px">Compare versions and discuss the proposed changes.</span></div>
+      <div style="display:flex;flex-direction:column;gap:6px;padding:18px 0;border-bottom:1px solid #DDD8CB"><span style="font-size:12px;letter-spacing:.1em;color:#D2461C">STALE EVIDENCE</span><span style="font-family:Newsreader,serif;font-size:22px">Changed source or evaluator context requires fresh evidence.</span></div>
+      <div style="display:flex;flex-direction:column;gap:6px;padding:18px 0;border-bottom:1px solid #DDD8CB"><span style="font-size:12px;letter-spacing:.1em;color:#D2461C">VISIBLE ACTION STATUS</span><span style="font-family:Newsreader,serif;font-size:22px">Buttons show progress, completion and failures.</span></div>
+    </div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:28px">
+    <span style="font-size:12px;letter-spacing:.14em;color:#6B675C">PROVENANCE</span>
+    <h2 style="margin:0;font-family:Newsreader,serif;font-weight:300;font-size:clamp(36px,4vw,58px);line-height:1.04">Every result points back to its source.</h2>
+    <div style="display:flex;flex-direction:column;font-size:15px;border-top:2px solid #1A1915">
+      <div style="display:flex;justify-content:space-between;gap:16px;padding:15px 0;border-bottom:1px solid #DDD8CB"><span style="color:#6B675C">code</span><span>0b913fb · tested source</span></div>
+      <div style="display:flex;justify-content:space-between;gap:16px;padding:15px 0;border-bottom:1px solid #DDD8CB"><span style="color:#6B675C">base</span><span>Native version + parents</span></div>
+      <div style="display:flex;justify-content:space-between;gap:16px;padding:15px 0;border-bottom:1px solid #DDD8CB"><span style="color:#6B675C">environment</span><span>Pinned offline Docker image</span></div>
+      <div style="display:flex;justify-content:space-between;gap:16px;padding:15px 0;border-bottom:1px solid #DDD8CB"><span style="color:#6B675C">oracle</span><span>Independent test suites</span></div>
+      <div style="display:flex;justify-content:space-between;gap:16px;padding:15px 0;border-bottom:1px solid #DDD8CB"><span style="color:#6B675C">evalspec</span><span>ace-self-v2 · seven checks</span></div>
+      <div style="display:flex;justify-content:space-between;gap:16px;padding:15px 0;border-bottom:1px solid #DDD8CB"><span style="color:#6B675C">hypothesis</span><span>Measured change + no regressions</span></div>
+      <div style="display:flex;justify-content:space-between;gap:16px;padding:15px 0;border-bottom:2px solid #1A1915"><span style="color:#6B675C">generator</span><span style="color:#D2461C">Declared proposal provenance</span></div>
+    </div>
+  </div>
+</section>
+
+<section id="platform" style="background:#ECE9E0;border-top:1px solid #DDD8CB;border-bottom:1px solid #DDD8CB">
+  <div style="max-width:1320px;margin:0 auto;padding:clamp(72px,10vw,140px) clamp(20px,4vw,48px);display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,400px),1fr));gap:clamp(40px,6vw,96px)">
+    <div style="display:flex;flex-direction:column;gap:24px">
+      <span style="font-size:12px;letter-spacing:.14em;color:#6B675C">NATIVE CORE, HOSTED PLATFORM</span>
+      <h2 style="margin:0;font-family:Newsreader,serif;font-weight:300;font-size:clamp(40px,5vw,72px);line-height:1.02">Source and learning travel together.</h2>
+    </div>
+    <div style="display:flex;flex-direction:column;border-top:2px solid #1A1915">
+      <div style="display:grid;grid-template-columns:minmax(0,180px) minmax(0,1fr);gap:24px;padding:20px 0;border-bottom:1px solid #D3CDBF;align-items:baseline"><span style="font-size:14px">ACE native objects</span><span style="font-family:Newsreader,serif;font-size:21px;line-height:1.3">Content-addressed source, parent versions, journals and branch references.</span></div>
+      <div style="display:grid;grid-template-columns:minmax(0,180px) minmax(0,1fr);gap:24px;padding:20px 0;border-bottom:1px solid #D3CDBF;align-items:baseline"><span style="font-size:14px">Workers</span><span style="font-family:Newsreader,serif;font-size:21px;line-height:1.3">Host Observatory, authentication, collaboration and bounded workflows.</span></div>
+      <div style="display:grid;grid-template-columns:minmax(0,180px) minmax(0,1fr);gap:24px;padding:20px 0;border-bottom:1px solid #D3CDBF;align-items:baseline"><span style="font-size:14px">R2 + Durable Objects + D1</span><span style="font-family:Newsreader,serif;font-size:21px;line-height:1.3">Retain objects, coordinate native history and mirror platform metadata.</span></div>
+      <div style="display:grid;grid-template-columns:minmax(0,180px) minmax(0,1fr);gap:24px;padding:20px 0;border-bottom:1px solid #D3CDBF;align-items:baseline"><span style="font-size:14px">Isolated evaluation</span><span style="font-family:Newsreader,serif;font-size:21px;line-height:1.3">Build and test supported application profiles with fixed dependencies and resource limits.</span></div>
+      <div style="display:grid;grid-template-columns:minmax(0,180px) minmax(0,1fr);gap:24px;padding:20px 0;border-bottom:1px solid #D3CDBF;align-items:baseline"><span style="font-size:14px">Recovery and spending controls</span><span style="font-family:Newsreader,serif;font-size:21px;line-height:1.3">Verified isolated backups and guarded paid execution. Operational drills remain in progress.</span></div>
+    </div>
+  </div>
+</section>
+
+<section id="start" style="max-width:1320px;margin:0 auto;padding:clamp(72px,10vw,140px) clamp(20px,4vw,48px);display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:clamp(40px,6vw,96px);align-items:center">
+  <div style="display:flex;flex-direction:column;gap:28px">
+    <span style="font-size:12px;letter-spacing:.14em;color:#6B675C">GET STARTED</span>
+    <h2 style="margin:0;font-family:Newsreader,serif;font-weight:300;font-size:clamp(40px,5vw,72px);line-height:1.02">Your first local experiment in <span style="font-style:italic">three commands.</span></h2>
+    <div style="display:flex;flex-direction:column;gap:6px;font-size:13px;color:#6B675C"><span>Latest release <span style="color:#1A1915">v0.4.0</span> · October 2026</span><span>Linux x86-64 preview · repository access required</span></div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap">
+      <a href="https://github.com/Insubox/ace/releases/tag/ace-0.4.0-linux-candidate-20261008" style="background:#D2461C;color:#F3F1EA;padding:14px 22px;border-radius:999px;font-size:14px" class="hover-568" rel="noopener noreferrer">Linux preview on GitHub</a>
+      <a href="/getting-started.html" style="padding:14px 22px;border:1px solid #1A1915;border-radius:999px;font-size:14px" class="hover-569">Read the getting-started guide</a>
+    </div>
+  </div>
+  <div style="background:#1A1915;color:#F3F1EA;border-radius:14px;overflow:hidden;font-size:clamp(12px,1.15vw,14px);line-height:1.9;box-shadow:0 30px 60px -30px rgba(26,25,21,.5)">
+    <div style="display:flex;gap:8px;padding:14px 18px;border-bottom:1px solid #2E2C26;align-items:center"><span style="width:10px;height:10px;border-radius:50%;background:#45423A"></span><span style="width:10px;height:10px;border-radius:50%;background:#45423A"></span><span style="width:10px;height:10px;border-radius:50%;background:#45423A"></span><span style="margin-left:12px;font-size:11px;color:#8A857A">~/ace-0.4.0 · after extraction</span></div>
+    <div style="padding:22px 24px 26px;display:flex;flex-direction:column;overflow-x:auto">
+      <span><span style="color:#D2461C">$</span> ./ace demo</span>
+      <span style="color:#8A857A">  ✓ 13 programs · independent correctness checks</span>
+      <span><span style="color:#D2461C">$</span> ./ace status ace-demo/run</span>
+      <span style="color:#8A857A">  ✓ retained source, results and champion</span>
+      <span><span style="color:#D2461C">$</span> ./ace inspect ace-demo/run --output report.html</span>
+      <span style="color:#8A857A">  ✓ verified evidence exported to report.html</span>
+      <span style="color:#8A857A">  ✓ local CLI needs no account, API key or Docker</span>
+      <span style="color:#F3F1EA">  ● application campaigns use the repository + Node + Docker</span>
+    </div>
+  </div>
+<p style="max-width:72ch;font-size:13px;line-height:1.6;color:#6B675C">Current downloads require access to the private Insubox/ace repository. Windows and macOS packages are not verified for this source. The Linux CLI demo is offline; complete Python applications need the repository, Node and Docker.</p></section>
+
+<footer style="border-top:1px solid #DDD8CB">
+  <div style="max-width:1320px;margin:0 auto;padding:40px clamp(20px,4vw,48px);display:flex;justify-content:space-between;align-items:center;gap:24px;flex-wrap:wrap;font-size:12px;color:#6B675C">
+    <div style="display:flex;align-items:flex-start;gap:6px"><span style="font-family:Newsreader,serif;font-style:italic;font-weight:300;font-size:30px;line-height:.8;color:#1A1915">ace</span><span style="width:8px;height:8px;border-radius:50%;background:#D2461C"></span></div>
+    <span style="font-family:Newsreader,serif;font-style:italic;font-size:18px;color:#45423A">Code is cheap now. Memory is the platform.</span>
+    <div style="display:flex;gap:24px;flex-wrap:wrap"><span>Developer preview · October 2026</span><a href="https://github.com/Insubox/ace" style="color:#6B675C" rel="noopener noreferrer">github.com/Insubox/ace</a></div>
+  </div>
+</footer>
+
+</div>
+
+</body></html>
