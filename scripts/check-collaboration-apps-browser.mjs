@@ -38,7 +38,7 @@ const server=createServer(async(req,res)=>{try{const url=new URL(req.url,'http:/
  if(url.pathname===`/v1/projects/${name}/trials`)return send(200,{trials:[]});
  if(url.pathname===`/v1/stores/${name}/compare`)return send(200,{left:url.searchParams.get('left'),right:url.searchParams.get('right'),changes:[{path:'core.py',change:'modified',before:hash,after:hash,before_text:['before\n'],after_text:source.match(/[^\n]*\n/g),text_edits:[]}],verified:true});
  if(url.pathname===`/v1/stores/${name}/reviews`){if(req.method==='POST'){assert.equal(role,'owner');requestCalls++;assert.equal(body.source,b);assert.equal(body.target,a);review={...body,author:'account:fixture-owner',status:'open',revision:1,events:[]};}return send(req.method==='POST'?201:200,req.method==='POST'?review:{reviews:review?[review]:[]});}
- if(url.pathname===`/v1/stores/${name}/reviews/${review?.id}`)return send(200,review);
+ if(url.pathname===`/v1/stores/${name}/reviews/${review?.id}`){const latest=new Map();for(const e of review.events)if(e.revision===review.revision&&e.actor!==review.author&&['approve','request_changes'].includes(e.type))latest.set(e.actor,e.type);return send(200,{...review,approval_satisfied:[...latest.values()].includes('approve')&&![...latest.values()].includes('request_changes'),stale:refs.heads[review.source_branch]!==review.source||refs.heads[review.target_branch]!==review.target});}
  if(url.pathname===`/v1/stores/${name}/reviews/${review?.id}/events`){eventCalls++;if(eventGate)await eventGate.promise;assert.equal(body.source,b);assert.equal(body.target,a);if(body.type==='approve')assert.equal(role,'reviewer');else{assert.equal(body.path,'core.py');assert.equal(body.line,2);}review.events.push({...body,actor:role==='reviewer'?'account:fixture-reviewer':'account:fixture-owner',recorded_at:Date.now()});return send(200,review);}
  if(url.pathname===`/v1/stores/${name}/reviews/${review?.id}/conflicts`)return send(200,{base:a,source:review.source,target:review.target,revision:review.revision,conflicts:[{path:'core.py',base:hash,ours:hash,theirs:hash}]});
  if(url.pathname===`/v1/stores/${name}/reviews/${review?.id}/resolve`){resolutionCalls++;assert.equal(body.resolutions[0].choice,'text');assert.match(body.resolutions[0].text,/resolved source/);review.revision++;review.source=c;refs.heads.feature=c;return send(200,{version:c,review,new_approval_required:true});}
@@ -59,12 +59,21 @@ const fill=values=>evaluate(Object.entries(values).map(([id,value])=>`document.g
 const submit=id=>evaluate(`document.getElementById(${JSON.stringify(id)}).requestSubmit()`);
 const signIn=async()=>{await call('Network.clearBrowserCookies');await call('Page.navigate',{url:origin});await until("document.getElementById('account-login')&&!document.getElementById('auth').hidden");await fill({username:'fixture-owner',password:'fixture-password-1234'});await submit('account-login');await until("!document.getElementById('workspace').hidden&&document.getElementById('status').textContent.includes('native versions loaded')");};
 try{
- await call('Runtime.enable');await call('Page.enable');await call('Emulation.setDeviceMetricsOverride',{width:1200,height:950,deviceScaleFactor:1,mobile:false});await signIn();
+ await call('Runtime.enable');await call('Page.enable');await call('Emulation.setFocusEmulationEnabled',{enabled:true});await call('Emulation.setDeviceMetricsOverride',{width:1200,height:950,deviceScaleFactor:1,mobile:false});await signIn();
  await evaluate("document.getElementById('nav-reviews').click()");await fill({'review-title':'Review calculator change','review-source':'feature','review-target':'main'});await submit('review-create');await until("!document.getElementById('review-detail').hidden&&document.getElementById('review-path').options.length===2");assert.equal(requestCalls,1);assert.equal(await evaluate('window.sourceExecuted'),undefined);
- await fill({'review-body':'Please check this line','review-path':'core.py','review-line':'2'});await submit('review-comment');await until("document.getElementById('review-events').textContent.includes('Please check this line')");assert.equal(eventCalls,1);assert.equal(await evaluate("document.getElementById('review-actions').textContent.includes('Approve exact changes')"),false);
- role='reviewer';await signIn();await evaluate("document.getElementById('review-list').firstChild.click()");await until("document.getElementById('review-actions').textContent.includes('Approve exact changes')");
+ await fill({'review-body':'Please check this line','review-path':'core.py','review-line':'2'});await submit('review-comment');await until("document.getElementById('review-events').textContent.includes('Please check this line')");assert.equal(eventCalls,1);assert.equal(await evaluate("document.getElementById('review-actions').textContent.includes('1. Approve changes')"),false);
+ role='reviewer';await signIn();await evaluate("document.getElementById('review-list').firstChild.click()");await until("document.getElementById('review-actions').textContent.includes('1. Approve changes')");
+ assert.equal(await evaluate("document.getElementById('review-steps').hidden"),false);
+ await evaluate("(()=>{const b=[...document.getElementById('review-actions').children].find(b=>b.textContent==='2. Merge changes');b.focus();b.click()})()");
+ assert.equal(mergeAttempts,0);
+ assert.equal(await evaluate("[...document.querySelectorAll('#review-actions button')].find(b=>b.textContent==='2. Merge changes').getAttribute('aria-disabled')"),'true');
+ assert.match(await evaluate("document.querySelector('#review-tooltips [role=tooltip]:not([hidden])').textContent"),/unavailable until an independent contributor approves/);
+ await call('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape'});await call('Input.dispatchKeyEvent',{type:'keyUp',key:'Escape',code:'Escape'});
+ assert.equal(await evaluate("document.querySelectorAll('#review-tooltips [role=tooltip]:not([hidden])').length"),0);
+ await evaluate("[...document.querySelectorAll('#review-actions button')].find(b=>b.textContent==='1. Approve changes').focus()");
+ assert.match(await evaluate("document.querySelector('#review-tooltips [role=tooltip]:not([hidden])').textContent"),/Step 1: after inspecting/);
  eventGate=deferred();const beforeApproval=eventCalls;
- await evaluate("(()=>{const b=[...document.getElementById('review-actions').children].find(b=>b.textContent==='Approve exact changes');b.click();b.click()})()");
+ await evaluate("(()=>{const b=[...document.getElementById('review-actions').children].find(b=>b.textContent==='1. Approve changes');b.click();b.click()})()");
  await until("document.getElementById('review-action-status').textContent.includes('Approving')");
  assert.equal(await evaluate("document.querySelector('#review-actions button[aria-busy=true]').textContent"),'Approving changes…');
  assert.equal(await evaluate("[...document.querySelectorAll('#review-actions button,#review-comment button')].every(b=>b.disabled)"),true);
@@ -73,16 +82,19 @@ try{
  await submit('review-comment');assert.equal(eventCalls,beforeApproval+1);
  eventGate.release();eventGate=null;
  await until("document.getElementById('review-action-status').textContent.includes('Approval saved')&&!document.querySelector('#review-actions button').disabled");assert.equal(eventCalls,beforeApproval+1);
+ assert.equal(await evaluate("[...document.querySelectorAll('#review-actions button')].find(b=>b.textContent==='2. Merge changes').getAttribute('aria-disabled')"),'false');
+ assert.match(await evaluate("document.getElementById('review-next-title').textContent"),/ready for step 2/);
+ assert.equal(await evaluate("document.getElementById('review-approve-step').dataset.complete"),'true');
  mergeFailureNext=true;mergeGate=deferred();
- await evaluate("(()=>{const b=[...document.getElementById('review-actions').children].find(b=>b.textContent==='Merge approved request');b.click();b.click()})()");
+ await evaluate("(()=>{const b=[...document.getElementById('review-actions').children].find(b=>b.textContent==='2. Merge changes');b.click();b.click()})()");
  await until("document.getElementById('review-action-status').textContent.includes('Merging')");
  assert.equal(await evaluate("[...document.querySelectorAll('#review-actions button')].every(b=>b.disabled)"),true);
  mergeGate.release();mergeGate=null;
  await until("document.getElementById('review-action-status').textContent.includes('Independent approval changed')");
  assert.equal(await evaluate("document.getElementById('review-action-status').dataset.error"),'true');
- assert.equal(await evaluate("[...document.getElementById('review-actions').children].find(b=>b.textContent==='Merge approved request').disabled"),false);
+ assert.equal(await evaluate("[...document.getElementById('review-actions').children].find(b=>b.textContent==='2. Merge changes').disabled"),false);
  assert.equal(mergeAttempts,1);assert.equal(mergeCalls,0);
- mergeGate=deferred();await evaluate("(()=>{const b=[...document.getElementById('review-actions').children].find(b=>b.textContent==='Merge approved request');b.click();b.click()})()");
+ mergeGate=deferred();await evaluate("(()=>{const b=[...document.getElementById('review-actions').children].find(b=>b.textContent==='2. Merge changes');b.click();b.click()})()");
  await until("document.getElementById('review-action-status').textContent.includes('Merging')");
  mergeGate.release();mergeGate=null;
  await until("document.getElementById('review-action-status').textContent.includes('Source merged')&&document.getElementById('review-result').textContent.includes('Source merged')");assert.equal(mergeCalls,1);assert.equal(mergeAttempts,2);
@@ -120,5 +132,5 @@ try{
  await call('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});assert(await evaluate('document.documentElement.scrollWidth<=innerWidth+1'));
  await evaluate("document.getElementById('logout').click()");await until("document.getElementById('workspace').hidden");assert.equal(await evaluate("document.getElementById('app-source').value+document.getElementById('app-report').textContent+document.getElementById('review-events').textContent+document.getElementById('review-action-status').textContent+document.getElementById('campaign-detail').textContent+document.getElementById('issue-body').textContent+document.getElementById('conflict-files').textContent"),'');
  role='reader';await signIn();assert.equal(await evaluate("document.getElementById('review-create').hidden&&document.getElementById('app-example').hidden&&document.getElementById('campaign-form').hidden&&document.getElementById('issue-create').hidden"),true);assert.equal(exceptions.length,0,JSON.stringify(exceptions.map(e=>e.exception?.description??e.text)));
- console.log(JSON.stringify({browser:'Chromium',visual_applications:['calculator','hello-world','tictactoe'],tictactoe_win_draw_reset:true,hello_world_inert_text:true,iframe_parent_access_blocked:true,iframe_network_blocked:true,locked_decimal_arithmetic:true,tasks_comments_status:true,private_notifications:true,browser_conflict_resolution:true,compare_source_inert:true,request_review:true,line_comment:true,independent_approval:true,browser_merge:true,review_progress_visible:true,duplicate_review_clicks_blocked:true,review_failure_can_retry:true,application_source_edit:true,application_http_retry:true,application_report:true,campaign_http_retry:true,campaign_cancel:true,mobile_layout:true,reader_restrictions:true,logout_clears_private_data:true,production_mutations:0}));
+ console.log(JSON.stringify({browser:'Chromium',visual_applications:['calculator','hello-world','tictactoe'],tictactoe_win_draw_reset:true,hello_world_inert_text:true,iframe_parent_access_blocked:true,iframe_network_blocked:true,locked_decimal_arithmetic:true,tasks_comments_status:true,private_notifications:true,browser_conflict_resolution:true,compare_source_inert:true,request_review:true,line_comment:true,independent_approval:true,browser_merge:true,review_progress_visible:true,approval_before_merge:true,tooltip_keyboard_and_escape:true,approval_enables_merge:true,duplicate_review_clicks_blocked:true,review_failure_can_retry:true,application_source_edit:true,application_http_retry:true,application_report:true,campaign_http_retry:true,campaign_cancel:true,mobile_layout:true,reader_restrictions:true,logout_clears_private_data:true,production_mutations:0}));
 }finally{socket.close();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}

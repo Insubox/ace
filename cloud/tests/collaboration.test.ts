@@ -38,6 +38,24 @@ it('requires independent approval, merges both parents atomically and repairs th
  const version=result.review.merge!.version,retained=await env.ARTIFACTS.get(`native-stores/${f.store}/versions/${version}.json`);expect(await retained!.json()).toMatchObject({version:{parents:[f.target,f.source].sort(),kind:{kind:'source'}}});expect((await(await readRefs(env,f.store)).json() as {heads:Record<string,string>}).heads.main).toBe(version);
  await mergeReview(env,operator,f.store,f.review.id,encode({}));const log=await coordinate(env,'NATIVE-STORE-'+f.store,'native-log') as {entries:unknown[]};expect(log.entries).toHaveLength(4);
 });
+it('reports approval readiness using current reviewer permissions and refreshed branch versions',async()=>{
+ const f=await fixture();
+ const read=async()=>await(await getReview(env,operator,f.store,f.review.id)).json();
+ expect(await read()).toMatchObject({approval_satisfied:false,stale:false});
+ await reviewEvent(env,f.reviewer,f.store,f.review.id,encode(f.event()));
+ expect(await read()).toMatchObject({approval_satisfied:true,stale:false});
+ await reviewEvent(env,f.reviewer,f.store,f.review.id,encode(f.event('request_changes','Correct this version')));
+ expect(await read()).toMatchObject({approval_satisfied:false});
+ await reviewEvent(env,f.reviewer,f.store,f.review.id,encode(f.event()));
+ await env.DB.prepare("UPDATE native_project_members SET role='reader' WHERE project=? AND username=?").bind(f.store,f.reviewer.username).run();
+ expect(await read()).toMatchObject({approval_satisfied:false});
+ await env.DB.prepare("UPDATE native_project_members SET role='writer' WHERE project=? AND username=?").bind(f.store,f.reviewer.username).run();
+ expect(await read()).toMatchObject({approval_satisfied:true});
+ const next=await f.version('one\r\nTWO\r\nTHREE\r\n',[f.source]);await f.branch('feature',next,f.source);
+ expect(await read()).toMatchObject({stale:true});
+ await reviewEvent(env,operator,f.store,f.review.id,encode(f.event('refresh','Review updated source')));
+ expect(await read()).toMatchObject({approval_satisfied:false,stale:false});
+});
 it('rejects stale approval after a branch advances and resets approvals on refresh',async()=>{
  const f=await fixture();await reviewEvent(env,f.reviewer,f.store,f.review.id,encode(f.event()));const next=await f.version('one\r\nTWO\r\nTHREE\r\n',[f.source]);await f.branch('feature',next,f.source);await expect(mergeReview(env,operator,f.store,f.review.id,encode({}))).rejects.toThrow('branches changed');
  await reviewEvent(env,operator,f.store,f.review.id,encode(f.event('refresh','Update heads')));await expect(mergeReview(env,operator,f.store,f.review.id,encode({}))).rejects.toThrow('approval');

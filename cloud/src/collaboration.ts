@@ -20,7 +20,12 @@ export async function comparison(env:Env,store:string,left:string,right:string){
  return{left,right,changes,verified:true,text_preview_limit:{files:20,bytes_per_file:65536,lines_per_file:256}};
 }
 export async function listReviews(env:Env,actor:Identity,store:string){await projects.access(env,actor,store);const result=await coordinate(env,name(store),'review-list') as {reviews:Review[]};const refs=await(await readRefs(env,store)).json() as {heads:Record<string,string>};return json({reviews:result.reviews.map(r=>({...r,events:undefined,resolutions:undefined,request:undefined,stale:refs.heads[r.source_branch]!==r.source||refs.heads[r.target_branch]!==r.target}))});}
-export async function getReview(env:Env,actor:Identity,store:string,id:string){await projects.access(env,actor,store);return json(await coordinate(env,name(store),'review-get',{id:reviewId.parse(id)}));}
+export async function getReview(env:Env,actor:Identity,store:string,id:string){
+ await projects.access(env,actor,store);
+ const review=await coordinate(env,name(store),'review-get',{id:reviewId.parse(id)}) as Review;
+ const refs=await(await readRefs(env,store)).json() as {heads:Record<string,string>};
+ return json({...review,approval_satisfied:approved(review,await eligible(env,store,review)),stale:refs.heads[review.source_branch]!==review.source||refs.heads[review.target_branch]!==review.target});
+}
 export async function createReview(env:Env,actor:Identity,store:string,input:Uint8Array){await projects.access(env,actor,store,'write');const args=z.strictObject({id:reviewId,title:text,source_branch:storeName,target_branch:storeName,source:hash,target:hash}).parse(strictJson(new TextDecoder().decode(input)));const review=await coordinate(env,name(store),'review-create',{...args,author:subject(actor)});await projects.audit(env,actor,store,'review.create',args.id,'review-create-'+args.id);return json(review,201);}
 export async function reviewEvent(env:Env,actor:Identity,store:string,id:string,input:Uint8Array){
  const role=await projects.access(env,actor,store,'write'),args=z.strictObject({id:reviewId,type:z.enum(['comment','approve','request_changes','refresh','close']),body:text,revision:z.number().int().positive(),source:hash,target:hash,path:filename.optional(),line:z.number().int().min(1).max(256).optional()}).parse(strictJson(new TextDecoder().decode(input)));

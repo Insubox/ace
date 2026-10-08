@@ -22,6 +22,15 @@ a changed file and a source line. Another contributor with current write access
 must approve. The author cannot approve their own request. Requests for changes
 block merging until those contributors approve instead.
 
+The review actions show the order explicitly: **1. Approve changes**, then
+**2. Merge changes**. Hovering or focusing an action shows its tooltip; Escape
+dismisses it. The two-step explanation remains visible on touch screens.
+Approval records a review of the exact versions. Merge combines their source
+and retains both parents. The merge button is unavailable until the server
+reports a valid independent approval, considering current reviewer permissions
+and requests for changes. The server checks approval and branch identities again
+when merging. A retained personal approval can coexist with a blocked merge.
+
 Reviews pin both branch heads. When either changes, the author or project owner
 must refresh the request, and prior approvals no longer apply. Removed members
 and accounts changed to reader cannot supply a qualifying approval. Readers can
