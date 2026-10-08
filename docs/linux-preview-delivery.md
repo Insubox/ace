@@ -14,29 +14,30 @@ used the existing local Git executable separately, without provider credentials.
 The executable is static; no installed Rust, Node, Docker or Cloudflare account
 is needed for its local demo. This does not qualify arbitrary hosted applications.
 
-The GitHub release `ace-0.4.0-linux-preview-20261008` remains a **draft without
-assets**. The user published the network addition for `uploads.github.com`,
-preserving the four existing custom domains and the package-manager preset.
-An actual upload now reaches GitHub but returns **401 Bad credentials**. The
-existing authentication still successfully reads the private repository and
-release through `api.github.com`; that does not establish upload authorization.
+The [GitHub release `ace-0.4.0-linux-preview-20261008`](https://github.com/Insubox/ace/releases/tag/ace-0.4.0-linux-preview-20261008)
+is now a **published prerelease** with the archive and its matching checksum.
+The archive is 4,059,062 bytes; the checksum file is 109 bytes. An authenticated
+download of both assets from GitHub matched the archive hash above. The exact
+downloaded archive passed `scripts/check-package.py`, including every first-use
+check described above. These are operator-run checks of the distributed package,
+not a hosted qualification receipt or a four-platform release.
 
-The environment draft now declares `ACE_GITHUB_RELEASE_TOKEN`, delivered only
-to `api.github.com` and `uploads.github.com`. Its value must be supplied securely
-in environment settings. The existing platform authentication is preserved.
-Retry uploading both the archive and checksum after this binding is supplied,
-verify the release assets, then publish and validate an actual downloaded
-archive. No GitHub download validation is claimed: no asset was available to
-download. GitHub Actions was not launched.
+The initial network denial and subsequent upload authentication failure were
+resolved through the published environment configuration. The dedicated
+`ACE_GITHUB_RELEASE_TOKEN` binding is scoped to `api.github.com` and
+`uploads.github.com`; existing platform Git authentication is preserved.
+The release targets the exact build commit and uses a tag outside the `v*`
+workflow trigger. No GitHub Actions was launched.
 
-The checked package remains in the private development workspace under
-`.ace-env/releases/ace-learning-linux-20261008`, outside the source checkout.
-The draft's notes specify Linux-only coverage and its source/checksum. Windows
+The package includes the getting-started guide from its frozen build commit;
+the current [guide](getting-started.md) records publication status. Windows
 and macOS execution remain unverified. The repository is private, so downloads
 also require existing GitHub repository access. A visibility change is separate
 from installing or publishing this Linux preview.
 
 Developers with repository access can already run the latest source using the
 [getting-started instructions](getting-started.md#build-directly-from-github).
-After publication, validate the exact downloaded archive and its checksum again
-before describing GitHub delivery as complete.
+Linux users with repository access can download both assets, check the checksum,
+extract the archive and run `./ace demo` without developer credentials. The
+broader developer-delivery objective remains open until all intended platforms
+and repository access for intended developers are verified.
