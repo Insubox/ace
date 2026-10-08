@@ -32,6 +32,16 @@ it('accepts only a strict correctness gain without regressing previously passing
  const files=templates.calculator,best=await report(files,2),gain=await report(files,4);expect(improves(best,gain)).toBe(true);expect(improves(best,best)).toBe(false);
  const regressed={...gain,cases:gain.cases.map((c,i)=>i===0?{...c,passed:false}:c),passed:3};expect(improves(best,regressed)).toBe(false);
 });
+it('removes evaluator outcomes only from the control prompt and retains the comparison mode',async()=>{
+ const f=await fixture(28),contexts:Record<string,unknown>[]=[];
+ const configured={...f.config,AI:{run:async(_model:string,input:Record<string,unknown>)=>{contexts.push(JSON.parse((input.messages as {content:string}[])[1]!.content));return{response:{strategy:'Distinct repair',files:{'core.py':'def handle(request):\n return {"error": "invalid_request"}\n'}}};}}} as Env;
+ const control=await generateApplication(configured,f.job,{...f.args,learning_mode:'contract_only'},f.baseline,f.state,1);
+ const treatment=await generateApplication(configured,f.job,{...f.args,learning_mode:'outcomes'},f.baseline,f.state,1);
+ expect(control.id).not.toBe(treatment.id);expect(contexts[0]!.learning).toBeNull();
+ expect((contexts[1]!.learning as {current_cases:unknown[]}).current_cases).toHaveLength(29);
+ for(const key of ['source','source_hash','suite_hash','image_hash','public_contract'])expect(contexts[0]![key]).toEqual(contexts[1]![key]);
+ expect((await generateApplication(configured,f.job,{...f.args,learning_mode:'contract_only'},f.baseline,f.state,1)).id).toBe(control.id);expect(contexts).toHaveLength(2);
+});
 it('retains raw generations, avoids repeated provider calls and forbids manifest/dependency or forged-verdict output',async()=>{
  const f=await fixture();let calls=0;
  const configured={...f.config,AI:{run:async()=>{calls++;return{response:JSON.stringify({strategy:'Fake approved result',files:{'dependencies.lock.json':'unlocked'},passed:true})};}}} as Env;

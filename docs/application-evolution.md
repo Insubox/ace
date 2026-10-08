@@ -69,3 +69,29 @@ failed. A subsequent adapter revision makes that existing contract explicit in
 the system prompt; no claim is made that this revision has produced a fully
 passing real model candidate. Provider quality and full correctness remain
 distinct from the functioning campaign/evaluation pipeline.
+
+## Measuring retained outcomes
+
+`application-evolve.mjs --learning-mode outcomes` supplies recorded case outcomes
+and prior rounds (the default). `--learning-mode contract_only` keeps the same
+source, fixed public contract, model settings and evaluator, but removes evaluator
+outcomes from the generator prompt. Both modes still independently evaluate every
+new proposal and enforce the same strict gain and regression rules.
+
+A bounded comparison starts two one-round real-model campaigns without advancing
+any branch:
+
+```sh
+node cloud/scripts/application-learning-compare.mjs --project my-project \
+  --baseline app-<completed-failing-run> --model qwen \
+  --state /private/learning-comparison.json --run
+```
+
+Repeat the command with the same private state to resume admission after an
+interruption. Omit `--run` to inspect both campaigns without admitting new work.
+Each pair needs up to two model calls and two remaining container reservations.
+A baseline from an older evaluator must first be replayed; exhausted replay or
+trial budgets are not bypassed. Generator faults and incomplete executions do not
+produce a gain comparison. Native campaign summaries retain the mode and the
+winning and losing observations. A single pair records an observed difference,
+not a causal or general claim that learning improves models.

@@ -4,7 +4,10 @@ import {readFile,writeFile,rename,chmod} from 'node:fs/promises';
 import {pathToFileURL} from 'node:url';
 import {settings,api} from './client.mjs';
 export async function observe(config,request=api){
- try{const response=await request(config,'/v1/operations',{signal:AbortSignal.timeout(15000)});const state=await response.json();if(state.schema_version!==1||!Array.isArray(state.alerts))throw new Error('invalid observations');return{schema_version:1,observed_at:Date.now(),alerts:state.alerts.filter(s=>typeof s==='string'&&/^[a-z_0-9]+$/.test(s)),budget:state.observatory_budget??null};}
+ try{const response=await request(config,'/v1/operations',{signal:AbortSignal.timeout(15000)});const state=await response.json();if(state.schema_version!==1||!Array.isArray(state.alerts)||state.alerts.length>64||state.alerts.some(s=>typeof s!=='string'||! /^[a-z_0-9]{1,128}$/.test(s)))throw new Error('invalid observations');
+  const input=state.observatory_budget;let budget=null;
+  if(input){if(typeof input.day!=='string'||! /^\d{4}-\d{2}-\d{2}$/.test(input.day))throw new Error('invalid budget');budget={day:input.day};for(const key of ['trials_used','trials_limit','application_replays_used','application_replays_limit','containers_used','containers_limit']){if(!Number.isSafeInteger(input[key])||input[key]<0)throw new Error('invalid budget');budget[key]=input[key];}}
+  return{schema_version:1,observed_at:Date.now(),alerts:[...new Set(state.alerts)],budget};}
  catch{return{schema_version:1,observed_at:Date.now(),alerts:['control_plane_unreachable_or_unauthorized'],budget:null};}
 }
 export async function notify(snapshot,previous,webhook,request=fetch){

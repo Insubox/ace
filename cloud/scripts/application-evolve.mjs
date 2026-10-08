@@ -2,14 +2,14 @@
 import {parseArgs} from 'node:util';
 import {randomUUID} from 'node:crypto';
 import {settings,api} from './client.mjs';
-const {values}=parseArgs({options:{project:{type:'string'},baseline:{type:'string'},model:{type:'string',default:'qwen'},rounds:{type:'string',default:'2'},patience:{type:'string',default:'2'},branch:{type:'string'},resume:{type:'string'}}});
+const {values}=parseArgs({options:{project:{type:'string'},baseline:{type:'string'},model:{type:'string',default:'qwen'},rounds:{type:'string',default:'2'},patience:{type:'string',default:'2'},branch:{type:'string'},resume:{type:'string'},'learning-mode':{type:'string',default:'outcomes'}}});
 if(!/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/.test(values.project??''))throw new Error('Use --project with a private ACE project');
 const config=settings(),path=`/v1/projects/${values.project}/application-campaigns`;
 let id=values.resume;
 if(id&&!/^campaign-[0-9a-f]{64}$/.test(id))throw new Error('Invalid --resume campaign ID');
 if(!id){
  if(!/^app-[0-9a-f]{64}$/.test(values.baseline??''))throw new Error('Use --baseline with a completed server application run');
- const body=JSON.stringify({request_id:randomUUID(),baseline_run:values.baseline,model:values.model,rounds:Number(values.rounds),patience:Number(values.patience),branch:values.branch??null});
+ const body=JSON.stringify({request_id:randomUUID(),baseline_run:values.baseline,model:values.model,rounds:Number(values.rounds),patience:Number(values.patience),branch:values.branch??null,learning_mode:values['learning-mode']});
  let response;for(let attempt=0;attempt<2;attempt++){try{response=await api(config,path,{method:'POST',body});break;}catch(error){if(attempt||error.status&&error.status<500)throw error;}}
  id=(await response.json()).id;console.log(JSON.stringify({campaign:id,accepted:true}));
 }
