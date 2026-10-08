@@ -37,7 +37,9 @@ Three-way merge follows the native Rust engine's bounded line/LCS semantics and
 preserves exact newlines. Binary or overlapping edits produce explicit conflicts;
 they do not publish a merged version. Modify the source branch, refresh and
 review again. An ambiguous ancestry requires an explicit base through the API.
-Browser merge supports at most 128 file paths. Each project currently supports
+Browser merge supports at most 4,096 file paths, with at most 128 unresolved
+conflicting files. Shared object metadata is checked once, in batches of eight,
+so full repositories can publish without serial waits for every file. Each project currently supports
 32 requests, with 64 events per request. These preview limits are explicit.
 
 An approval means a contributor reviewed the source. A merge does not inherit

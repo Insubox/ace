@@ -67,6 +67,9 @@ The [0.4.0 delivery record](docs/local-delivery-0.4.md) distinguishes tested beh
 from the remaining architecture and remote platform checks. The
 [2026-10-08 validation record](docs/validation-2026-10-08.md) documents application
 evolution, browser collaboration, isolated recovery and the visual examples.
+[ACE developing ACE](docs/ace-self-development.md) turns the remaining objectives
+into private project tasks and introduces an offline, isolated Rust/TypeScript
+repository evaluator with protected tests and retained native results.
 
 This repository implements **Phase 0: the domain kernel** and **Phase 1: a local
 WASM experiment runner**, plus the **Phase 2 Cloudflare control plane implementation**

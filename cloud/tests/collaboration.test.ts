@@ -8,9 +8,10 @@ import {mergeText} from '../src/source-merge';
 import type {Review} from '../src/review-state';
 const operator={username:'operator',kind:'operator',role:'admin'} as const;
 const encode=(v:unknown)=>new TextEncoder().encode(typeof v==='string'?v:JSON.stringify(v));
-async function fixture(conflict=false){
+async function fixture(conflict=false,filesCount=1){
  const store='review-'+crypto.randomUUID();await ensure(env,operator,store);let sequence=0,previous:string|null=null;
- async function version(source:string,parents:string[]=[]){const bytes=encode(source),object=await sha256(bytes);await putObject(env,store,object,bytes);const version={schema_version:1,parents:parents.sort(),kind:{kind:'source'},message:'Review fixture',files:{'app.py':object}},id=await nativeHash(version);await putVersion(env,store,id,encode({version,content_hash:id}));sequence++;const entry={schema_version:1,sequence,previous,version:id,content_hash:await nativeHash([1,sequence,previous,id])};await appendEntry(env,store,encode(entry));previous=entry.content_hash;return id;}
+ const fixedBytes=encode('unchanged\n'),fixed=await sha256(fixedBytes);await putObject(env,store,fixed,fixedBytes);
+ async function version(source:string,parents:string[]=[]){const bytes=encode(source),object=await sha256(bytes);await putObject(env,store,object,bytes);const version={schema_version:1,parents:parents.sort(),kind:{kind:'source'},message:'Review fixture',files:{'app.py':object,...Object.fromEntries(Array.from({length:filesCount-1},(_,i)=>[`unchanged/file-${i}.txt`,fixed]))}},id=await nativeHash(version);await putVersion(env,store,id,encode({version,content_hash:id}));sequence++;const entry={schema_version:1,sequence,previous,version:id,content_hash:await nativeHash([1,sequence,previous,id])};await appendEntry(env,store,encode(entry));previous=entry.content_hash;return id;}
  const base=await version('one\r\ntwo\r\nthree\r\n'),target=await version('ONE\r\ntwo\r\nthree\r\n',[base]),source=await version(conflict?'OTHER\r\ntwo\r\nthree\r\n':'one\r\ntwo\r\nTHREE\r\n',[base]);
  let refSequence=0,refTip:string|null=null;
  async function branch(branch:string,id:string,expected:string|null=null){refSequence++;const ref={schema_version:1,sequence:refSequence,previous:refTip,branch,expected,target:id,content_hash:await nativeHash([1,refSequence,refTip,branch,expected,id])};await appendRef(env,store,encode(ref));refTip=ref.content_hash;}
@@ -23,6 +24,13 @@ async function fixture(conflict=false){
 it('compares exact CRLF source and preserves bounded native merge semantics',async()=>{
  const f=await fixture(),result=await comparison(env,f.store,f.target,f.source);expect(result.changes[0]).toMatchObject({path:'app.py',before_text:['ONE\r\n','two\r\n','three\r\n'],after_text:['one\r\n','two\r\n','THREE\r\n']});
  expect(new TextDecoder().decode(mergeText(encode('a\nb\nc\n'),encode('A\nb\nc\n'),encode('a\nb\nC\n'))!)).toBe('A\nb\nC\n');expect(mergeText(encode('a\n'),encode('left\n'),encode('right\n'))).toBeNull();
+});
+it('merges a complete repository while retaining every unchanged file',async()=>{
+ const f=await fixture(false,377);await reviewEvent(env,f.reviewer,f.store,f.review.id,encode(f.event()));
+ const result=await(await mergeReview(env,operator,f.store,f.review.id,encode({}))).json() as {review:Review};
+ const sealed=await env.ARTIFACTS.get(`native-stores/${f.store}/versions/${result.review.merge!.version}.json`),value=await sealed!.json<{version:{files:Record<string,string>}}>();
+ expect(Object.keys(value.version.files)).toHaveLength(377);const object=await env.ARTIFACTS.get(`native-stores/${f.store}/objects/${value.version.files['app.py']}`);expect(await object!.text()).toBe('ONE\r\ntwo\r\nTHREE\r\n');
+ const unchanged=await env.ARTIFACTS.get(`native-stores/${f.store}/objects/${value.version.files['unchanged/file-375.txt']}`);expect(await unchanged!.text()).toBe('unchanged\n');
 });
 it('requires independent approval, merges both parents atomically and repairs the same merge on retry',async()=>{
  const f=await fixture();await expect(mergeReview(env,operator,f.store,f.review.id,encode({}))).rejects.toThrow('approval');await expect(reviewEvent(env,operator,f.store,f.review.id,encode(f.event()))).rejects.toThrow('different contributor');

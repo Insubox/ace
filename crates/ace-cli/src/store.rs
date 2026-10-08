@@ -14,7 +14,8 @@ const MARKER: &[u8] = b"{\"ace_native_store\":1}\n";
 const MAX_FILE: u64 = 8_388_608;
 const MAX_TREE: usize = 134_217_728;
 const MAX_FILES: usize = 4096;
-const MAX_VERSIONS: usize = 256;
+const MAX_VERSIONS: usize = 1024;
+const MAX_REF_EVENTS: usize = 4096;
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
@@ -178,7 +179,7 @@ fn state(path: &Path) -> Result<State> {
         .map(|e| e.map(|e| e.path()))
         .collect::<std::io::Result<Vec<_>>>()?;
     if paths.len() > MAX_VERSIONS {
-        return Err("native store exceeds 256 versions; select a smaller store".into());
+        return Err("native store exceeds 1024 versions; select a smaller store".into());
     }
     paths.sort();
     let mut versions = Vec::new();
@@ -645,8 +646,8 @@ fn read_refs(state: &State) -> Result<(Vec<RefEvent>, BTreeMap<String, ContentHa
         .map(|e| e.map(|e| e.path()))
         .collect::<std::io::Result<Vec<_>>>()?;
     paths.sort();
-    if paths.len() > 1024 {
-        return Err("native reference log exceeds 1024 events".into());
+    if paths.len() > MAX_REF_EVENTS {
+        return Err("native reference log exceeds 4096 events".into());
     }
     let mut events: Vec<RefEvent> = Vec::new();
     let mut heads = BTreeMap::new();
@@ -707,8 +708,8 @@ pub(crate) fn branch(
     {
         return Err("branch target must exist and extend the previous head".into());
     }
-    if events.len() >= 1024 {
-        return Err("native reference log reached 1024 events".into());
+    if events.len() >= MAX_REF_EVENTS {
+        return Err("native reference log reached 4096 events".into());
     }
     let mut event = RefEvent {
         schema_version: ace_protocol::ProtocolVersion,

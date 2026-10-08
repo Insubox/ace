@@ -51,12 +51,12 @@ export async function mergePlan(env:Env,store:string,review:Review,explicitBase?
   if(refs.heads[review.source_branch]!==review.source||refs.heads[review.target_branch]!==review.target)throw new HttpError(409,'branches changed; refresh and review again');
   const versions=new Map<string,Awaited<ReturnType<typeof loadVersion>>>();for(const entry of log.entries)versions.set(entry.version,await loadVersion(env,store,entry.version));
   const base=mergeBase(new Map([...versions].map(([id,v])=>[id,v.version.parents])),review.target,review.source,explicitBase),b=versions.get(base)!.version.files,o=versions.get(review.target)!.version.files,t=versions.get(review.source)!.version.files;
-  const paths=[...new Set([...Object.keys(b),...Object.keys(o),...Object.keys(t)])].sort();if(paths.length>128)throw new HttpError(413,'browser merge supports at most 128 files');
+  const paths=[...new Set([...Object.keys(b),...Object.keys(o),...Object.keys(t)])].sort();if(paths.length>4096)throw new HttpError(413,'browser merge supports at most 4096 files');
   const files:Record<string,string>={},newObjects:Map<string,Uint8Array>=new Map(),conflicts=[];
   for(const path of paths){const bb=b[path],ob=o[path],tb=t[path];let chosen:string|undefined;
    if(ob===tb)chosen=ob;else if(ob===bb)chosen=tb;else if(tb===bb)chosen=ob;else{
     let bytes:Uint8Array|null=null;if(bb&&ob&&tb){const data:Uint8Array[]=[];for(const h of [bb,ob,tb]){const object=await env.ARTIFACTS.head(`native-stores/${store}/objects/${h}`);if(!object)throw new HttpError(503,'merge object missing');if(object.size>65536)break;data.push(new Uint8Array(await(await readFile(env,store,'objects',h)).arrayBuffer()));}if(data.length===3)bytes=mergeText(data[0]!,data[1]!,data[2]!);}
-    if(bytes){chosen=await sha256(bytes);newObjects.set(chosen,bytes);}else{conflicts.push({path,base:bb??null,ours:ob??null,theirs:tb??null});continue;}
+    if(bytes){chosen=await sha256(bytes);newObjects.set(chosen,bytes);}else{conflicts.push({path,base:bb??null,ours:ob??null,theirs:tb??null});if(conflicts.length>128)throw new HttpError(413,'browser resolution supports at most 128 conflicting files');continue;}
    }if(chosen)files[path]=chosen;
   }
   return{base,files,newObjects,conflicts,log,refs};

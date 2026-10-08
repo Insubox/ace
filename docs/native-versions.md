@@ -104,7 +104,7 @@ The version ID uses ACE's domain-separated canonical JSON hash; raw content uses
 SHA-256. Evaluation views under `views/` are verified materializations for the
 runner, not the source of native version identity.
 
-The current preview supports 256 versions per store, 4,096 explicit files per
+The current preview supports 1,024 versions per store, 4,096 explicit files per
 version, 8 MiB per file and 128 MiB total per version. Paths must be portable and
 relative; aliases on case-insensitive filesystems, traversal, reserved Windows
 names, individual-file symlinks and paths escaping their source/store roots are rejected. This is a bounded local engine,

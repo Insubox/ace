@@ -69,3 +69,12 @@ it('branch publication requires a published target and rejects a modified refere
  await expect(appendRef(env,n,encode(ref))).rejects.toThrow('target first');
  await appendEntry(env,n,encode(await entry(f.id)));await expect(appendRef(env,n,encode({...ref,content_hash:'0'.repeat(64)}))).rejects.toThrow('hash differs');
 });
+it('checks a complete repository with bounded parallel metadata and counts shared file bytes',async()=>{
+ const base=await fixture(),files=Object.fromEntries(Array.from({length:377},(_,i)=>[`src/file-${i}.txt`,i.toString(16).padStart(64,'0')]));
+ let active=0,peak=0,calls=0,published=0;const bucket={head:async()=>{active++;calls++;peak=Math.max(peak,active);await Promise.resolve();active--;return{size:1};},put:async()=>{published++;return{};}};
+ const local={...env,ARTIFACTS:bucket} as unknown as Env,version={...base.version,files},id=await nativeHash(version);
+ await putVersion(local,'large-source',id,encode({version,content_hash:id}));expect(peak).toBeGreaterThan(1);expect(peak).toBeLessThanOrEqual(8);expect(calls).toBe(377);expect(published).toBe(1);
+ const shared={...base.version,files:Object.fromEntries(Array.from({length:17},(_,i)=>[`src/shared-${i}.txt`,base.object]))},sharedId=await nativeHash(shared);calls=0;published=0;
+ bucket.head=async()=>{calls++;return{size:8388608};};await expect(putVersion(local,'shared-too-large',sharedId,encode({version:shared,content_hash:sharedId}))).rejects.toThrow('128 MiB');expect(calls).toBe(1);expect(published).toBe(0);
+ bucket.head=async()=>null as unknown as {size:number};await expect(putVersion(local,'missing',id,encode({version,content_hash:id}))).rejects.toThrow('upload native objects');
+});

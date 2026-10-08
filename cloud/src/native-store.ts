@@ -38,7 +38,15 @@ export async function loadVersion(env:Env,name:string,id:string){const object=aw
 export async function putObject(env:Env,name:string,id:string,bytes:Uint8Array){hash.parse(id);if(bytes.length>8388608)throw new HttpError(413,'native object exceeds 8 MiB');if(await sha256(bytes)!==id)throw new HttpError(409,'native object hash differs');await immutablePut(env.ARTIFACTS,prefix(name)+`objects/${id}`,bytes);return json({object:id,retained:true});}
 export async function putVersion(env:Env,name:string,id:string,bytes:Uint8Array){
   const sealed=versionSchema.parse(decode(bytes));if(sealed.content_hash!==hash.parse(id)||await nativeHash(sealed.version)!==id)throw new HttpError(409,'native version hash differs');
-  let total=0;for(const objectHash of Object.values(sealed.version.files)){const object=await env.ARTIFACTS.head(prefix(name)+`objects/${objectHash}`);if(!object)throw new HttpError(409,'upload native objects before the version');total+=object.size;if(total>134217728)throw new HttpError(413,'native file tree exceeds 128 MiB');}
+  // Full repositories contain hundreds of objects. Bound concurrent checks and
+  // reuse metadata for shared content instead of serially waiting for every path.
+  const objects=[...new Set(Object.values(sealed.version.files))],sizes=new Map<string,number>();
+  for(let start=0;start<objects.length;start+=8){
+    const batch=objects.slice(start,start+8),results=await Promise.allSettled(batch.map(id=>env.ARTIFACTS.head(prefix(name)+`objects/${id}`)));
+    for(const [i,result]of results.entries()){if(result.status==='rejected')throw result.reason;if(!result.value)throw new HttpError(409,'upload native objects before the version');sizes.set(batch[i]!,result.value.size);}
+  }
+  // Count each file's bytes even when multiple paths share one content object.
+  if(Object.values(sealed.version.files).reduce((sum,id)=>sum+sizes.get(id)!,0)>134217728)throw new HttpError(413,'native file tree exceeds 128 MiB');
   // Normalize envelope formatting, preserving its canonical version identity.
   await immutablePut(env.ARTIFACTS,prefix(name)+`versions/${id}.json`,encoder.encode(JSON.stringify(sealed)));
   return json({version:id,retained:true,qualification:'caller_asserted_requires_ACE_verification'});
