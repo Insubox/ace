@@ -15,12 +15,19 @@ The executable is static; no installed Rust, Node, Docker or Cloudflare account
 is needed for its local demo. This does not qualify arbitrary hosted applications.
 
 The GitHub release `ace-0.4.0-linux-preview-20261008` remains a **draft without
-assets**. Uploading the archive failed because the managed network excludes
-`uploads.github.com`. The configuration draft adds that exact host while
+assets**. The user published the network addition for `uploads.github.com`,
 preserving the four existing custom domains and the package-manager preset.
-The user must review, save and publish that environment change before the asset
-upload can be retried. No GitHub download validation is claimed: no asset was
-available to download. GitHub Actions was not launched.
+An actual upload now reaches GitHub but returns **401 Bad credentials**. The
+existing authentication still successfully reads the private repository and
+release through `api.github.com`; that does not establish upload authorization.
+
+The environment draft now declares `ACE_GITHUB_RELEASE_TOKEN`, delivered only
+to `api.github.com` and `uploads.github.com`. Its value must be supplied securely
+in environment settings. The existing platform authentication is preserved.
+Retry uploading both the archive and checksum after this binding is supplied,
+verify the release assets, then publish and validate an actual downloaded
+archive. No GitHub download validation is claimed: no asset was available to
+download. GitHub Actions was not launched.
 
 The checked package remains in the private development workspace under
 `.ace-env/releases/ace-learning-linux-20261008`, outside the source checkout.
