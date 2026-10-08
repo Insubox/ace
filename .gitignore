@@ -11,3 +11,4 @@ __pycache__/
 /.wrangler/
 .dev.vars
 .env
+/.ace-monitor.json
