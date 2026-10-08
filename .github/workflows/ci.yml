@@ -1,7 +1,20 @@
 name: Rust kernel
 on:
   push:
+    branches: [main]
+    paths-ignore:
+      - '**/*.md'
+      - LICENSE
   pull_request:
+    branches: [main]
+    paths-ignore:
+      - '**/*.md'
+      - LICENSE
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -9,6 +22,7 @@ permissions:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -31,6 +45,7 @@ jobs:
       - run: node scripts/check-store-sync.mjs target/debug/ace
   cloud:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

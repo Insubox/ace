@@ -45,11 +45,22 @@ cost or live queue/concurrency claim. Infrastructure authority remains separate
 from project/account permissions.
 
 Local Linux package verification and remote release job outcomes are distinct.
-This environment cannot presently read GitHub Actions results: the request to
-`api.github.com` is blocked by the current network policy. The domain addition
-is saved in the environment draft and requires publication before a new access
-check. macOS/Windows execution and downloadable release assets remain unverified
-until their remote jobs can be inspected.
+GitHub API access now works. Inspection of runs `37704821874` (packages) and
+`37704821872` (CI), both for `f18f44b`, found that every runner job was prevented
+from starting. GitHub reports failed account payments or an insufficient spending
+limit. No build or test step ran; package publication was skipped. A release lookup
+for `v0.4.0` returned 404. macOS/Windows execution and downloadable release assets
+remain unverified until this account restriction is resolved and jobs actually run.
+
+To reduce Actions consumption, the four-platform package matrix runs only on
+version tags or explicit manual dispatch. Ordinary development pushes and pull
+requests no longer start it. CI runs for `main` pushes and pull requests targeting
+`main`, skips Markdown/license-only changes, and remains manually available.
+New CI runs cancel obsolete runs for the same ref. CI jobs have a 30-minute
+timeout, package jobs 60 minutes, and publication 10 minutes. All existing test,
+package validation and publication prerequisites remain in place. These limits
+bound individual runs; they are not an account spending cap. Development checks
+continue locally while the Actions quota is unavailable.
 
 The static Linux package built from `ea27ac0730f471ac21e3dc437857b62e5e01e96e`
 has archive SHA-256
