@@ -1,3 +1,6 @@
+import {loadAppSource,type AppJob} from './applications';
+import {cases,executor,checkCase,type AppCase,type AppReport} from './application-profiles';
+import {nativeHash} from './native-store';
 import {loadVersion} from './native-store';
 import { DurableObject } from 'cloudflare:workers';
 import { Files } from '@cloudflare/sandbox';
@@ -45,6 +48,17 @@ export class EvaluationSandbox extends DurableObject<Env> {
       const process=await container.exec(['/usr/local/bin/ace','cloud','archive-trial','/workspace/run','--prepared','/workspace/prepared','--store','/workspace/native'],{signal});if((await process.output()).exitCode!==0)throw new Error('trusted trial source/evidence archival failed');
       const exported=await container.exec(['python3','/opt/ace/export_native.py'],{signal});if((await exported.output()).exitCode!==0)throw new Error('trusted native export failed');
       const bundle=await files.readFile('/workspace/native-bundle.json',{signal});return bundle.json<NativeBundle>();
+    });
+  }
+  async testApplication(job:AppJob):Promise<AppReport>{
+    const source=await loadAppSource(this.env,job),suite=cases[source.profile] as AppCase[];
+    return this.withContainer(async(files,container,signal)=>{
+      await files.mkdir('/workspace/app',{recursive:true,signal});for(const [path,text]of Object.entries(source.files))await files.writeFile('/workspace/app/'+path,text,{signal});
+      const invoke=async(request:unknown)=>{const process=await container.exec(['python3','-I','-c',executor,JSON.stringify(request)],{signal});const out=await process.output();if(out.exitCode!==0||out.stdout.byteLength>24576)throw new Error('application broker failed');return JSON.parse(new TextDecoder('utf-8',{fatal:true,ignoreBOM:true}).decode(out.stdout));};
+      const compiled=await invoke({mode:'compile'}) as {compiled:boolean;runtime:string;errors:string[]};const results:AppReport['cases']=[];
+      if(compiled.compiled)for(const test of suite){const observation=await invoke({mode:'run',input:test.input}) as {exit_code:number;timed_out:boolean;stdout:string;stderr:string};results.push(checkCase(test,observation));}
+      for(const [path,text]of Object.entries(source.files)){const retained=await files.readFile('/workspace/app/'+path,{signal});if(await retained.text()!==text)throw new Error('application changed its retained source');}
+      const passed=results.filter(c=>c.passed).length;return{schema_version:1,profile:source.profile,runtime:compiled.runtime,compiled:compiled.compiled,compile_errors:compiled.errors,status:compiled.compiled&&passed===suite.length?'passed':'failed',cases:results,passed,total:suite.length,source_hash:await nativeHash(source.files),suite_hash:await nativeHash(suite),image_hash:this.env.APPLICATION_IMAGE_HASH??null,scope:'Recorded public application suite, fixed Python standard-library dependencies, bounded child processes, fresh offline container. Passing does not qualify performance, prove all inputs or promote source.'};
     });
   }
   private async withContainer<T>(action: (files: Files, container: Container, signal: AbortSignal) => Promise<T>): Promise<T> {

@@ -342,6 +342,15 @@ fn commit(
     Ok(id)
 }
 
+pub(crate) fn commit_application_files(
+    files: BTreeMap<String, Vec<u8>>,
+    destination: &Path,
+    message: Text,
+    parents: Option<BTreeSet<ContentHash>>,
+) -> Result<ContentHash> {
+    commit(destination, Kind::Source, files, message, parents)
+}
+
 pub(crate) fn commit_source(
     source: &Path,
     destination: &Path,

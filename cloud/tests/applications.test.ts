@@ -1,0 +1,35 @@
+import {it,expect} from 'vitest';
+import {env,SELF} from 'cloudflare:test';
+import {appRequest,templates,cases,checkCase,type AppReport} from '../src/application-profiles';
+import {ensure} from '../src/projects';
+import {applicationTemplates,requestApp,publishSource,finishApp,listApps,readApp,retainedApplication,type AppJob} from '../src/applications';
+import {sha256,coordinate,type Env} from '../src/contracts';
+import {nativeHash,type NativeEntry} from '../src/native-store';
+const operator={username:'operator',kind:'operator',role:'admin'} as const;
+const encode=(v:unknown)=>new TextEncoder().encode(JSON.stringify(v));
+it('preserves the calculator suite identity across the Rust and JavaScript wire formats',async()=>{
+ expect(await nativeHash(cases.calculator)).toBe('76837a02d3e704362ed8c0dd2ddf189aec0f9901f30780526e5c10843d54781d');
+});
+it('serves three complete examples with locked local dependencies and rejects external dependency substitutions',async()=>{
+ const project='apps-'+crypto.randomUUID();await ensure(env,operator,project);
+ for(const selected of ['hello-world','tictactoe','calculator'] as const){const value=await(await applicationTemplates(env,operator,project,selected)).json() as {files:Record<string,string>};expect(value.files).toHaveProperty('main.py');expect(value.files).toHaveProperty('core.py');expect(appRequest.safeParse({request_id:crypto.randomUUID(),profile:selected,files:value.files,parent:null,branch:null}).success).toBe(true);}
+ const args={request_id:crypto.randomUUID(),profile:'calculator',files:{...templates.calculator,'dependencies.lock.json':'{"schema_version":1,"runtime":"python3-stdlib-v1","external":["requests"],"local":["core.py"]}'},parent:null,branch:null};expect(appRequest.safeParse(args).success).toBe(false);expect(appRequest.safeParse({...args,files:{...templates.calculator,'../escape.py':'escape'}}).success).toBe(false);
+ expect(appRequest.safeParse({...args,files:{...templates.calculator,'core.py':'é'.repeat(17000)}}).success).toBe(false);
+ const incomplete={...templates.calculator} as Record<string,string>;delete incomplete['README.md'];expect(appRequest.safeParse({...args,files:incomplete}).success).toBe(false);
+});
+it('compares JSON semantics independently, rejects forged status, extra output and nonzero candidate exits',()=>{
+ const test={id:'case',input:{a:2,b:3},expected:{result:5}};expect(checkCase(test,{exit_code:0,timed_out:false,stdout:'{"result":5.0}',stderr:''}).passed).toBe(true);for(const stdout of ['{"passed":true}','{"result":6}','{"result":5}\nextra'])expect(checkCase(test,{exit_code:0,timed_out:false,stdout,stderr:''}).passed).toBe(false);expect(checkCase(test,{exit_code:1,timed_out:false,stdout:'{"result":5}',stderr:''}).passed).toBe(false);expect(checkCase(test,{exit_code:0,timed_out:true,stdout:'{"result":5}',stderr:''}).error).toBe('execution_timeout');
+});
+it('retains passed and failed source, exact report hash and scoped learning without inventing a Cell qualification',async()=>{
+ for(const status of ['passed','failed'] as const){const project='outcome-'+crypto.randomUUID(),id='app-'+await sha256(encode(project)),source=appRequest.parse({request_id:crypto.randomUUID(),profile:'calculator',files:templates.calculator,parent:null,branch:'main'});await ensure(env,operator,project);const job:AppJob={id,project,actor:'operator:operator',requestHash:await sha256(encode(source)),requestKey:'applications/'+id+'/request.json'};
+ await env.DB.prepare("INSERT INTO application_runs (id,project,actor,profile,request_hash,request_key,status,created_at,updated_at) VALUES (?,?,?,?,?,?,'testing',?,?)").bind(id,project,job.actor,source.profile,job.requestHash,job.requestKey,Date.now(),Date.now()).run();const parent=await publishSource(env,job,source.files,[],'original source');await env.DB.prepare('UPDATE application_runs SET source_version=? WHERE id=?').bind(parent,id).run();
+ const report:AppReport={schema_version:1,profile:'calculator',runtime:'3.11',compiled:true,compile_errors:[],status,cases:[],passed:status==='passed'?cases.calculator.length:0,total:cases.calculator.length,source_hash:await nativeHash(source.files),suite_hash:await nativeHash(cases.calculator),image_hash:null,scope:'fixed public suite'};
+ const result=await finishApp(env,job,source,report);expect(result.status).toBe(status);const log=await coordinate(env,'NATIVE-STORE-'+project,'native-log') as {entries:NativeEntry[]};expect(log.entries).toHaveLength(2);const file=await env.ARTIFACTS.get(`native-stores/${project}/versions/${result.version}.json`);expect(await file!.json()).toMatchObject({version:{parents:[parent],kind:{kind:'source'},files:{'application/learning.json':expect.any(String)}}});expect(await(await readApp(env,operator,project,id)).json()).toMatchObject({status,report:{status}});expect(await(await retainedApplication(env,operator,project,result.version)).json()).toMatchObject({version:result.version,profile:'calculator',files:templates.calculator});
+ }
+});
+it('application request retries preserve identity and never accept caller reports or replacement source',async()=>{
+ const project='submit-'+crypto.randomUUID();await ensure(env,operator,project);const workflow={create:async()=>({})} as unknown as NonNullable<Env['APPLICATION_RUNS']>,configured={...env,APPLICATION_RUNS:workflow} as Env,args={request_id:crypto.randomUUID(),profile:'hello-world',files:templates['hello-world'],parent:null,branch:null};const first=await(await requestApp(configured,operator,project,encode(args))).json(),second=await(await requestApp(configured,operator,project,encode(args))).json();expect(second).toEqual(first);await expect(requestApp(configured,operator,project,encode({...args,files:{...args.files,'core.py':'changed'}}))).rejects.toThrow('reused');await expect(requestApp(configured,operator,project,encode({...args,report:{passed:true}}))).rejects.toThrow();
+});
+it('protects templates and reports with project membership and keeps readers read-only',async()=>{
+ const project='private-'+crypto.randomUUID();await ensure(env,operator,project);await expect(listApps(env,{username:'outsider',kind:'account',role:'admin'},project)).rejects.toThrow('project not found');expect((await SELF.fetch(`https://ace/v1/projects/${project}/applications`)).status).toBe(401);
+});

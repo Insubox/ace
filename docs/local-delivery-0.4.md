@@ -82,8 +82,10 @@ explicitly. The full automatic backup/isolated restore chain also completed;
 see [backup validation](backups.md). The operational snapshot then reported no
 stale-workflow or backup-freshness alerts.
 
-ACE remains a bounded technical preview. Hosted review/issues, arbitrary native
+ACE remains a bounded technical preview. Issue tracking, arbitrary native
 application builds, IDE integrations, canonical Composition/promotion, measured
 100-container concurrency, external monitoring and a production failover are
 unfinished. These capabilities are required before calling ACE a complete
-replacement for GitHub.
+replacement for GitHub. See [browser collaboration and applications](collaboration-and-applications.md)
+for the subsequent implementation of review requests, hosted merge and three bounded
+Python application profiles on main.

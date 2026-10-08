@@ -9,7 +9,7 @@ export default defineConfig({
       durableObjects: { RESTORE_COORDINATORS:{className:'RestoreCoordinator',useSQLite:true}, COORDINATORS: { className: 'ExperimentCoordinator', useSQLite: true } },
       d1Databases: ['DB','RESTORE_DB'], r2Buckets: ['ARTIFACTS','BACKUPS','RESTORE_STORAGE'],
       queueProducers: { EVALUATIONS: 'ace-evaluations', FINALIZATIONS: 'ace-finalizations' },
-      workflows: { OBSERVATORY_TRIALS:{name:'ace-observatory',className:'ObservatoryWorkflow'}, BACKUP_WORKFLOW:{name:'ace-backups',className:'BackupWorkflow'}, NATIVE_VERIFICATIONS:{name:'ace-native-verifications',className:'NativeVerificationWorkflow'}, EXPERIMENTS: { name: 'ace-experiments', className: 'ExperimentWorkflow' } }
+      workflows: { APPLICATION_RUNS:{name:'ace-applications',className:'ApplicationWorkflow'}, OBSERVATORY_TRIALS:{name:'ace-observatory',className:'ObservatoryWorkflow'}, BACKUP_WORKFLOW:{name:'ace-backups',className:'BackupWorkflow'}, NATIVE_VERIFICATIONS:{name:'ace-native-verifications',className:'NativeVerificationWorkflow'}, EXPERIMENTS: { name: 'ace-experiments', className: 'ExperimentWorkflow' } }
     }
   })],
   test: { setupFiles:['cloud/tests/setup.ts'], include: ['cloud/tests/**/*.test.ts'], testTimeout: 30_000 }

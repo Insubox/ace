@@ -297,3 +297,11 @@ local static file server according to your organization's browser policy.
 
 Read [native versions](https://github.com/Insubox/ace/blob/main/docs/native-versions.md)
 to save arbitrary source files, restore versions and copy ACE history without Git.
+
+### Application projects on main
+
+Create and test Hello World, TicTacToe or Calculator with `ace app init` and
+`ace app test`. These fixed Python profiles record compilation, public test
+results and both passing/failing source in native ACE history. Testing requires
+Docker and a prepared local Python image. See [applications and browser reviews](collaboration-and-applications.md)
+for complete commands, dependency limits and hosted collaboration.

@@ -16,6 +16,7 @@ fn parse_content_hash(value: &str) -> std::result::Result<ContentHash, String> {
 }
 
 mod agent;
+mod application;
 mod archive;
 mod evolve;
 mod generate;
@@ -42,6 +43,11 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Command {
+    /// Create and independently test bounded Python applications in offline Docker containers.
+    App {
+        #[command(subcommand)]
+        command: AppCommand,
+    },
     /// ACE's native version engine: capture, verify, restore and copy source/learning.
     Store {
         #[command(subcommand)]
@@ -226,6 +232,23 @@ enum Command {
     Evidence {
         #[command(subcommand)]
         command: EvidenceCommand,
+    },
+}
+
+#[derive(Subcommand)]
+enum AppCommand {
+    /// Create Hello World, TicTacToe or Calculator in a fresh folder.
+    Init { profile: String, directory: PathBuf },
+    /// Compile and test source against the fixed public suite; optionally retain all outcomes.
+    Test {
+        directory: PathBuf,
+        #[arg(long)]
+        output: PathBuf,
+        #[arg(long)]
+        store: Option<PathBuf>,
+        /// Existing local Docker image with Python 3.11+; never pulled implicitly.
+        #[arg(long, default_value = "python:3.11-slim-bookworm")]
+        image: String,
     },
 }
 
@@ -453,6 +476,22 @@ fn evidence_path(project: &Path, id: &EvidenceId) -> PathBuf {
 
 fn run(cli: Cli) -> Result<()> {
     match cli.command {
+        Command::App { command } => match command {
+            AppCommand::Init { profile, directory } => {
+                print(&application::init(&profile, &directory)?)?
+            }
+            AppCommand::Test {
+                directory,
+                output,
+                store,
+                image,
+            } => print(&application::test(
+                &directory,
+                &output,
+                store.as_deref(),
+                &image,
+            )?)?,
+        },
         Command::Store { command } => match command {
             StoreCommand::Save {
                 run,

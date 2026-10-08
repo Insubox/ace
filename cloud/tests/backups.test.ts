@@ -65,3 +65,10 @@ it('fails closed when restoration bindings alias live databases, buckets or coor
  await expect(assertIsolated({...env,RESTORE_COORDINATORS:env.COORDINATORS})).rejects.toThrow('namespace must be independent');
  expect((await env.ARTIFACTS.list({prefix:'isolation-probe/'})).objects).toHaveLength(0);
 });
+
+it('restores review requests and their comments together with pinned native branch authority',async()=>{
+ const f=await fixture();
+ const version={schema_version:1,parents:[f.versionHash],kind:{kind:'source'},message:'review feature',files:{'source.txt':f.hash}},source=await nativeHash(version);await putVersion(env,f.name,source,encode({version,content_hash:source}));const entry={schema_version:1,sequence:2,previous:f.entry.content_hash,version:source,content_hash:await nativeHash([1,2,f.entry.content_hash,source])};await appendEntry(env,f.name,encode(entry));const refs=await coordinate(env,'NATIVE-STORE-'+f.name,'native-refs') as {tip:string};const ref={schema_version:1,sequence:2,previous:refs.tip,branch:'feature',expected:null,target:source,content_hash:await nativeHash([1,2,refs.tip,'feature',null,source])};await appendRef(env,f.name,encode(ref));
+ const {createReview,reviewEvent}=await import('../src/collaboration');const reviewId=crypto.randomUUID();await createReview(env,operator,f.name,encode({id:reviewId,title:'Retain this discussion',source_branch:'feature',target_branch:'main',source,target:f.versionHash}));await reviewEvent(env,operator,f.name,reviewId,encode({id:crypto.randomUUID(),type:'comment',body:'Keep this exact learning',revision:1,source,target:f.versionHash}));
+ const id='backup-'+crypto.randomUUID(),inventory=await capture(env,id),items=await copyChunk(env,id,inventory.keys);await restoreChunk(env,id,items);await restoreMetadata(env,id,inventory,items);const restored=await coordinate({...env,COORDINATORS:env.RESTORE_COORDINATORS!},'RESTORE-'+id+'-NATIVE-'+f.name,'review-get',{id:reviewId}) as {events:{body:string}[]};expect(restored.events[0]!.body).toBe('Keep this exact learning');
+});

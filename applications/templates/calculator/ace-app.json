@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "profile": "calculator",
+  "runtime": "python3-stdlib-v1",
+  "entrypoint": "main.py",
+  "dependencies": "dependencies.lock.json"
+}

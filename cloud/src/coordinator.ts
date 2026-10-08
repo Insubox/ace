@@ -1,3 +1,4 @@
+import {reviewOperation} from './review-state';
 import { DurableObject } from 'cloudflare:workers';
 import { type Env, type ExperimentState, type Task, HttpError, json } from './contracts';
 import { entrySchema,refSchema,type NativeRef, type NativeEntry } from './native-store';
@@ -8,6 +9,7 @@ export class ExperimentCoordinator extends DurableObject<Env> {
       const op = new URL(request.url).pathname.slice(1);
       const body = await request.json() as Record<string, unknown>;
       const result = await this.ctx.storage.transaction(async tx => {
+        if(op.startsWith('review-'))return await reviewOperation(tx,op,body);
         if(op==='operational-budgets')return{
           trials_used:await tx.get<number>('observatory-registered')??0,trials_limit:8,
           containers_used:await tx.get<number>('observatory-containers')??0,containers_limit:16
@@ -60,7 +62,7 @@ export class ExperimentCoordinator extends DurableObject<Env> {
         if(op==='native-log'||op==='native-backup-authority'){
           const entries=await tx.get<NativeEntry[]>('native-entries')??[];
           const publishers=await tx.get<Record<string,{username:string;published_at:number}>>('native-publishers')??{};
-          return {schema_version:1,backend:'ace-native-v1',entries,publishers,tip:entries.at(-1)?.content_hash??null,qualification:'caller_asserted_requires_ACE_verification',...(op==='native-backup-authority'?{refs:{schema_version:1,events:await tx.get<NativeRef[]>('native-ref-events')??[],heads:await tx.get<Record<string,string>>('native-ref-heads')??{},tip:(await tx.get<NativeRef[]>('native-ref-events'))?.at(-1)?.content_hash??null}}:{})};
+          return {schema_version:1,backend:'ace-native-v1',entries,publishers,tip:entries.at(-1)?.content_hash??null,qualification:'caller_asserted_requires_ACE_verification',...(op==='native-backup-authority'?{reviews:await tx.get('native-reviews')??[],refs:{schema_version:1,events:await tx.get<NativeRef[]>('native-ref-events')??[],heads:await tx.get<Record<string,string>>('native-ref-heads')??{},tip:(await tx.get<NativeRef[]>('native-ref-events'))?.at(-1)?.content_hash??null}}:{})};
         }
         if(op==='native-append'){
           const entry=entrySchema.parse(body.entry),parents=body.parents as string[];

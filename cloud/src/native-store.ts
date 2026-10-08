@@ -10,7 +10,7 @@ const kind=z.discriminatedUnion('kind',[
   z.strictObject({kind:z.literal('evaluation'),report_hash:hash}),
   z.strictObject({kind:z.literal('generator_fault'),context_hash:hash}),
 ]);
-const filename=z.string().min(1).max(2048).refine(name=>encoder.encode(name).length<=2048&&name.split('/').every(part=>part.length>0&&part!=='.'&&part!=='..'
+export const filename=z.string().min(1).max(2048).refine(name=>encoder.encode(name).length<=2048&&name.split('/').every(part=>part.length>0&&part!=='.'&&part!=='..'
   &&encoder.encode(part).length<=255&&!/[\\:<>"|?*\x00-\x1f\x7f]/.test(part)&&!/[. ]$/.test(part)
   &&!/^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\.|$)/i.test(part)));
 export const versionSchema=z.strictObject({version:z.strictObject({schema_version:z.literal(1),parents:z.array(hash).max(2),

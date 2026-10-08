@@ -6,6 +6,7 @@ import { type Env, type ExperimentState, type FinalizeJob, HttpError, coordinate
 import { consumeEvaluation, consumeFinalization, failExperiment } from './pipeline';
 import { judge, readJudgement,judgementId,judgeContextSchema } from './judge';
 import { generate, readGeneration,generationId,taskSchema, type Selector } from './generator';
+import * as collaboration from './collaboration';
 import * as nativeStores from './native-store';
 import dashboard from './dashboard.html';
 import * as accounts from './accounts';
@@ -13,6 +14,8 @@ import * as projects from './projects';
 import {readVerification,requestVerification,readVerifiedRun} from './verification';
 import {requestBackup,listBackups,requestRestore,readDrill,readRestoreReceipt} from './backups';
 import {requestTrial,listTrials,readTrial,readProposal,retryTrial} from './observatory';
+import {applicationTemplates,retainedApplication,listApps,readApp,requestApp} from './applications';
+export {ApplicationWorkflow} from './applications';
 import {operations} from './operations';
 export {ObservatoryWorkflow} from './observatory';
 export {BackupWorkflow} from './backups';
@@ -104,6 +107,12 @@ export default {
       if(restoration){if(request.method==='GET'&&!restoration[2])return await readRestoreReceipt(env,current,restoration[1]!);if(request.method==='POST'&&!restoration[2])return await requestRestore(env,current,restoration[1]!);if(request.method==='GET'&&restoration[2])return await readDrill(env,current,restoration[1]!,restoration[2],restoration[3]??restoration[5],restoration[4]);}
       if(url.pathname==='/v1/projects'&&request.method==='GET')return await projects.list(env,current);
       if(url.pathname==='/v1/projects'&&request.method==='POST')return await projects.create(env,current,await limitedBody(request,8192));
+      const apps=/^\/v1\/projects\/([A-Za-z0-9][A-Za-z0-9_-]{0,63})\/applications(?:\/(app-[0-9a-f]{64}))?$/.exec(url.pathname);
+      if(apps){if(request.method==='GET')return apps[2]?await readApp(env,current,apps[1]!,apps[2]):await listApps(env,current,apps[1]!);if(request.method==='POST'&&!apps[2])return await requestApp(env,current,apps[1]!,await limitedBody(request,131072));}
+      const retainedApp=/^\/v1\/projects\/([A-Za-z0-9][A-Za-z0-9_-]{0,63})\/application-versions\/([0-9a-f]{64})$/.exec(url.pathname);
+      if(retainedApp&&request.method==='GET')return await retainedApplication(env,current,retainedApp[1]!,retainedApp[2]!);
+      const template=/^\/v1\/projects\/([A-Za-z0-9][A-Za-z0-9_-]{0,63})\/application-templates\/(hello-world|tictactoe|calculator)$/.exec(url.pathname);
+      if(template&&request.method==='GET')return await applicationTemplates(env,current,template[1]!,template[2]!);
       const trials=/^\/v1\/projects\/([A-Za-z0-9][A-Za-z0-9_-]{0,63})\/trials(?:\/(trial-[0-9a-f]{64})(\/(?:proposal|retry))?)?$/.exec(url.pathname);
       if(trials){if(request.method==='GET'&&trials[3]!=='/retry')return trials[2]?(trials[3]?await readProposal(env,current,trials[1]!,trials[2]):await readTrial(env,current,trials[1]!,trials[2])):await listTrials(env,current,trials[1]!);if(request.method==='POST'&&!trials[2])return await requestTrial(env,current,trials[1]!,await limitedBody(request,65536));if(request.method==='POST'&&trials[2]&&trials[3]==='/retry'){if((await limitedBody(request,1)).length)throw new HttpError(400,'retry accepts no replacement source');return await retryTrial(env,current,trials[1]!,trials[2]);}}
       const project=/^\/v1\/projects\/([^/]+)\/(members|audit)(?:\/([a-z0-9][a-z0-9_-]{2,31}))?$/.exec(url.pathname);
@@ -112,6 +121,10 @@ export default {
       if(url.pathname==='/v1/stores'&&request.method==='GET')return await projects.listStores(env,current);
       const check=/^\/v1\/stores\/([A-Za-z0-9][A-Za-z0-9_-]{0,63})\/versions\/([0-9a-f]{64})\/(verification(?:\/run)?|verify)$/.exec(url.pathname);
       if(check){await projects.access(env,current,check[1]!,request.method==='GET'?'read':'write');if(request.method==='GET'&&check[3]==='verification/run')return await readVerifiedRun(env,check[1]!,check[2]!);if(request.method==='GET'&&check[3]==='verification')return await readVerification(env,check[1]!,check[2]!);if(request.method==='POST'&&check[3]==='verify'){if((await limitedBody(request,1)).length)throw new HttpError(400,'verification does not accept caller-supplied results');const result=await requestVerification(env,check[1]!,check[2]!);await projects.audit(env,current,check[1]!,'verification.request',check[2]!);return result;}}
+      const reviews=/^\/v1\/stores\/([A-Za-z0-9][A-Za-z0-9_-]{0,63})\/reviews(?:\/([0-9a-f-]{36})(?:\/(events|merge))?)?$/.exec(url.pathname);
+      if(reviews){const store=reviews[1]!,id=reviews[2];if(request.method==='GET')return id?await collaboration.getReview(env,current,store,id):await collaboration.listReviews(env,current,store);if(request.method==='POST'){const input=await limitedBody(request,16384);return !id?await collaboration.createReview(env,current,store,input):reviews[3]==='events'?await collaboration.reviewEvent(env,current,store,id,input):reviews[3]==='merge'?await collaboration.mergeReview(env,current,store,id,input):(()=>{throw new HttpError(404,'review route not found');})();}}
+      const compare=/^\/v1\/stores\/([A-Za-z0-9][A-Za-z0-9_-]{0,63})\/compare$/.exec(url.pathname);
+      if(compare&&request.method==='GET'){await projects.access(env,current,compare[1]!);return json(await collaboration.comparison(env,compare[1]!,hash.parse(url.searchParams.get('left')),hash.parse(url.searchParams.get('right'))));}
       const refs=/^\/v1\/stores\/([A-Za-z0-9][A-Za-z0-9_-]{0,63})\/refs$/.exec(url.pathname);
       if(refs){await projects.access(env,current,refs[1]!,request.method==='GET'?'read':'write');if(request.method==='GET')return await nativeStores.readRefs(env,refs[1]!);if(request.method==='POST'){const response=await nativeStores.appendRef(env,refs[1]!,await limitedBody(request,8192));const value=await response.clone().json() as {ref:{content_hash:string}};await projects.audit(env,current,refs[1]!,'branch.advance',value.ref.content_hash,'reference-'+value.ref.content_hash);return response;}}
       const native=/^\/v1\/stores\/([A-Za-z0-9][A-Za-z0-9_-]{0,63})(?:\/(objects|versions)\/([0-9a-f]{64})|\/(journal))?$/.exec(url.pathname);

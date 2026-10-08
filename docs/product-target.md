@@ -23,7 +23,10 @@ now includes a private browser workspace, native push/pull and ACE accounts
 with administrator, writer and reader roles, explicit project permissions,
 account recovery, audit and automated private backups with isolated restore drills.
 Native branch heads, bounded diffs/merges and divergent DAG synchronization are
-implemented. Collaboration/review, full hosted merge execution and other developer
-workflows remain unfinished. ACE is a working native technical preview; these
+implemented. Browser comparisons, review requests, comments, independent approvals
+and atomic hosted source merges are now implemented. Three Python application
+profiles support compilation, independent public tests and retained passing/failing
+source. Arbitrary languages, external dependencies and broader developer workflows
+remain unfinished. ACE is a working native technical preview; these
 remaining capabilities must be implemented and verified before describing it as
 a complete GitHub replacement.

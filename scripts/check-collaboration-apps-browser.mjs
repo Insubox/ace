@@ -1,0 +1,55 @@
+// Actual Chromium UI checks with isolated accounts and transport; no cloud writes.
+import assert from 'node:assert/strict';
+import {createServer} from 'node:http';
+import {readFile} from 'node:fs/promises';
+import {createHash} from 'node:crypto';
+import {nativeHash} from '../cloud/scripts/native-wire.mjs';
+const html=await readFile(process.env.ACE_DASHBOARD_HTML??'cloud/src/dashboard.html','utf8');
+const templates=JSON.parse(await readFile('applications/templates.json','utf8'));
+const name='browser-apps',token='isolated-fixture-token',a='a'.repeat(64),b='b'.repeat(64),c='c'.repeat(64),id='11111111-1111-4111-8111-111111111111';
+const source='first\n</pre><img src=x onerror="window.sourceExecuted=true">\nthird\n',bytes=Buffer.from(source),hash=createHash('sha256').update(bytes).digest('hex');
+let role='owner',review=null,eventCalls=0,mergeCalls=0,requestCalls=0,appCalls=0,submitted=null,application=null;
+const refs={schema_version:1,events:[],heads:{main:a,feature:b},tip:null};
+const server=createServer(async(req,res)=>{try{const url=new URL(req.url,'http://localhost'),chunks=[];for await(const chunk of req)chunks.push(chunk);const body=chunks.length?JSON.parse(Buffer.concat(chunks)):null;
+ const send=(status,value)=>{res.writeHead(status,{'content-type':'application/json'});res.end(JSON.stringify(value));};
+ if(url.pathname==='/'){res.writeHead(200,{'content-type':'text/html','content-security-policy':"default-src 'none'; script-src 'nonce-ace-native-dashboard-v1'; style-src 'nonce-ace-native-dashboard-v1'; font-src data:; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"});return res.end(html);}
+ if(url.pathname==='/v1/auth/login')return send(200,{token});if(url.pathname==='/v1/auth/logout')return send(200,{});
+ if(req.headers.authorization!=='Bearer '+token)return send(401,{});
+ if(url.pathname==='/v1/auth/me')return send(200,{kind:'account',username:role==='reviewer'?'fixture-reviewer':role==='reader'?'fixture-reader':'fixture-owner',role:role==='reader'?'reader':'writer'});
+ if(url.pathname==='/v1/projects')return send(200,{projects:[{name,role:role==='owner'?'owner':role==='reader'?'reader':'writer'}]});
+ if(url.pathname==='/v1/stores')return send(200,{stores:[{name,version_count:3,project_role:role==='owner'?'owner':role==='reader'?'reader':'writer'}]});
+ if(url.pathname===`/v1/stores/${name}`)return send(200,{schema_version:1,entries:[a,b,c].map((version,i)=>({schema_version:1,sequence:i+1,previous:i?hash:null,version,content_hash:hash})),publishers:{},tip:hash});
+ if(url.pathname===`/v1/stores/${name}/refs`)return send(200,refs);
+ if(url.pathname.startsWith(`/v1/stores/${name}/versions/`)){const id=url.pathname.split('/').at(-1);return send(200,{content_hash:id,version:{schema_version:1,parents:id===a?[]:[a],kind:{kind:'source'},message:'source fixture',files:{'core.py':hash}}});}
+ if(url.pathname.endsWith('/objects/'+hash)){res.writeHead(200,{'content-type':'application/octet-stream'});return res.end(bytes);}
+ if(url.pathname===`/v1/projects/${name}/trials`)return send(200,{trials:[]});
+ if(url.pathname===`/v1/stores/${name}/compare`)return send(200,{left:url.searchParams.get('left'),right:url.searchParams.get('right'),changes:[{path:'core.py',change:'modified',before:hash,after:hash,before_text:['before\n'],after_text:source.match(/[^\n]*\n/g),text_edits:[]}],verified:true});
+ if(url.pathname===`/v1/stores/${name}/reviews`){if(req.method==='POST'){assert.equal(role,'owner');requestCalls++;assert.equal(body.source,b);assert.equal(body.target,a);review={...body,author:'account:fixture-owner',status:'open',revision:1,events:[]};}return send(req.method==='POST'?201:200,req.method==='POST'?review:{reviews:review?[review]:[]});}
+ if(url.pathname===`/v1/stores/${name}/reviews/${review?.id}`)return send(200,review);
+ if(url.pathname===`/v1/stores/${name}/reviews/${review?.id}/events`){eventCalls++;assert.equal(body.source,b);assert.equal(body.target,a);if(body.type==='approve')assert.equal(role,'reviewer');else{assert.equal(body.path,'core.py');assert.equal(body.line,2);}review.events.push({...body,actor:role==='reviewer'?'account:fixture-reviewer':'account:fixture-owner',recorded_at:Date.now()});return send(200,review);}
+ if(url.pathname===`/v1/stores/${name}/reviews/${review?.id}/merge`){assert(review.events.some(e=>e.type==='approve'));mergeCalls++;review.status='merged';review.merge={version:c};refs.heads.main=c;return send(200,{status:'merged',review,evaluation_required:true});}
+ if(url.pathname===`/v1/projects/${name}/application-templates/calculator`)return send(200,{profile:'calculator',files:templates.calculator});
+ if(url.pathname===`/v1/projects/${name}/applications`){if(req.method==='POST'){appCalls++;if(!submitted){submitted=body;return send(503,{error:'simulated interrupted accepted request'});}assert.deepEqual(body,submitted);assert.match(body.files['core.py'],/browser source edit/);application={id:'app-'+hash,profile:'calculator',status:'passed',source_version:a,result_version:b,report:{compiled:true,passed:29,total:29,status:'passed'}};return send(202,{id:application.id,status:'passed'});}return send(200,{runs:application?[application]:[]});}
+ if(url.pathname===`/v1/projects/${name}/applications/${application?.id}`)return send(200,application);
+ return send(404,{error:'isolated route not found'});
+ }catch(error){res.writeHead(500);res.end(JSON.stringify({error:error.message}));}});
+await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const origin=`http://127.0.0.1:${server.address().port}`;
+const target=(await(await fetch('http://127.0.0.1:9222/json/list')).json()).find(t=>t.type==='page');assert(target);const socket=new WebSocket(target.webSocketDebuggerUrl);await new Promise((resolve,reject)=>{socket.onopen=resolve;socket.onerror=reject;});let next=0;const pending=new Map(),exceptions=[];
+socket.onmessage=event=>{const m=JSON.parse(event.data);if(m.id){const p=pending.get(m.id);pending.delete(m.id);if(m.error)p.reject(new Error(m.error.message));else p.resolve(m.result);}if(m.method==='Runtime.exceptionThrown')exceptions.push(m.params.exceptionDetails);};
+const call=(method,params={})=>new Promise((resolve,reject)=>{const id=++next;pending.set(id,{resolve,reject});socket.send(JSON.stringify({id,method,params}));});
+const evaluate=async expression=>{const r=await call('Runtime.evaluate',{expression,returnByValue:true});assert(!r.exceptionDetails);return r.result.value;};
+const until=async expression=>{for(let i=0;i<160;i++){if(await evaluate(expression))return;await new Promise(resolve=>setTimeout(resolve,100));}throw new Error('UI wait failed: '+expression);};
+const fill=values=>evaluate(Object.entries(values).map(([id,value])=>`document.getElementById(${JSON.stringify(id)}).value=${JSON.stringify(value)}`).join(';'));
+const submit=id=>evaluate(`document.getElementById(${JSON.stringify(id)}).requestSubmit()`);
+const signIn=async()=>{await call('Page.navigate',{url:origin});await until("document.getElementById('account-login')&&!document.getElementById('auth').hidden");await fill({username:'fixture-owner',password:'fixture-password-1234'});await submit('account-login');await until("!document.getElementById('workspace').hidden&&document.getElementById('status').textContent.includes('native versions loaded')");};
+try{
+ await call('Runtime.enable');await call('Page.enable');await call('Emulation.setDeviceMetricsOverride',{width:1200,height:950,deviceScaleFactor:1,mobile:false});await signIn();
+ await evaluate("document.getElementById('nav-reviews').click()");await fill({'review-title':'Review calculator change','review-source':'feature','review-target':'main'});await submit('review-create');await until("!document.getElementById('review-detail').hidden&&document.getElementById('review-path').options.length===2");assert.equal(requestCalls,1);assert.equal(await evaluate('window.sourceExecuted'),undefined);
+ await fill({'review-body':'Please check this line','review-path':'core.py','review-line':'2'});await submit('review-comment');await until("document.getElementById('review-events').textContent.includes('Please check this line')");assert.equal(eventCalls,1);assert.equal(await evaluate("document.getElementById('review-actions').textContent.includes('Approve exact changes')"),false);
+ role='reviewer';await signIn();await evaluate("document.getElementById('review-list').firstChild.click()");await until("document.getElementById('review-actions').textContent.includes('Approve exact changes')");await evaluate("[...document.getElementById('review-actions').children].find(b=>b.textContent==='Approve exact changes').click()");await until("document.getElementById('review-events').textContent.includes('approve')");await evaluate("[...document.getElementById('review-actions').children].find(b=>b.textContent==='Merge approved request').click()");await until("document.getElementById('review-result').textContent.includes('Source merged')");assert.equal(mergeCalls,1);
+ await evaluate("document.getElementById('nav-applications').click();document.getElementById('app-profile').value='calculator';document.getElementById('app-example').click()");await until("!document.getElementById('app-form').hidden");await evaluate("document.getElementById('app-source').value+="+JSON.stringify('\n# browser source edit\n')+";document.getElementById('app-source').dispatchEvent(new Event('input'))");await submit('app-form');await until("document.getElementById('app-result').textContent.includes('could not be confirmed')");await submit('app-form');await until("document.getElementById('app-runs').textContent.includes('PASSED')");assert.equal(appCalls,2);await evaluate("document.getElementById('app-runs').firstChild.click()");await until("document.getElementById('app-result').textContent.includes('29/29')");
+ await call('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});assert(await evaluate('document.documentElement.scrollWidth<=innerWidth+1'));
+ await evaluate("document.getElementById('logout').click()");await until("document.getElementById('workspace').hidden");assert.equal(await evaluate("document.getElementById('app-source').value+document.getElementById('app-report').textContent+document.getElementById('review-events').textContent"),'');
+ role='reader';await signIn();assert.equal(await evaluate("document.getElementById('review-create').hidden&&document.getElementById('app-example').hidden"),true);assert.equal(exceptions.length,0);
+ console.log(JSON.stringify({browser:'Chromium',compare_source_inert:true,request_review:true,line_comment:true,independent_approval:true,browser_merge:true,application_source_edit:true,application_http_retry:true,application_report:true,mobile_layout:true,reader_restrictions:true,logout_clears_private_data:true,production_mutations:0}));
+}finally{socket.close();await new Promise(resolve=>server.close(resolve));}

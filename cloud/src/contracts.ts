@@ -37,6 +37,7 @@ export type Env = {
   AI?: { run(model: string, input: Record<string, unknown>): Promise<unknown> };
   API_TOKEN: string;
   NATIVE_VERIFIER_BINARY_HASH?: string;
+  APPLICATION_IMAGE_HASH?:string;
   NATIVE_VERIFICATIONS: Workflow<import('./verification').VerificationJob>;
   DB: D1Database; ARTIFACTS: R2Bucket;
   BACKUPS?:R2Bucket; RESTORE_STORAGE?:R2Bucket; RESTORE_DB?:D1Database;
@@ -45,6 +46,7 @@ export type Env = {
   SANDBOXES: DurableObjectNamespace<import('./sandbox').EvaluationSandbox>;
   EVALUATIONS: Queue<Job>; FINALIZATIONS: Queue<FinalizeJob>;
   EXPERIMENTS: Workflow<FinalizeJob>;
+  APPLICATION_RUNS?:Workflow<import('./applications').AppJob>;
   OBSERVATORY_TRIALS?:Workflow<import('./observatory').TrialJob>;
 };
 

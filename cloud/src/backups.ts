@@ -3,13 +3,14 @@ import {WorkflowEntrypoint,type WorkflowEvent,type WorkflowStep} from 'cloudflar
 import {z} from 'zod';
 import {type Env,type ExperimentState,HttpError,json,sha256,coordinate,strictJson} from './contracts';
 import {nativeHash,entrySchema,versionSchema,refSchema,type NativeRef,type NativeEntry} from './native-store';
+import type {Review} from './review-state';
 import type {Identity} from './accounts';
 const encode=(v:unknown)=>new TextEncoder().encode(JSON.stringify(v));
-const tables=['experiments','evaluations','evidence_index','native_users','native_projects','native_project_members','project_resource_owners','project_artifacts','project_audit','account_audit','native_stores','native_verifications','observatory_trials'] as const;
+const tables=['experiments','evaluations','evidence_index','native_users','native_projects','native_project_members','project_resource_owners','project_artifacts','project_audit','account_audit','native_stores','native_verifications','observatory_trials','application_runs'] as const;
 const backupId=z.string().regex(/^backup-(?:[0-9]{8}|[0-9a-f-]{36})$/);
 type Row=Record<string,string|number|null>;
 type Table={name:string;sql:string;columns:string[];rows:Row[]};
-type Log={entries:NativeEntry[];publishers:Record<string,{username:string;published_at:number}>;tip:string|null};
+type Log={entries:NativeEntry[];publishers:Record<string,{username:string;published_at:number}>;tip:string|null;reviews?:Review[]};
 type RefLog={events:NativeRef[];heads:Record<string,string>;tip:string|null};
 type Inventory={schema_version:1;id:string;started_at:number;tables:Table[];stores:Record<string,Log>;refs?:Record<string,RefLog>;experiments:Record<string,ExperimentState>;keys:string[]};
 type Item={key:string;hash:string;size:number};
@@ -84,6 +85,7 @@ export async function restoreNative(env:Env,id:string,name:string,log:Log,items:
    for(const hash of new Set(Object.values(sealed.version.files))){const object=objectMap.get(`native-stores/${name}/objects/${hash}`);if(!object||object.hash!==hash)throw new Error('restored source object differs');}
    await restoreCoordinate(env,'RESTORE-'+id+'-NATIVE-'+name,'native-restore',{entry,parents:sealed.version.parents,publisher:log.publishers[entry.version]});previous=entry.content_hash;known.add(entry.version);
   }
+  if(log.reviews){await restoreCoordinate(env,'RESTORE-'+id+'-NATIVE-'+name,'review-restore',{reviews:log.reviews});const actual=await restoreCoordinate(env,'RESTORE-'+id+'-NATIVE-'+name,'review-list') as {reviews:Review[]};if(JSON.stringify(actual.reviews)!==JSON.stringify(log.reviews))throw new Error('restored reviews differ');}
   const observed=await restoreCoordinate(env,'RESTORE-'+id+'-NATIVE-'+name,'native-log') as Log;if(observed.tip!==log.tip||JSON.stringify(observed.entries)!==JSON.stringify(log.entries)||JSON.stringify(observed.publishers)!==JSON.stringify(log.publishers))throw new Error('restored authority differs');
 
  return{name,versions:log.entries.length};

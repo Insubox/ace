@@ -48,6 +48,12 @@ source browsing and remote push/pull with ACE version identities.
 The deployed private preview is at [ACE](https://ace-control-plane.nex-insure.workers.dev/);
 its data requires an ACE account. The [Observatory](docs/observatory.md) is the main
 interface for native versions, completed trials and learning from winners and losers.
+[Browser reviews and application projects](docs/collaboration-and-applications.md)
+add source comparisons, line comments, independent approval and native branch merge,
+plus Hello World, TicTacToe and Calculator with locked local dependencies,
+Python compilation and retained pass/fail tests. Create an example locally with
+`ace app init calculator my-calculator`; `ace app test my-calculator --store ace-history`
+uses Docker and a prepared Python image as described in the guide.
 [Independent server verification](docs/server-verification.md) checks uploaded
 evaluations and retains separate server evidence. [Private project permissions](docs/native-hosting.md)
 and account recovery protect hosted access. [Automated backups](docs/backups.md)

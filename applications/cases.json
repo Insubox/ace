@@ -1,0 +1,695 @@
+{
+  "hello-world": [
+    {
+      "id": "hello-world-01",
+      "input": {},
+      "expected": {
+        "message": "Hello, World!"
+      }
+    },
+    {
+      "id": "hello-world-02",
+      "input": {
+        "name": "ACE"
+      },
+      "expected": {
+        "message": "Hello, ACE!"
+      }
+    },
+    {
+      "id": "hello-world-03",
+      "input": {
+        "name": "  Ada  "
+      },
+      "expected": {
+        "message": "Hello, Ada!"
+      }
+    },
+    {
+      "id": "hello-world-04",
+      "input": {
+        "name": ""
+      },
+      "expected": {
+        "message": "Hello, World!"
+      }
+    },
+    {
+      "id": "hello-world-05",
+      "input": {
+        "name": "  "
+      },
+      "expected": {
+        "message": "Hello, World!"
+      }
+    },
+    {
+      "id": "hello-world-06",
+      "input": {
+        "name": "José 🌎"
+      },
+      "expected": {
+        "message": "Hello, José 🌎!"
+      }
+    },
+    {
+      "id": "hello-world-07",
+      "input": {
+        "name": "<script>alert(1)</script>"
+      },
+      "expected": {
+        "message": "Hello, <script>alert(1)</script>!"
+      }
+    },
+    {
+      "id": "hello-world-08",
+      "input": {
+        "name": null
+      },
+      "expected": {
+        "error": "invalid_request"
+      }
+    },
+    {
+      "id": "hello-world-09",
+      "input": {
+        "name": true
+      },
+      "expected": {
+        "error": "invalid_request"
+      }
+    },
+    {
+      "id": "hello-world-10",
+      "input": {
+        "name": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+      },
+      "expected": {
+        "error": "invalid_request"
+      }
+    },
+    {
+      "id": "hello-world-11",
+      "input": [],
+      "expected": {
+        "error": "invalid_request"
+      }
+    }
+  ],
+  "calculator": [
+    {
+      "id": "calculator-01",
+      "input": {
+        "op": "add",
+        "a": 0,
+        "b": 0
+      },
+      "expected": {
+        "result": 0
+      }
+    },
+    {
+      "id": "calculator-02",
+      "input": {
+        "op": "add",
+        "a": 2,
+        "b": 3
+      },
+      "expected": {
+        "result": 5
+      }
+    },
+    {
+      "id": "calculator-03",
+      "input": {
+        "op": "add",
+        "a": -8,
+        "b": 2
+      },
+      "expected": {
+        "result": -6
+      }
+    },
+    {
+      "id": "calculator-04",
+      "input": {
+        "op": "add",
+        "a": 1.5,
+        "b": 0.5
+      },
+      "expected": {
+        "result": 2
+      }
+    },
+    {
+      "id": "calculator-05",
+      "input": {
+        "op": "add",
+        "a": 1000000,
+        "b": -1
+      },
+      "expected": {
+        "result": 999999
+      }
+    },
+    {
+      "id": "calculator-06",
+      "input": {
+        "op": "add",
+        "a": 7,
+        "b": 2
+      },
+      "expected": {
+        "result": 9
+      }
+    },
+    {
+      "id": "calculator-07",
+      "input": {
+        "op": "subtract",
+        "a": 0,
+        "b": 0
+      },
+      "expected": {
+        "result": 0
+      }
+    },
+    {
+      "id": "calculator-08",
+      "input": {
+        "op": "subtract",
+        "a": 2,
+        "b": 3
+      },
+      "expected": {
+        "result": -1
+      }
+    },
+    {
+      "id": "calculator-09",
+      "input": {
+        "op": "subtract",
+        "a": -8,
+        "b": 2
+      },
+      "expected": {
+        "result": -10
+      }
+    },
+    {
+      "id": "calculator-10",
+      "input": {
+        "op": "subtract",
+        "a": 1.5,
+        "b": 0.5
+      },
+      "expected": {
+        "result": 1
+      }
+    },
+    {
+      "id": "calculator-11",
+      "input": {
+        "op": "subtract",
+        "a": 1000000,
+        "b": -1
+      },
+      "expected": {
+        "result": 1000001
+      }
+    },
+    {
+      "id": "calculator-12",
+      "input": {
+        "op": "subtract",
+        "a": 7,
+        "b": 2
+      },
+      "expected": {
+        "result": 5
+      }
+    },
+    {
+      "id": "calculator-13",
+      "input": {
+        "op": "multiply",
+        "a": 0,
+        "b": 0
+      },
+      "expected": {
+        "result": 0
+      }
+    },
+    {
+      "id": "calculator-14",
+      "input": {
+        "op": "multiply",
+        "a": 2,
+        "b": 3
+      },
+      "expected": {
+        "result": 6
+      }
+    },
+    {
+      "id": "calculator-15",
+      "input": {
+        "op": "multiply",
+        "a": -8,
+        "b": 2
+      },
+      "expected": {
+        "result": -16
+      }
+    },
+    {
+      "id": "calculator-16",
+      "input": {
+        "op": "multiply",
+        "a": 1.5,
+        "b": 0.5
+      },
+      "expected": {
+        "result": 0.75
+      }
+    },
+    {
+      "id": "calculator-17",
+      "input": {
+        "op": "multiply",
+        "a": 1000000,
+        "b": -1
+      },
+      "expected": {
+        "result": -1000000
+      }
+    },
+    {
+      "id": "calculator-18",
+      "input": {
+        "op": "multiply",
+        "a": 7,
+        "b": 2
+      },
+      "expected": {
+        "result": 14
+      }
+    },
+    {
+      "id": "calculator-19",
+      "input": {
+        "op": "divide",
+        "a": 0,
+        "b": 0
+      },
+      "expected": {
+        "error": "division_by_zero"
+      }
+    },
+    {
+      "id": "calculator-20",
+      "input": {
+        "op": "divide",
+        "a": 2,
+        "b": 3
+      },
+      "expected": {
+        "result": 0.6666666666666666
+      }
+    },
+    {
+      "id": "calculator-21",
+      "input": {
+        "op": "divide",
+        "a": -8,
+        "b": 2
+      },
+      "expected": {
+        "result": -4
+      }
+    },
+    {
+      "id": "calculator-22",
+      "input": {
+        "op": "divide",
+        "a": 1.5,
+        "b": 0.5
+      },
+      "expected": {
+        "result": 3
+      }
+    },
+    {
+      "id": "calculator-23",
+      "input": {
+        "op": "divide",
+        "a": 1000000,
+        "b": -1
+      },
+      "expected": {
+        "result": -1000000
+      }
+    },
+    {
+      "id": "calculator-24",
+      "input": {
+        "op": "divide",
+        "a": 7,
+        "b": 2
+      },
+      "expected": {
+        "result": 3.5
+      }
+    },
+    {
+      "id": "calculator-25",
+      "input": {
+        "op": "pow",
+        "a": 2,
+        "b": 3
+      },
+      "expected": {
+        "error": "invalid_request"
+      }
+    },
+    {
+      "id": "calculator-26",
+      "input": {
+        "op": "add",
+        "a": true,
+        "b": 2
+      },
+      "expected": {
+        "error": "invalid_request"
+      }
+    },
+    {
+      "id": "calculator-27",
+      "input": {
+        "op": "add",
+        "a": "2",
+        "b": 3
+      },
+      "expected": {
+        "error": "invalid_request"
+      }
+    },
+    {
+      "id": "calculator-28",
+      "input": {
+        "a": 2,
+        "b": 3
+      },
+      "expected": {
+        "error": "invalid_request"
+      }
+    },
+    {
+      "id": "calculator-29",
+      "input": [],
+      "expected": {
+        "error": "invalid_request"
+      }
+    }
+  ],
+  "tictactoe": [
+    {
+      "id": "tictactoe-01",
+      "input": {
+        "moves": []
+      },
+      "expected": {
+        "board": ".........",
+        "status": "playing",
+        "next": "X"
+      }
+    },
+    {
+      "id": "tictactoe-02",
+      "input": {
+        "moves": [
+          0
+        ]
+      },
+      "expected": {
+        "board": "X........",
+        "status": "playing",
+        "next": "O"
+      }
+    },
+    {
+      "id": "tictactoe-03",
+      "input": {
+        "moves": [
+          4,
+          0
+        ]
+      },
+      "expected": {
+        "board": "O...X....",
+        "status": "playing",
+        "next": "X"
+      }
+    },
+    {
+      "id": "tictactoe-04",
+      "input": {
+        "moves": [
+          0,
+          3,
+          1,
+          4,
+          2
+        ]
+      },
+      "expected": {
+        "board": "XXXOO....",
+        "status": "X",
+        "next": null
+      }
+    },
+    {
+      "id": "tictactoe-05",
+      "input": {
+        "moves": [
+          0,
+          1,
+          3,
+          2,
+          6
+        ]
+      },
+      "expected": {
+        "board": "XOOX..X..",
+        "status": "X",
+        "next": null
+      }
+    },
+    {
+      "id": "tictactoe-06",
+      "input": {
+        "moves": [
+          0,
+          1,
+          4,
+          2,
+          8
+        ]
+      },
+      "expected": {
+        "board": "XOO.X...X",
+        "status": "X",
+        "next": null
+      }
+    },
+    {
+      "id": "tictactoe-07",
+      "input": {
+        "moves": [
+          2,
+          0,
+          4,
+          1,
+          6
+        ]
+      },
+      "expected": {
+        "board": "OOX.X.X..",
+        "status": "X",
+        "next": null
+      }
+    },
+    {
+      "id": "tictactoe-08",
+      "input": {
+        "moves": [
+          0,
+          3,
+          1,
+          4,
+          8,
+          5
+        ]
+      },
+      "expected": {
+        "board": "XX.OOO..X",
+        "status": "O",
+        "next": null
+      }
+    },
+    {
+      "id": "tictactoe-09",
+      "input": {
+        "moves": [
+          0,
+          1,
+          2,
+          4,
+          3,
+          7
+        ]
+      },
+      "expected": {
+        "board": "XOXXO..O.",
+        "status": "O",
+        "next": null
+      }
+    },
+    {
+      "id": "tictactoe-10",
+      "input": {
+        "moves": [
+          0,
+          1,
+          5,
+          3,
+          6,
+          7,
+          8,
+          4
+        ]
+      },
+      "expected": {
+        "board": "XO.OOXXOX",
+        "status": "O",
+        "next": null
+      }
+    },
+    {
+      "id": "tictactoe-11",
+      "input": {
+        "moves": [
+          0,
+          1,
+          2,
+          4,
+          3,
+          5,
+          7,
+          6,
+          8
+        ]
+      },
+      "expected": {
+        "board": "XOXXOOOXX",
+        "status": "draw",
+        "next": null
+      }
+    },
+    {
+      "id": "tictactoe-12",
+      "input": {
+        "moves": [
+          0,
+          0
+        ]
+      },
+      "expected": {
+        "error": "invalid_move"
+      }
+    },
+    {
+      "id": "tictactoe-13",
+      "input": {
+        "moves": [
+          9
+        ]
+      },
+      "expected": {
+        "error": "invalid_request"
+      }
+    },
+    {
+      "id": "tictactoe-14",
+      "input": {
+        "moves": [
+          -1
+        ]
+      },
+      "expected": {
+        "error": "invalid_request"
+      }
+    },
+    {
+      "id": "tictactoe-15",
+      "input": {
+        "moves": [
+          true
+        ]
+      },
+      "expected": {
+        "error": "invalid_request"
+      }
+    },
+    {
+      "id": "tictactoe-16",
+      "input": {
+        "moves": [
+          "1"
+        ]
+      },
+      "expected": {
+        "error": "invalid_request"
+      }
+    },
+    {
+      "id": "tictactoe-17",
+      "input": {
+        "moves": [
+          0,
+          3,
+          1,
+          4,
+          2,
+          5
+        ]
+      },
+      "expected": {
+        "error": "invalid_move"
+      }
+    },
+    {
+      "id": "tictactoe-18",
+      "input": {
+        "moves": null
+      },
+      "expected": {
+        "error": "invalid_request"
+      }
+    },
+    {
+      "id": "tictactoe-19",
+      "input": {},
+      "expected": {
+        "error": "invalid_request"
+      }
+    },
+    {
+      "id": "tictactoe-20",
+      "input": [],
+      "expected": {
+        "error": "invalid_request"
+      }
+    }
+  ]
+}
