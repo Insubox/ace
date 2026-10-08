@@ -18,6 +18,7 @@ it('private native histories cannot be listed, guessed or written by unrelated a
  expect((await request(alice,`/v1/stores/${project}/objects/${id}`)).status).toBe(200);
  for(const method of ['GET','PUT'])expect((await request(bob,`/v1/stores/${project}/objects/${id}`,method,method==='PUT'?bytes:undefined)).status).toBe(404);
  expect((await request(bob,`/v1/stores/${project}`)).status).toBe(404);
+ expect((await request(bob,`/v1/projects/${project}/learning?baseline=${id}`)).status).toBe(404);
  const list=await(await request(bob,'/v1/projects')).json() as {projects:{name:string}[]};expect(list.projects.some(p=>p.name===project)).toBe(false);
 });
 it('project permissions intersect account roles and non-owners cannot manage members',async()=>{

@@ -18,7 +18,10 @@ Git is needed only for the optional compatibility archive/export commands.
 ## Download an executable
 
 1. Open [GitHub releases](https://github.com/Insubox/ace/releases).
-2. Choose the latest technical preview and expand **Assets**.
+2. Choose an available technical preview and expand **Assets**. Only download a
+   platform that actually has an asset in that release. The current source is
+   newer than the older published previews; use the source instructions below
+   for the latest changes. Private repositories require repository access.
 3. Download the package for your computer and its matching `.sha256` file:
 
 | Computer | Package suffix |
@@ -71,13 +74,12 @@ Improvements refer to Wasmi fuel on this workload, rather than production CPU
 speed or savings caused by AI filtering. Oracle success checks the configured
 cases; it is not a proof for every possible input.
 
-The release workflow also builds downloadable artifacts on each `main` update.
-If a release has not yet appeared, open **Actions → Downloadable CLI**, choose
-a successful run, and download the artifact named for your computer. Extract
-the Actions ZIP and then the native archive inside it. GitHub requires sign-in
-for Actions artifacts; private repositories also require repository access.
-Release publication depends on all platform jobs passing. Packages are native
-to the indicated platform; use the source build below for other architectures.
+The package workflow runs on version tags or explicit manual dispatch. GitHub
+Actions is currently account-limited, so ordinary development performs local
+checks and does not launch Actions. Windows/macOS execution for the current
+source remains unverified. A local Linux package and a draft release do not
+establish a completed four-platform release. Use the source instructions below
+when a suitable published asset is unavailable.
 
 ## Run successive generations
 

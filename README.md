@@ -7,10 +7,14 @@ Knowledge survives discarded code. The official project domain is **ace.org.ai**
 ## Download, run, and test
 
 The local CLI now generates candidates and runs complete GCD experiments without
-Cloudflare, accounts, API keys or Docker. Native packages are built by the
-[Downloadable CLI workflow](https://github.com/Insubox/ace/actions/workflows/release.yml)
-and tagged previews are published in [Releases](https://github.com/Insubox/ace/releases).
+Cloudflare, accounts, API keys or Docker. Build from source below, or use an
+available verified preview in [Releases](https://github.com/Insubox/ace/releases).
+The four-platform package workflow remains available; development currently
+validates locally while the GitHub Actions account limit is unresolved.
 See the [step-by-step guide](docs/getting-started.md) for Linux, macOS and Windows.
+
+The [complete-project learning guide](docs/complete-project-learning.md) explains
+retrieval of exact-source reports from ACE's own development pilot.
 
 From a source checkout with Git and Rust installed:
 

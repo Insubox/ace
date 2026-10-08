@@ -21,6 +21,7 @@ import {listIssues,readIssue,createIssue,issueEvent,notifications,readNotificati
 export {ApplicationCampaignWorkflow} from './application-campaigns';
 export {ApplicationWorkflow} from './applications';
 import {operations} from './operations';
+import {projectLearning} from './project-learning';
 export {ObservatoryWorkflow} from './observatory';
 export {BackupWorkflow} from './backups';
 export {NativeVerificationWorkflow} from './verification';
@@ -113,6 +114,8 @@ export default {
       if(restoration){if(request.method==='GET'&&!restoration[2])return await readRestoreReceipt(env,current,restoration[1]!);if(request.method==='POST'&&!restoration[2])return await requestRestore(env,current,restoration[1]!);if(request.method==='GET'&&restoration[2])return await readDrill(env,current,restoration[1]!,restoration[2],restoration[3]??restoration[5],restoration[4]);}
       if(url.pathname==='/v1/projects'&&request.method==='GET')return await projects.list(env,current);
       if(url.pathname==='/v1/projects'&&request.method==='POST')return await projects.create(env,current,await limitedBody(request,8192));
+      const projectMemory=/^\/v1\/projects\/([A-Za-z0-9][A-Za-z0-9_-]{0,63})\/learning$/.exec(url.pathname);
+      if(projectMemory&&request.method==='GET')return await projectLearning(env,current,projectMemory[1]!,url);
       const issues=/^\/v1\/projects\/([A-Za-z0-9][A-Za-z0-9_-]{0,63})\/issues(?:\/([0-9a-f-]{36})(\/events)?)?$/.exec(url.pathname);
       if(issues){const project=issues[1]!,id=issues[2];if(request.method==='GET'&&!issues[3])return id?await readIssue(env,current,project,id):await listIssues(env,current,project);if(request.method==='POST'){const input=await limitedBody(request,16384);if(!id)return await createIssue(env,current,project,input);if(issues[3]==='/events')return await issueEvent(env,current,project,id,input);}}
       const activity=/^\/v1\/projects\/([A-Za-z0-9][A-Za-z0-9_-]{0,63})\/notifications(\/read)?$/.exec(url.pathname);
