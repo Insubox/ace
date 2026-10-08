@@ -4,6 +4,8 @@ export async function rollout({before,candidate,read,deploy,smoke,record=async()
  if(!uuid.test(before)||!uuid.test(candidate)||before===candidate)throw Error('Choose distinct uploaded Worker versions');
  let current=await read();if(!same(current.versions,[{version_id:before,percentage:100}]))throw Error('Current deployment differs from the expected stable version');
  const evidence={schema_version:1,before,candidate,stages:[],rollback_drill:false,scope:'Worker traffic and read-only smoke checks; no database, container-image or production-data restoration'};
+ // Verify evidence storage before assigning production traffic.
+ await record(evidence);
  const move=async versions=>{
   const latest=await read();if(latest.id!==current.id)throw Error('Concurrent deployment detected; refusing to overwrite it');
   const saved=await deploy(versions);current=saved;
@@ -20,10 +22,10 @@ export async function rollout({before,candidate,read,deploy,smoke,record=async()
   evidence.status='completed';await record(evidence);return evidence;
  }catch(error){
   evidence.status='failed';
-  await record(evidence);
+  try{await record(evidence);}catch{}
   // Provider writes are not an atomic CAS. Preserve a competing deployment.
   try{const latest=await read();if(latest.id===current.id){await move([{version_id:before,percentage:100}]);evidence.recovered=await smoke(before);evidence.rollback_deployment=current.id;}else evidence.rollback_blocked='Concurrent deployment; operator reconciliation required';}
   catch{evidence.rollback_blocked='Provider or recovery checks failed; operator reconciliation required';}
-  await record(evidence);throw error;
+  try{await record(evidence);}catch{}throw error;
  }
 }
