@@ -15,6 +15,8 @@ import {readVerification,requestVerification,readVerifiedRun} from './verificati
 import {requestBackup,listBackups,requestRestore,readDrill,readRestoreReceipt} from './backups';
 import {requestTrial,listTrials,readTrial,readProposal,retryTrial} from './observatory';
 import {applicationTemplates,retainedApplication,listApps,readApp,requestApp} from './applications';
+import {requestCampaign,listCampaigns,readCampaign,cancelCampaign} from './application-campaigns';
+export {ApplicationCampaignWorkflow} from './application-campaigns';
 export {ApplicationWorkflow} from './applications';
 import {operations} from './operations';
 export {ObservatoryWorkflow} from './observatory';
@@ -108,6 +110,8 @@ export default {
       if(url.pathname==='/v1/projects'&&request.method==='GET')return await projects.list(env,current);
       if(url.pathname==='/v1/projects'&&request.method==='POST')return await projects.create(env,current,await limitedBody(request,8192));
       const apps=/^\/v1\/projects\/([A-Za-z0-9][A-Za-z0-9_-]{0,63})\/applications(?:\/(app-[0-9a-f]{64}))?$/.exec(url.pathname);
+      const campaigns=/^\/v1\/projects\/([A-Za-z0-9][A-Za-z0-9_-]{0,63})\/application-campaigns(?:\/(campaign-[0-9a-f]{64})(\/cancel)?)?$/.exec(url.pathname);
+      if(campaigns){const project=campaigns[1]!,id=campaigns[2];if(request.method==='GET'&&!campaigns[3])return id?await readCampaign(env,current,project,id):await listCampaigns(env,current,project);if(request.method==='POST'){const input=await limitedBody(request,8192);if(!id)return await requestCampaign(env,current,project,input);if(campaigns[3]==='/cancel'&&!input.length)return await cancelCampaign(env,current,project,id);}}
       if(apps){if(request.method==='GET')return apps[2]?await readApp(env,current,apps[1]!,apps[2]):await listApps(env,current,apps[1]!);if(request.method==='POST'&&!apps[2])return await requestApp(env,current,apps[1]!,await limitedBody(request,131072));}
       const retainedApp=/^\/v1\/projects\/([A-Za-z0-9][A-Za-z0-9_-]{0,63})\/application-versions\/([0-9a-f]{64})$/.exec(url.pathname);
       if(retainedApp&&request.method==='GET')return await retainedApplication(env,current,retainedApp[1]!,retainedApp[2]!);

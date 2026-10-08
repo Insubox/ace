@@ -47,6 +47,7 @@ export type Env = {
   EVALUATIONS: Queue<Job>; FINALIZATIONS: Queue<FinalizeJob>;
   EXPERIMENTS: Workflow<FinalizeJob>;
   APPLICATION_RUNS?:Workflow<import('./applications').AppJob>;
+  APPLICATION_CAMPAIGNS?:Workflow<import('./application-campaigns').CampaignJob>;
   OBSERVATORY_TRIALS?:Workflow<import('./observatory').TrialJob>;
 };
 

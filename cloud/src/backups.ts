@@ -6,7 +6,7 @@ import {nativeHash,entrySchema,versionSchema,refSchema,type NativeRef,type Nativ
 import type {Review} from './review-state';
 import type {Identity} from './accounts';
 const encode=(v:unknown)=>new TextEncoder().encode(JSON.stringify(v));
-const tables=['experiments','evaluations','evidence_index','native_users','native_projects','native_project_members','project_resource_owners','project_artifacts','project_audit','account_audit','native_stores','native_verifications','observatory_trials','application_runs'] as const;
+const tables=['experiments','evaluations','evidence_index','native_users','native_projects','native_project_members','project_resource_owners','project_artifacts','project_audit','account_audit','native_stores','native_verifications','observatory_trials','application_runs','application_campaigns'] as const;
 const backupId=z.string().regex(/^backup-(?:[0-9]{8}|[0-9a-f-]{36})$/);
 type Row=Record<string,string|number|null>;
 type Table={name:string;sql:string;columns:string[];rows:Row[]};

@@ -1,6 +1,7 @@
 import {beforeAll} from 'vitest';
 import {env} from 'cloudflare:test';
 import applications from '../migrations/0010_application_runs.sql?raw';
+import campaigns from '../migrations/0011_application_campaigns.sql?raw';
 import observatory from '../migrations/0009_observatory_trials.sql?raw';
 import accounts from '../migrations/0004_native_accounts.sql?raw';
 import stores from '../migrations/0003_native_stores.sql?raw';
@@ -9,4 +10,4 @@ import backups from '../migrations/0008_backups.sql?raw';
 import verification from '../migrations/0005_native_verifications.sql?raw';
 import recovery from '../migrations/0007_account_recovery.sql?raw';
 import permissions from '../migrations/0006_project_permissions.sql?raw';
-beforeAll(async()=>{for(const raw of[initial,stores,accounts,verification,permissions,recovery,backups,observatory,applications])await env.DB.batch(raw.split(';').map(s=>s.trim()).filter(Boolean).map(s=>env.DB.prepare(s)));});
+beforeAll(async()=>{for(const raw of[initial,stores,accounts,verification,permissions,recovery,backups,observatory,applications,campaigns])await env.DB.batch(raw.split(';').map(s=>s.trim()).filter(Boolean).map(s=>env.DB.prepare(s)));});

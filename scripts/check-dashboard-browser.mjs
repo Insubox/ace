@@ -57,6 +57,7 @@ const server=createServer(async(req,res)=>{
     if(url.pathname===`/v1/projects/${name}/members`){if(req.method==='POST'){assert.equal(role,'admin');memberCalls++;}return send(200,{members:[{username:'fixture-admin',role:'owner'},{username:'fixture-reader',role:'reader'}]});}
     if(url.pathname===`/v1/stores/${name}/refs`){if(req.method==='POST'){assert.equal(role,'admin');const args=JSON.parse(input);assert.equal(args.branch,'browser-branch');assert.equal(args.expected,null);assert.equal(args.content_hash,nativeHash([1,args.sequence,args.previous,args.branch,args.expected,args.target]));branchCalls++;branchFixture={schema_version:1,events:[args],heads:{[args.branch]:args.target},tip:args.content_hash};}return send(200,branchFixture);}
     if(req.method==='GET'&&/^\/v1\/stores\/[^/]+\/reviews$/.test(url.pathname))return send(200,{reviews:[]});
+    if(req.method==='GET'&&url.pathname.endsWith('/application-campaigns'))return send(200,{campaigns:[]});
     if(req.method==='GET'&&/^\/v1\/projects\/[^/]+\/applications$/.test(url.pathname))return send(200,{runs:[]});
     // Only read deployed store data. No production account or source is mutated.
     if(req.method==='GET'&&(url.pathname==='/v1/stores'||url.pathname.startsWith(`/v1/stores/${name}`))){

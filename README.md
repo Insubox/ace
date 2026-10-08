@@ -54,6 +54,9 @@ plus Hello World, TicTacToe and Calculator with locked local dependencies,
 Python compilation and retained pass/fail tests. Create an example locally with
 `ace app init calculator my-calculator`; `ace app test my-calculator --store ace-history`
 uses Docker and a prepared Python image as described in the guide.
+[Application agent campaigns](docs/application-evolution.md) reuse tested source
+and retained learning, independently evaluate each new proposal and keep a new
+best only when it improves public-suite correctness without regressions.
 [Independent server verification](docs/server-verification.md) checks uploaded
 evaluations and retains separate server evidence. [Private project permissions](docs/native-hosting.md)
 and account recovery protect hosted access. [Automated backups](docs/backups.md)

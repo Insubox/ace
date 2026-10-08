@@ -23,6 +23,7 @@ const server=createServer(async(req,res)=>{
  if(path.endsWith('/refs'))return send(200,{schema_version:1,heads:{},events:[],tip:null});
  if(path.endsWith('/trials'))return send(200,{trials:[]});
  if(path.endsWith('/reviews'))return send(200,{reviews:[]});
+ if(path.endsWith('/application-campaigns'))return send(200,{campaigns:[]});
  if(path.endsWith('/applications'))return send(200,{runs:[]});
  return send(404,{});
 });
