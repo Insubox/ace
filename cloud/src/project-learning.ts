@@ -12,7 +12,7 @@ const prepared=z.strictObject({rustc_sha256:hash,cargo_sha256:hash,node_sha256:h
   installed_node_lock_sha256:hash,cargo_lock_sha256:hash,package_lock_sha256:hash});
 const observation=z.strictObject({id:z.enum(checks as [string,...string[]]),exit_code:z.number().int().nullable(),
   signal:z.string().nullable(),error:z.string().nullable(),duration_ms:z.number().nonnegative(),stdout_hash:hash,stderr_hash:hash});
-const reportSchema=z.object({schema_version:z.literal(1),profile:z.literal('ace-self-v1'),baseline_version:hash,
+const reportSchema=z.object({schema_version:z.literal(1),profile:z.enum(['ace-self-v1','ace-self-v2']),baseline_version:hash,
   source_version:hash,source_hash:hash,harness_hash:hash,image_id:z.string().regex(/^sha256:[0-9a-f]{64}$/),
   prepared_inputs:prepared,status:z.enum(['passed','failed','infrastructure_failed']),
   observations:z.array(observation).max(7),infrastructure_error:z.string().nullable(),
@@ -27,7 +27,8 @@ export async function inspectProjectReport(id:string,published:Set<string>,reade
   const report=reportSchema.parse(strictJson(new TextDecoder('utf-8',{fatal:true,ignoreBOM:true}).decode(await reader.object(reportId,65536))));
   if(!published.has(report.source_version)||!published.has(report.baseline_version)||!retained.version.parents.includes(report.source_version))throw new Error('report source ancestry differs');
   const source=await reader.version(report.source_version);
-  if(!source.version.parents.includes(report.baseline_version)||await nativeHash(source.version.files)!==report.source_hash)throw new Error('report source identity differs');
+  const unchanged=report.profile==='ace-self-v2'&&report.source_version===report.baseline_version;
+  if(!unchanged&&!source.version.parents.includes(report.baseline_version)||await nativeHash(source.version.files)!==report.source_hash)throw new Error('report source identity differs');
   const baseline=await reader.version(report.baseline_version),mutable='crates/ace-cli/src/store.rs';
   if(Object.keys(source.version.files).length!==Object.keys(baseline.version.files).length||Object.entries(baseline.version.files).some(([p,h])=>p!==mutable&&source.version.files[p]!==h))throw new Error('protected project source differs');
   if(!source.version.files[mutable]||!baseline.version.files[mutable])throw new Error('pilot mutation contract is missing');

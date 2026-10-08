@@ -116,6 +116,45 @@ export async function requestBackup(env:Env,actor:Identity,id='backup-'+crypto.r
 export async function listBackups(env:Env,actor:Identity){authority(actor);return json({backups:(await env.DB.prepare('SELECT * FROM workspace_backups ORDER BY created_at DESC LIMIT 30').all()).results,scope:'infrastructure_operator',retention:'manual_deletion_only'});}
 export async function requestRestore(env:Env,actor:Identity,id:string){authority(actor);await load(env,id);const workflow='restore-'+backupId.parse(id);try{await env.BACKUP_WORKFLOW!.create({id:workflow,params:{id,restore:true}});}catch{await(await env.BACKUP_WORKFLOW!.get(workflow)).status();}return json({id,workflow,isolated:true},202);}
 export async function readRestoreReceipt(env:Env,actor:Identity,id:string){authority(actor);requireBindings(env);const row=await env.DB.prepare("SELECT restore_hash FROM workspace_backups WHERE id = ? AND restore_status = 'completed'").bind(backupId.parse(id)).first<{restore_hash:string}>();if(!row)throw new HttpError(409,'restoration drill is not complete');return new Response(await checked(env.RESTORE_STORAGE!,prefix(id)+'restore-receipt.json',row.restore_hash),{headers:{'content-type':'application/json'}});}
+
+// Seal readiness while the live control database is available. Subsequent
+// recovery reads use only backup/restore resources and current operator auth.
+export async function prepareRecovery(env:Env,actor:Identity,id:string){
+ authority(actor);const {manifest}=await load(env,id),response=await readRestoreReceipt(env,actor,id),bytes=new Uint8Array(await response.arrayBuffer()),receipt=strictJson(new TextDecoder().decode(bytes)) as {id:string;sessions_restored:number;production_writes:number;objects:number};
+ if(receipt.id!==id||receipt.sessions_restored!==0||receipt.production_writes!==0||receipt.objects!==manifest.objects.length)throw new HttpError(409,'restoration receipt differs');
+ const ready={schema_version:1,id,manifest_hash:await sha256(encode(manifest)),receipt_hash:await sha256(bytes),sessions_restored:0,read_only:true};
+ await retain(env.RESTORE_STORAGE!,prefix(id)+'recovery-ready.json',encode(ready));return json({ready:true,backup:id,read_only:true,sessions_restored:0});
+}
+export async function readRecovery(env:Env,actor:Identity,id:string,name:string,kind?:string,digest?:string){
+ authority(actor);backupId.parse(id);
+ if(!env.BACKUPS||!env.RESTORE_STORAGE||!env.RESTORE_COORDINATORS)throw new HttpError(503,'independent recovery bindings required');
+ if(env.COORDINATORS.idFromName('ace-restore-isolation').toString()===env.RESTORE_COORDINATORS.idFromName('ace-restore-isolation').toString())throw new HttpError(503,'recovery namespace aliases production');
+ const object=await env.RESTORE_STORAGE.get(prefix(id)+'recovery-ready.json');if(!object||object.size>16384)throw new HttpError(409,'recovery snapshot is not sealed ready');
+ const ready=z.strictObject({schema_version:z.literal(1),id:backupId,manifest_hash:z.string().regex(/^[a-f0-9]{64}$/),receipt_hash:z.string().regex(/^[a-f0-9]{64}$/),sessions_restored:z.literal(0),read_only:z.literal(true)}).parse(strictJson(await object.text()));
+ if(ready.id!==id)throw new HttpError(503,'recovery snapshot identity differs');
+ const manifest=strictJson(new TextDecoder().decode(await checked(env.BACKUPS,prefix(id)+'manifest.json',ready.manifest_hash))) as Manifest;
+ const inventory=strictJson(new TextDecoder().decode(await checked(env.BACKUPS,prefix(id)+'inventory.json',manifest.inventory_hash))) as Inventory;
+ const receipt=strictJson(new TextDecoder().decode(await checked(env.RESTORE_STORAGE,prefix(id)+'restore-receipt.json',ready.receipt_hash))) as {id:string;sessions_restored:number;production_writes:number};
+ if(manifest.id!==id||inventory.id!==id||receipt.id!==id||receipt.sessions_restored!==0||receipt.production_writes!==0)throw new HttpError(503,'recovery evidence differs');
+ if(!Object.hasOwn(inventory.stores,name))throw new HttpError(404,'restored store missing');
+ const expected=inventory.stores[name]!;let response:Response;
+ if(!kind){
+  const actual=await restoreCoordinate(env,'RESTORE-'+id+'-NATIVE-'+name,'native-log') as Log;
+  if(actual.tip!==expected.tip||await nativeHash(actual.entries)!==await nativeHash(expected.entries))throw new HttpError(503,'restored native journal differs');response=json(actual);
+ }else if(kind==='refs'){
+  const actual=await restoreCoordinate(env,'RESTORE-'+id+'-NATIVE-'+name,'native-refs') as RefLog;
+  if(await nativeHash(actual)!==await nativeHash({schema_version:1,...inventory.refs?.[name]}))throw new HttpError(503,'restored references differ');response=json(actual);
+ }else{
+  if(!digest||! /^[a-f0-9]{64}$/.test(digest)||!['objects','versions'].includes(kind))throw new HttpError(400,'invalid restored file');
+  const key=`native-stores/${name}/${kind}/${digest}${kind==='versions'?'.json':''}`,item=manifest.objects.find(i=>i.key===key);
+  if(!item)throw new HttpError(404,'restored file missing');
+  const bytes=await checked(env.RESTORE_STORAGE,prefix(id)+key,item.hash);
+  if(kind==='objects'&&await sha256(bytes)!==digest)throw new HttpError(503,'restored source identity differs');
+  if(kind==='versions'){const sealed=versionSchema.parse(strictJson(new TextDecoder().decode(bytes)));if(sealed.content_hash!==digest||await nativeHash(sealed.version)!==digest)throw new HttpError(503,'restored version identity differs');}
+  response=new Response(bytes,{headers:{'content-type':kind==='versions'?'application/json':'application/octet-stream'}});
+ }
+ response.headers.set('cache-control','no-store');response.headers.set('x-ace-storage-source',id);return response;
+}
 export async function readDrill(env:Env,actor:Identity,id:string,name:string,kind?:string,hash?:string){authority(actor);const {inventory}=await load(env,id);if(!inventory.stores[name])throw new HttpError(404,'restored store missing');if(!/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/.test(name))throw new HttpError(400,'invalid native name');const row=await env.DB.prepare("SELECT restore_status FROM workspace_backups WHERE id = ?").bind(id).first<{restore_status:string}>();if(row?.restore_status!=='completed')throw new HttpError(409,'restoration drill is not complete');if(kind==='refs')return json(await restoreCoordinate(env,'RESTORE-'+id+'-NATIVE-'+name,'native-refs'));if(!kind)return json(await restoreCoordinate(env,'RESTORE-'+id+'-NATIVE-'+name,'native-log'));if(!hash||!/^[0-9a-f]{64}$/.test(hash)||!['objects','versions'].includes(kind))throw new HttpError(400,'invalid restored file');const object=await env.RESTORE_STORAGE!.get(prefix(id)+`native-stores/${name}/${kind}/${hash}${kind==='versions'?'.json':''}`);if(!object)throw new HttpError(404,'restored file missing');return new Response(object.body,{headers:{'content-type':'application/octet-stream'}});}
 export class BackupWorkflow extends WorkflowEntrypoint<Env,BackupJob>{
  async run(event:WorkflowEvent<BackupJob>,step:WorkflowStep){const {id,restore}=event.payload;

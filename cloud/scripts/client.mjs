@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { open } from 'node:fs/promises';
+import {constants} from 'node:fs';
 
 export function settings() {
   const url = new URL(process.env.ACE_API_URL ?? '');
@@ -13,9 +14,11 @@ export function settings() {
 }
 export function rawHash(bytes) { return createHash('sha256').update(bytes).digest('hex'); }
 export async function boundedFile(path, limit) {
-  const file = await open(path, 'r');
+  if(!Number.isSafeInteger(limit)||limit<0||limit>8388608)throw Error('Invalid file byte budget');
+  const file = await open(path, constants.O_RDONLY|constants.O_NOFOLLOW|constants.O_NONBLOCK);
   try {
-    if ((await file.stat()).size > limit) throw new Error('File exceeds upload limit');
+    const stat=await file.stat();if(!stat.isFile())throw Error('Input must be a regular file');
+    if (stat.size > limit) throw new Error('File exceeds upload limit');
     const bytes = Buffer.alloc(limit + 1); let offset = 0;
     while (offset < bytes.length) { const read = await file.read(bytes, offset, bytes.length - offset, null); if (!read.bytesRead) break; offset += read.bytesRead; }
     if (offset > limit) throw new Error('File exceeds upload limit'); return bytes.subarray(0, offset);

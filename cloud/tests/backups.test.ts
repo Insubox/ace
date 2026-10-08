@@ -1,9 +1,11 @@
 import {it,expect,beforeEach} from 'vitest';
 import {env,SELF} from 'cloudflare:test';
-import {capture,copyChunk,seal,restoreChunk,restoreMetadata,restoreExperiment,requestBackup,assertIsolated} from '../src/backups';
+import {capture,copyChunk,seal,restoreChunk,restoreMetadata,restoreExperiment,requestBackup,assertIsolated,prepareRecovery,readRecovery} from '../src/backups';
+import worker from '../src/worker';
 import {ensure} from '../src/projects';
 import {putObject,putVersion,appendEntry,appendRef,nativeHash} from '../src/native-store';
 import {sha256,coordinate} from '../src/contracts';
+import type {Env} from '../src/contracts';
 const operator={username:'operator',role:'admin',kind:'operator'} as const;
 beforeEach(async()=>{for(const table of ['project_audit','native_project_members','project_resource_owners','project_artifacts','native_stores','native_projects'])await env.DB.prepare('DELETE FROM '+table).run();let cursor:string|undefined;do{const list=await env.ARTIFACTS.list({cursor});for(const item of list.objects)await env.ARTIFACTS.delete(item.key);cursor=list.truncated?list.cursor:undefined;}while(cursor);});
 const encode=(v:unknown)=>new TextEncoder().encode(typeof v==='string'?v:JSON.stringify(v));
@@ -25,6 +27,26 @@ it('restores exact source, native authority and relational metadata after origin
  const log=await coordinate({...env,COORDINATORS:env.RESTORE_COORDINATORS!},'RESTORE-'+f.id+'-NATIVE-'+f.name,'native-log') as {tip:string;publishers:Record<string,unknown>};expect(log.tip).toBe(f.entry.content_hash);expect(log.publishers[f.versionHash]).toMatchObject({username:'original-owner'});expect((await coordinate({...env,COORDINATORS:env.RESTORE_COORDINATORS!},'RESTORE-'+f.id+'-NATIVE-'+f.name,'native-refs') as {heads:Record<string,string>}).heads.main).toBe(f.versionHash);
  await restoreChunk(env,f.id,f.items);expect(await restoreMetadata(env,f.id,f.inventory,f.items)).toEqual(result);
  expect(await env.RESTORE_DB!.prepare(`SELECT name FROM ${result.namespace}native_projects WHERE name = ?`).bind(f.name).first()).toMatchObject({name:f.name});
+});
+it('switches native read traffic to a sealed restore while live storage and its database are unavailable',async()=>{
+ const f=await fixture();await restoreChunk(env,f.id,f.items);const restored=await restoreMetadata(env,f.id,f.inventory,f.items);
+ const receipt=encode({id:f.id,...restored,objects:f.items.length});await env.RESTORE_STORAGE!.put(f.id+'/restore-receipt.json',receipt);
+ await env.DB.prepare("UPDATE workspace_backups SET restore_status='completed',restore_hash=? WHERE id=?").bind(await sha256(receipt),f.id).run();
+ await prepareRecovery(env,operator,f.id);
+ const unavailable={...env,DB:{prepare(){throw Error('live database down');}},ARTIFACTS:{get(){throw Error('live storage down');}},COORDINATORS:{idFromName:env.COORDINATORS.idFromName.bind(env.COORDINATORS),get(){throw Error('live native authority down');}}} as unknown as Env;
+ const headers={authorization:'Bearer '+env.API_TOKEN,'x-ace-recovery-backup':f.id};
+ for(const path of ['', '/refs', '/objects/'+f.hash, '/versions/'+f.versionHash]){
+  const response=await worker.fetch(new Request(`https://ace/v1/stores/${f.name}${path}`,{headers}),unavailable);
+  expect(response.status).toBe(200);expect(response.headers.get('x-ace-storage-source')).toBe(f.id);expect(response.headers.get('cache-control')).toBe('no-store');
+  if(path.startsWith('/objects/'))expect(await response.text()).toBe(new TextDecoder().decode(f.source));
+ }
+ expect((await worker.fetch(new Request(`https://ace/v1/stores/${f.name}`,{headers:{authorization:'Bearer '+env.API_TOKEN}}),unavailable)).status).toBe(503);
+ expect((await worker.fetch(new Request(`https://ace/v1/stores/${f.name}/journal`,{method:'POST',headers,body:'{}'}),unavailable)).status).toBe(405);
+ expect((await worker.fetch(new Request(`https://ace/v1/stores/${f.name}`,{headers:{'x-ace-recovery-backup':f.id}}),env)).status).toBe(401);
+ await expect(readRecovery(env,{username:'admin-fixture',kind:'account',role:'admin'},f.id,f.name)).rejects.toThrow('operator');
+ await env.RESTORE_STORAGE!.put(f.id+`/native-stores/${f.name}/objects/${f.hash}`,'corrupted');
+ expect((await worker.fetch(new Request(`https://ace/v1/stores/${f.name}/objects/${f.hash}`,{headers}),unavailable)).status).toBe(503);
+ const live=await env.ARTIFACTS.get(`native-stores/${f.name}/objects/${f.hash}`);expect(await live!.text()).toBe(new TextDecoder().decode(f.source));
 });
 it('rejects missing or corrupted copies and never repairs by accepting changed bytes',async()=>{
  const f=await fixture(),item=f.items.find(i=>i.key.endsWith('/objects/'+f.hash))!;

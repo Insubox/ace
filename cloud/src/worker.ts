@@ -1,4 +1,5 @@
 import {requireSpendingAdmission,readSpending,updateSpending} from './spending-control';
+import {servedVersion} from './version';
 import {submit} from './submission';
 export {submit} from './submission';
 import { z } from 'zod';
@@ -13,7 +14,7 @@ import dashboard from './dashboard.html';
 import * as accounts from './accounts';
 import * as projects from './projects';
 import {readVerification,requestVerification,readVerifiedRun} from './verification';
-import {requestBackup,listBackups,requestRestore,readDrill,readRestoreReceipt} from './backups';
+import {requestBackup,listBackups,requestRestore,readDrill,readRestoreReceipt,prepareRecovery,readRecovery} from './backups';
 import {requestTrial,listTrials,readTrial,readProposal,retryTrial} from './observatory';
 import {decimal} from './application-profiles';
 import {applicationTemplates,retainedApplication,listApps,readApp,requestApp,replayApp} from './applications';
@@ -87,7 +88,7 @@ async function mcp(request: Request, env: Env, actor:accounts.Identity): Promise
   return json({ jsonrpc: '2.0', id: body.id, error: { code: -32601, message: 'Method not found' } });
 }
 
-export default {
+const handler = {
   async fetch(request: Request, env: Env): Promise<Response> {
     try {
       if(request.method==='GET'&&['/','/setup','/recover'].includes(new URL(request.url).pathname))return new Response(dashboard,{headers:{'content-type':'text/html; charset=utf-8',
@@ -100,6 +101,14 @@ export default {
       if(url.pathname==='/v1/auth/browser-logout'&&request.method==='POST'){if((await limitedBody(request,1)).length)throw new HttpError(400,'sign-out takes no payload');return await accounts.browserLogout(request,env);}
       if(url.pathname==='/v1/auth/recover'&&request.method==='POST')return await accounts.recover(request,env,await limitedBody(request,16384));
       const current=await accounts.identity(request,env);accounts.authorize(request,current);
+      const recoveryBackup=request.headers.get('x-ace-recovery-backup');
+      if(recoveryBackup!==null){
+        if(current.kind!=='operator')throw new HttpError(403,'infrastructure operator required');
+        if(request.method!=='GET')throw new HttpError(405,'recovery traffic is read only');
+        const route=/^\/v1\/stores\/([A-Za-z0-9][A-Za-z0-9_-]{0,63})(?:\/(objects|versions)\/([0-9a-f]{64})|\/(refs))?$/.exec(url.pathname);
+        if(!route)throw new HttpError(404,'recovery supports native reads only');
+        return await readRecovery(env,current,recoveryBackup,route[1]!,route[2]??route[4],route[3]);
+      }
       if(url.pathname==='/v1/spending-control'&&request.method==='GET')return await readSpending(env,current);
       if(url.pathname==='/v1/spending-control'&&request.method==='POST')return await updateSpending(env,current,await limitedBody(request,2048));
       if(url.pathname==='/v1/spending-control/pause'&&request.method==='POST')return await updateSpending(env,current,await limitedBody(request,2048),true);
@@ -117,6 +126,8 @@ export default {
       if(url.pathname==='/v1/users'&&request.method==='GET')return await accounts.users(env,current);
       if(url.pathname==='/v1/backups'&&request.method==='GET')return await listBackups(env,current);
       if(url.pathname==='/v1/backups'&&request.method==='POST'){if((await limitedBody(request,1)).length)throw new HttpError(400,'backup takes no payload');return await requestBackup(env,current);}
+      const ready=/^\/v1\/backups\/(backup-(?:[0-9]{8}|[0-9a-f-]{36}))\/ready$/.exec(url.pathname);
+      if(ready&&request.method==='POST'){if((await limitedBody(request,1)).length)throw new HttpError(400,'readiness takes no payload');return await prepareRecovery(env,current,ready[1]!);}
       const restoration=/^\/v1\/backups\/(backup-(?:[0-9]{8}|[0-9a-f-]{36}))\/restore(?:\/stores\/([A-Za-z0-9][A-Za-z0-9_-]{0,63})(?:\/(objects|versions)\/([0-9a-f]{64})|\/(refs))?)?$/.exec(url.pathname);
       if(restoration){if(request.method==='GET'&&!restoration[2])return await readRestoreReceipt(env,current,restoration[1]!);if(request.method==='POST'&&!restoration[2])return await requestRestore(env,current,restoration[1]!);if(request.method==='GET'&&restoration[2])return await readDrill(env,current,restoration[1]!,restoration[2],restoration[3]??restoration[5],restoration[4]);}
       if(url.pathname==='/v1/projects'&&request.method==='GET')return await projects.list(env,current);
@@ -219,5 +230,12 @@ export default {
         else message.retry({ delaySeconds: 60 });
       }
     }
+  }
+} satisfies ExportedHandler<Env>;
+
+export default {
+  ...handler,
+  async fetch(request:Request,env:Env):Promise<Response> {
+    return servedVersion(await handler.fetch(request,env),env);
   }
 } satisfies ExportedHandler<Env>;

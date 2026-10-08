@@ -1,6 +1,6 @@
 // Runs independently of ACE/Cloudflare. Alert delivery is opt-in configuration.
 import {parseArgs} from 'node:util';
-import {readFile,writeFile,rename,chmod} from 'node:fs/promises';
+import {readPrivateState,writePrivateState} from './lib/private-state.mjs';
 import {pathToFileURL} from 'node:url';
 import {settings,api} from './client.mjs';
 export async function observe(config,request=api){
@@ -19,7 +19,7 @@ export async function notify(snapshot,previous,webhook,request=fetch){
  if(!response.ok)throw new Error('External alert delivery failed');
  return{signature,sent_at:Date.now(),alerting:snapshot.alerts.length>0};
 }
-async function main(){const {values}=parseArgs({options:{watch:{type:'boolean',default:false},state:{type:'string',default:'.ace-monitor.json'},interval:{type:'string',default:'60'}}}),interval=Number(values.interval);if(!Number.isInteger(interval)||interval<30||interval>3600)throw new Error('Interval must be 30–3600 seconds');const config=settings();let previous;try{previous=JSON.parse(await readFile(values.state,'utf8'));}catch(error){if(error.code!=='ENOENT')throw new Error('Monitor state cannot be read');}
- do{const snapshot=await observe(config);console.log(JSON.stringify(snapshot));try{const next=await notify(snapshot,previous,process.env.ACE_ALERT_WEBHOOK_URL);if(next!==previous){const pending=values.state+'.pending';await writeFile(pending,JSON.stringify(next),{mode:0o600});await chmod(pending,0o600);await rename(pending,values.state);previous=next;}}catch{console.error('External alert delivery failed; retry on next observation.');process.exitCode=1;}if(!values.watch){if(snapshot.alerts.length)process.exitCode=1;break;}await new Promise(resolve=>setTimeout(resolve,interval*1000));}while(true);
+async function main(){const {values}=parseArgs({options:{watch:{type:'boolean',default:false},state:{type:'string',default:'.ace-monitor.json'},interval:{type:'string',default:'60'}}}),interval=Number(values.interval);if(!Number.isInteger(interval)||interval<30||interval>3600)throw new Error('Interval must be 30–3600 seconds');const config=settings();let previous;try{previous=await readPrivateState(values.state);}catch(error){if(error.code!=='ENOENT')throw new Error('Monitor state cannot be read');}
+ do{const snapshot=await observe(config);console.log(JSON.stringify(snapshot));try{const next=await notify(snapshot,previous,process.env.ACE_ALERT_WEBHOOK_URL);if(next!==previous){await writePrivateState(values.state,next);previous=next;}}catch{console.error('External alert delivery failed; retry on next observation.');process.exitCode=1;}if(!values.watch){if(snapshot.alerts.length)process.exitCode=1;break;}await new Promise(resolve=>setTimeout(resolve,interval*1000));}while(true);
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href)main().catch(()=>{console.error('Monitor configuration failed.');process.exitCode=1;});

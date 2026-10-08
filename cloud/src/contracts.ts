@@ -34,6 +34,9 @@ export type ExperimentState = {
   deadline: number; tasks: Task[]; finalizer: Task; error?: string; reportKey?: string;
 };
 export type Env = {
+  WORKER_VERSION?: {id:string};
+  RELEASE_SOURCE_VERSION?:string;
+  RELEASE_SOURCE_HASH?:string;
   SPENDING_CONTROL_MODE?: 'enforce'|'local-disabled';
   AI?: { run(model: string, input: Record<string, unknown>): Promise<unknown> };
   API_TOKEN: string;

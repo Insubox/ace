@@ -14,9 +14,9 @@ async function fixture(suite='original'){
   const files:Record<string,string>={};for(const p of ['self-host/native-contract.mjs','self-host/objectives.json','scripts/lib/ace-project.mjs','scripts/ace-project.mjs','Cargo.lock','package-lock.json','crates/ace-cli/src/store.rs'])files[p]=await object(encode(p+' '+suite));
   const root=await retain({schema_version:1,kind:{kind:'source'},parents:[],files,message:'baseline'});
   let attempt=0;
-  async function result(status='passed',change:(r:any)=>void=()=>{},changedFiles:Record<string,string>={}){
+  async function result(status='passed',change:(r:any)=>void=()=>{},changedFiles:Record<string,string>={},unchanged=false){
     const sourceFiles={...files};for(const [path,value]of Object.entries(changedFiles))sourceFiles[path]=await object(encode(value));
-    const source=await retain({schema_version:1,kind:{kind:'source'},parents:[root],files:sourceFiles,message:'proposal '+ ++attempt});
+    const source=unchanged?root:await retain({schema_version:1,kind:{kind:'source'},parents:[root],files:sourceFiles,message:'proposal '+ ++attempt});
     const evidence={...sourceFiles},observations=[];
     for(const id of checks){const stdout_hash=await object(encode([id,attempt])),stderr_hash=await object(encode(''));evidence[`project/${id}.stdout.log`]=stdout_hash;evidence[`project/${id}.stderr.log`]=stderr_hash;observations.push({id,exit_code:status==='failed'&&id==='native-contract'?1:0,signal:null,error:null,duration_ms:1,stdout_hash,stderr_hash});}
     const report={schema_version:1,profile:'ace-self-v1',baseline_version:root,source_version:source,source_hash:await nativeHash(sourceFiles),harness_hash:await nativeHash(Object.fromEntries(Object.entries(files).filter(([p])=>p.startsWith('self-host/')||p.startsWith('scripts/')))),image_id:'sha256:'+'a'.repeat(64),prepared_inputs:{rustc_sha256:'a'.repeat(64),cargo_sha256:'b'.repeat(64),node_sha256:'c'.repeat(64),installed_node_lock_sha256:'d'.repeat(64),cargo_lock_sha256:files['Cargo.lock'],package_lock_sha256:files['package-lock.json']},status,observations,infrastructure_error:status==='infrastructure_failed'?'container_unavailable':null,qualification:'local_independent_checks; server_verification_not_performed',promotion:'requires_review'};
@@ -34,6 +34,12 @@ it('rejects forged source, dependency locks, harness and log linkage',async()=>{
 it('refuses corrupted objects and unpublished baseline versions',async()=>{const f=await fixture(),id=await f.result(),file=f.versions.get(id)!.version.files['project/report.json']!;f.objects.set(file,encode('corrupted'));await expect(inspectProjectReport(id,new Set(f.entries.map(e=>e.version)),f.reader)).rejects.toThrow('invalid object');await expect(inspectProjectReport('0'.repeat(64),new Set(f.entries.map(e=>e.version)),f.reader)).rejects.toThrow('not found');});
 it('bounds results and scans while offering an immutable sequence cursor',async()=>{const f=await fixture();for(let i=0;i<18;i++)await f.result();const latest=f.entries.at(-1)!.version,result=await queryProjectLearning(f.entries,latest,2,undefined,f.reader);expect(result.scanned).toBe(32);expect(result.observations).toHaveLength(2);expect(result.truncated).toBe(true);expect(result.next_before).toBeGreaterThan(1);const older=await queryProjectLearning(f.entries,latest,32,result.next_before!,f.reader);expect(older.observations.every(o=>!result.observations.some(n=>n.version===o.version))).toBe(true);});
 it('requires authentication before exposing a private project learning query',async()=>{expect((await SELF.fetch('https://ace/v1/projects/private/learning?baseline='+'a'.repeat(64))).status).toBe(401);});
+
+it('v2 can re-evaluate an unchanged merged version without rewriting its identity and keeps v1 ancestry rules',async()=>{
+ const f=await fixture(),v2=await f.result('passed',r=>{r.profile='ace-self-v2';},{},true);
+ const report=await inspectProjectReport(v2,new Set(f.entries.map(e=>e.version)),f.reader);expect(report.report.source_version).toBe(report.report.baseline_version);
+ const v1=await f.result('passed',()=>{},{},true);await expect(inspectProjectReport(v1,new Set(f.entries.map(e=>e.version)),f.reader)).rejects.toThrow('source identity');
+});
 
 it('rejects changing frozen source or inline tests even with resealed reports',async()=>{for(const edits of [{'Cargo.lock':'different lock'},{'crates/ace-cli/src/store.rs':'code #[cfg(test)] removed assertions'}] as Record<string,string>[]){const f=await fixture(),id=await f.result('passed',()=>{},edits);await expect(inspectProjectReport(id,new Set(f.entries.map(e=>e.version)),f.reader)).rejects.toThrow('protected');}});
 

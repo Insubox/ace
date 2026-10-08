@@ -4,6 +4,11 @@ ACE is an agent-first software evolution platform: experiments produce candidate
 evaluation produces immutable evidence, and deterministic policy qualifies elites.
 Knowledge survives discarded code. The official project domain is **ace.org.ai**.
 
+The complete-task repair campaigns, measured retrieval comparison and gated
+release/recovery procedures are described in
+[stable delivery acceptance](docs/stability-acceptance.md). They include
+reproducible local checks that do not use GitHub Actions or paid cloud execution.
+
 ## Download, run, and test
 
 The local CLI now generates candidates and runs complete GCD experiments without

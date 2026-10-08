@@ -92,7 +92,7 @@ With `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN`, `ACE_API_URL` and
 `ACE_API_TOKEN` configured privately, deploy the uploaded version:
 
 ```sh
-node cloud/scripts/rollout.mjs --worker ace-control-plane \
+node cloud/scripts/rollout.mjs --plan /private/approved-release.json --worker ace-control-plane \
   --before <current-version-uuid> --candidate <uploaded-version-uuid> \
   --output /private/ace-rollout.json --drill
 ```
@@ -100,7 +100,12 @@ node cloud/scripts/rollout.mjs --worker ace-control-plane \
 The command checks the expected stable deployment, assigns 10%, 50% and 100%
 traffic, verifies provider deployment state, and runs Observatory/CSP and
 operator-authenticated operations smoke checks after each step. Version override
-headers request the version under test. `--drill` restores the stable version
+headers request the version under test, and the actual provider version in the
+response must match. Prepare the private approved release plan with
+`cloud/scripts/release-plan.mjs`; its requirements are described in
+[`stability-acceptance.md`](stability-acceptance.md). Both versions need the
+`WORKER_VERSION` metadata binding. The plan is revalidated before candidate
+traffic changes. `--drill` restores the stable version
 after the 50% step, checks it, then completes the candidate rollout. A failed check
 restores the stable version when the deployment still belongs to this operation.
 A competing deployment stops the operation; it must be reconciled before retry.
@@ -135,3 +140,14 @@ requests also intermittently returned 401, while concurrent operations reads and
 project requests succeeded. The journal concurrency check remains failed until
 the authentication/transport discrepancy is diagnosed. No authentication checks
 were weakened and no automatic retry of an authorization failure was added.
+
+A subsequent probe with two actual account sessions accepted all 40 concurrent
+reads, one of 20 journal publications, all 20 identical retries, and denied
+reader writes with HTTP 403. The journal and source hashes matched. This
+establishes bounded account-session consistency; the earlier intermittent
+environment-injected operator credential discrepancy was not independently
+identified and remains recorded separately.
+
+The original gradual-deployment smoke requests did not verify served-version
+metadata. The current rollout command rejects absent or mismatched metadata;
+earlier provider traffic assignments remain evidence of those assignments only.
