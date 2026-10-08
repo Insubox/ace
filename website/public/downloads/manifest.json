@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "version": "0.4.0",
+  "source_commit": "0b913fbaf8c41c26aa7465bd80525f18b1142528",
+  "source_access": "private_repository",
+  "scope": "Verified Linux offline technical preview; native Windows and macOS execution pending",
+  "platforms": [
+    {
+      "target": "x86_64-unknown-linux-musl",
+      "status": "verified",
+      "archive": "ace-0.4.0-x86_64-unknown-linux-musl.tar.gz",
+      "sha256": "10171fff6d6ce530b655e52bee3dec21da34cd4a0b6e68ee65755531f23f479e",
+      "rust_tests": {
+        "passed": 128,
+        "ignored": 0
+      },
+      "first_use": {
+        "demo_programs": 13,
+        "qualified": 10,
+        "diagnostic_failures": 3,
+        "generations": 3,
+        "history_verified": true,
+        "mcp_tools": 30,
+        "unsigned_cells_verified": [
+          "MaxU32",
+          "MinU32"
+        ],
+        "mcp_experiment_verified": true,
+        "agent_proposals_verified": true,
+        "offline_inspector_verified": true,
+        "agent_rounds": 2,
+        "native_memory_verified": true,
+        "native_versions": 4,
+        "native_clone_verified": true,
+        "generator_fault_verified": true,
+        "git_snapshots": 3,
+        "third_party_notices_verified": true,
+        "git_clone_verified": true,
+        "git_provider_credentials": "absent",
+        "external_tool_path": "empty",
+        "provider_credentials": "absent"
+      }
+    },
+    {
+      "target": "aarch64-apple-darwin",
+      "status": "native_execution_pending"
+    },
+    {
+      "target": "x86_64-apple-darwin",
+      "status": "native_execution_pending"
+    },
+    {
+      "target": "x86_64-pc-windows-msvc",
+      "status": "native_execution_pending"
+    }
+  ]
+}

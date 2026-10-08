@@ -12,3 +12,5 @@ __pycache__/
 .dev.vars
 .env
 /.ace-monitor.json
+/website/public/downloads/*.tar.gz
+/website/public/downloads/*.zip

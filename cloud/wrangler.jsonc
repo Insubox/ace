@@ -21,7 +21,7 @@
   "containers": [{ "class_name": "EvaluationSandbox", "scheduling_policy": "durable_object",
     "images": { "ace": { "dockerfile": "./Dockerfile", "build_context": ".." } }
   }],
-  "limits":{"subrequests":10000},
+  "limits":{"subrequests":100000},
   "triggers":{"crons":["0 8 * * *"]},
   "workflows": [{"binding":"APPLICATION_CAMPAIGNS","name":"ace-application-campaigns","class_name":"ApplicationCampaignWorkflow"},{"binding":"APPLICATION_RUNS","name":"ace-applications","class_name":"ApplicationWorkflow"},{"binding":"OBSERVATORY_TRIALS","name":"ace-observatory","class_name":"ObservatoryWorkflow"},{"binding":"BACKUP_WORKFLOW","name":"ace-backups","class_name":"BackupWorkflow"},{"binding":"NATIVE_VERIFICATIONS","name":"ace-native-verifications","class_name":"NativeVerificationWorkflow"}, { "binding": "EXPERIMENTS", "name": "ace-experiments", "class_name": "ExperimentWorkflow" }],
   "d1_databases": [{"binding":"RESTORE_DB","database_name":"ace-restore-drill","database_id":"11111111-1111-1111-1111-111111111111"},{ "binding": "DB", "database_name": "ace-metadata",

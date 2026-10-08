@@ -3,6 +3,18 @@
 The remaining objectives are evaluated separately. This record does not turn
 a partial result into a production qualification.
 
+The [owner's updated scope](scope-2026-10-08.md) removes the external continuous
+monitor and VS Code integration from this delivery. Their absence is recorded
+as an exclusion rather than a passed operational or editor check.
+
+The updated 2,784-object backup has now passed isolated restoration, native
+history verification, a replay from restored source and real read-only traffic
+switching. See [the recovery record](backups.md#updated-recovery-validation--2026-10-08).
+The [native distribution flow](native-distribution.md) passed on Linux, including
+a public website download and first-use check without credentials.
+Windows and both macOS architectures still require native execution; a
+complete four-platform stable distribution is not yet claimed.
+
 ## Complete task campaigns and measured retrieval
 
 `scripts/application-task.mjs` accepts 1–4 declared proposals for complete Python

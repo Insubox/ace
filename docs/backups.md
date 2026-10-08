@@ -18,8 +18,10 @@ Production references remain untouched during drills. Receipt field
 status records are still updated by the control plane. A sealed backup is published
 only after all objects have been copied; a separate restoration receipt is published
 only after the isolated reconstruction passes. Immutable retries cannot replace
-bytes. The Worker config admits 10,000 subrequests; workflows explicitly yield after
-every 100 objects to release request budgets. Each Workflow step has bounded chunks, and snapshots stop rather than
+bytes. The original Worker config admitted 10,000 subrequests. The deployed
+operator configuration now permits 100,000 for the approved code after a
+2,784-object restoration exhausted the earlier limit. Durable sleeps do not
+prove that the provider request budget has reset. Each Workflow step has bounded chunks, and snapshots stop rather than
 silently truncate when limits are exceeded.
 
 ## Deployment bindings
@@ -66,6 +68,26 @@ There is deliberately no endpoint that overwrites production from a backup.
 
 ## Recovery scope and retention
 
+If the backup row says `running` while progress has stopped, inspect the actual
+Cloudflare Workflow state. An exhausted request budget can also prevent the
+Workflow from recording its final failure in D1. Never treat that stale row as
+proof that recovery is progressing.
+
+For an errored object-copy step caused specifically by the provider's subrequest
+limit, inspect and then resume the failed chunk:
+
+```sh
+node cloud/scripts/retry-restore.mjs --id backup-...
+node cloud/scripts/retry-restore.mjs --id backup-... --run
+```
+
+This operator tool uses Cloudflare's documented `restart` API with `from`.
+Completed steps retain their cached results; the failed chunk and later steps
+run again. It requires a sealed matching backup and an errored restore Workflow,
+rejects unrelated errors such as corrupted hashes, and never writes live
+source. It is a recovery operation, not an automatic failover or a guarantee
+that the maximum supported inventory fits every provider resource limit.
+
 D1 metadata is read in one transaction; each native store pins its authoritative
 journal separately. Capture records its interval and checks immutable referenced
 objects. This is not a globally atomic timestamp across D1, DOs and R2. Unreferenced
@@ -106,3 +128,31 @@ native stores and the retained branch journal. The isolated Observatory store
 downloaded with all four evaluated versions and 92 verified native objects.
 Independent replay from that recovered history reproduced the observations.
 Production source overwrites and restored/exported sessions were both zero.
+
+## Updated recovery validation — 2026-10-08
+
+Snapshot `backup-4acb9159-5c3f-4c8d-ad42-4637dfa11225` retained 2,784 objects
+and 14,410,126 bytes. Its first restore Workflow exhausted the 10,000-subrequest
+budget at object chunk 2480 and could not update the stale D1 `running` row.
+The operator resumed that failed chunk using the documented provider API.
+The restore then sealed successfully: 17 metadata tables, 14 native stores,
+20 branches, nine experiment authorities, zero restored sessions and zero live
+source replacements. The approved application code is unchanged; its operator
+deployment now has a verified 100,000-subrequest configuration.
+
+The read-only recovery selector served the approved main version
+`a7634ae9cfea52e1610bbd912d0fa889f56740d21ab8037a34bb086582184b2d`.
+Source bytes matched their identity, mutations returned HTTP 405 and removing
+the selector returned traffic to the unchanged live references. The real ACE
+engine verified all 65 versions and 646 objects of the restored self-development
+history, including 54 source-linked evidence documents and nine passing/failing
+project reports. That history contains source versions, so executable replay
+was checked separately: `native-platform-v030` restored six versions and 143
+objects, and a retained evaluation reproduced independently from restored code.
+
+One bulk download stopped on HTTP 401; subsequent successful authenticated
+control checks and a new pinned-version session completed verification using
+hash-checked cached bytes. The separate authentication diagnosis remains open.
+This is a successful controlled read-only recovery drill with operator
+intervention, not evidence of automatic write failover or provider-wide outage
+recovery.

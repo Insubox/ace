@@ -9,7 +9,8 @@ runtime compiler, remote font request or application credentials.
 The content describes the verified Linux 0.4.0 testing candidate from `0b913fb`,
 complete-task repairs and the explicitly controlled learning comparison. It
 links to the real Observatory, repository, candidate release and a public local
-getting-started guide. Downloads still require repository access. Unverified
+getting-started guide. The Linux standalone archive and checksum are served
+publicly under `/downloads/`; the source repository remains private. Unverified
 platform binaries, general model efficacy and completed production operations
 are not presented as available features.
 
@@ -18,9 +19,16 @@ ACE control plane:
 
 ```sh
 python3 -m http.server 8790 --bind 127.0.0.1 --directory website/public
+python3 website/check-downloads.py
 npx wrangler deploy --config website/wrangler.jsonc
 ```
 
 Cloudflare serves static assets; this deployment has no evaluator, AI, container,
 database or session bindings. The HTML and deployment configuration are tracked
 so future changes can be reviewed and reproduced. Do not place secrets here.
+
+Archives are generated files excluded from Git. Before deployment, populate
+`public/downloads/` with the verified Linux archive and matching checksum from
+the native release output. Check their digest against the tracked manifest and
+repeat first-use verification after downloading from the live website. A source
+clone alone does not include those archives; do not deploy broken download links.

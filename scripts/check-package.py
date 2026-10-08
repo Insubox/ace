@@ -23,20 +23,25 @@ def main():
     prefix = args.archive.name.removesuffix(".zip") if windows else args.archive.name.removesuffix(".tar.gz")
     executable_name = "ace.exe" if windows else "ace"
     expected = {f"{prefix}/{name}" for name in [executable_name, "GETTING_STARTED.md", "BUILD.json"]}
+    modern = expected | {f"{prefix}/THIRD_PARTY_NOTICES.txt"}
     # Read only exact named regular files; never extract an arbitrary archive tree.
     if windows:
         with zipfile.ZipFile(args.archive) as archive:
             names = archive.namelist()
-            if len(names) != 3 or set(names) != expected:
+            if len(names) != len(set(names)) or set(names) not in (expected, modern):
                 raise ValueError("unexpected release package contents")
             documents = {Path(name).name: archive.read(name) for name in names}
     else:
         with tarfile.open(args.archive, "r:gz") as archive:
             files = [member for member in archive.getmembers() if not member.isdir()]
-            if len(files) != 3 or {member.name for member in files} != expected or any(not m.isfile() for m in files):
+            if len(files) != len({member.name for member in files}) or {member.name for member in files} not in (expected, modern) or any(not m.isfile() for m in files):
                 raise ValueError("unexpected release package contents")
             documents = {Path(member.name).name: archive.extractfile(member).read() for member in files}
     metadata = json.loads(documents["BUILD.json"])
+    notice = documents.get("THIRD_PARTY_NOTICES.txt")
+    if notice is not None or "third_party_notices_sha256" in metadata:
+        if notice is None or hashlib.sha256(notice).hexdigest() != metadata.get("third_party_notices_sha256"):
+            raise ValueError("third-party notices checksum does not match build metadata")
     if hashlib.sha256(documents[executable_name]).hexdigest() != metadata["binary_sha256"]:
         raise ValueError("executable checksum does not match build metadata")
     with tempfile.TemporaryDirectory(prefix="ace-downloaded-") as directory:
@@ -190,6 +195,7 @@ def main():
                       "mcp_tools": 30, "unsigned_cells_verified": ["MaxU32", "MinU32"], "mcp_experiment_verified": True,
                       "agent_proposals_verified": True, "offline_inspector_verified": True, "agent_rounds": 2, "native_memory_verified": True, "native_versions": 4, "native_clone_verified": True,
                       "generator_fault_verified": True, "git_snapshots": len(git_history["snapshots"]),
+                      "third_party_notices_verified": notice is not None,
                       "git_clone_verified": True, "git_provider_credentials": "absent",
                       "external_tool_path": "empty", "provider_credentials": "absent"}))
 

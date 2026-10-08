@@ -17,11 +17,14 @@ Git is needed only for the optional compatibility archive/export commands.
 
 ## Download an executable
 
-1. Open [GitHub releases](https://github.com/Insubox/ace/releases).
+1. Open the [public getting-started page](https://ace.org.ai/getting-started.html)
+   for the Linux standalone download. No GitHub account is required for that
+   download. The alternative [GitHub releases](https://github.com/Insubox/ace/releases)
+   require access while the source repository remains private.
 2. For Linux, Intel/AMD 64-bit, open the
-   [verified 0.4.0 preview](https://github.com/Insubox/ace/releases/tag/ace-0.4.0-linux-preview-20261008)
+   [verified 0.4.0 candidate](https://github.com/Insubox/ace/releases/tag/ace-0.4.0-linux-candidate-20261008)
    and expand **Assets**. This preview contains only the Linux package, built
-   from commit `468a3b1`. Private repositories require repository access.
+   from commit `0b913fb`. Private repositories require repository access.
    For current macOS/Windows source, use the source instructions below.
 3. Download the package for your computer and its matching `.sha256` file:
 
@@ -80,7 +83,8 @@ Actions is currently account-limited, so ordinary development performs local
 checks and does not launch Actions. Windows/macOS execution for the current
 source remains unverified. The published Linux preview passed checksum and
 first-use checks after downloading it from GitHub; this does not establish a
-completed four-platform release. Use the source instructions below
+completed four-platform release. The [native distribution guide](native-distribution.md)
+provides local build and verification commands without Actions. Use the source instructions below
 when a suitable published asset is unavailable.
 
 ## Run successive generations
