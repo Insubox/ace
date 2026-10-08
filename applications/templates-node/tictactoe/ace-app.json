@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "profile": "tictactoe",
+  "runtime": "nodejs-decimal-v1",
+  "entrypoint": "src/main.cjs",
+  "dependencies": "dependencies.lock.json"
+}

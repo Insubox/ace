@@ -1,4 +1,6 @@
+import {readState,writeState} from './paged-state';
 import {reviewOperation} from './review-state';
+import {issueOperation} from './issues';
 import { DurableObject } from 'cloudflare:workers';
 import { type Env, type ExperimentState, type Task, HttpError, json } from './contracts';
 import { entrySchema,refSchema,type NativeRef, type NativeEntry } from './native-store';
@@ -10,8 +12,12 @@ export class ExperimentCoordinator extends DurableObject<Env> {
       const body = await request.json() as Record<string, unknown>;
       const result = await this.ctx.storage.transaction(async tx => {
         if(op.startsWith('review-'))return await reviewOperation(tx,op,body);
+        if(op.startsWith('issue-'))return await issueOperation(tx,op,body);
+        if(op==='campaign-register'){const ids=new Set([...(await tx.get<string[]>('campaign-ids')??[]),...(body.known as string[])]),id=String(body.id);if(ids.has(id))return{allowed:true};if(ids.size>=32)return{allowed:false};ids.add(id);await tx.put('campaign-ids',[...ids]);return{allowed:true};}
+        if(op==='application-replay-register'){const ids=await tx.get<string[]>('application-replays')??[],id=String(body.id);if(ids.includes(id))return{allowed:true};if(ids.length>=2)return{allowed:false};await tx.put('application-replays',[...ids,id]);return{allowed:true};}
         if(op==='operational-budgets')return{
           trials_used:await tx.get<number>('observatory-registered')??0,trials_limit:8,
+          application_replays_used:(await tx.get<string[]>('application-replays')??[]).length,application_replays_limit:2,
           containers_used:await tx.get<number>('observatory-containers')??0,containers_limit:16
         };
         if(op==='setup-issue'){
@@ -37,11 +43,11 @@ export class ExperimentCoordinator extends DurableObject<Env> {
           const state=body.state as ExperimentState;const existing=await tx.get<ExperimentState>('state');if(existing&&JSON.stringify(existing)!==JSON.stringify(state))throw new HttpError(409,'restored state differs');await tx.put('state',state);return{restored:true};
         }
         if(op==='native-restore'){
-          const entry=entrySchema.parse(body.entry),parents=body.parents as string[],entries=await tx.get<NativeEntry[]>('native-entries')??[],publishers=await tx.get<Record<string,unknown>>('native-publishers')??{};
+          const entry=entrySchema.parse(body.entry),parents=body.parents as string[],entries=await readState<NativeEntry[]>(tx,'native-entries')??[],publishers=await readState<Record<string,unknown>>(tx,'native-publishers')??{};
           const existing=entries[entry.sequence-1];if(existing){if(existing.content_hash!==entry.content_hash)throw new HttpError(409,'restored journal differs');return{restored:true};}
           if(entry.sequence!==entries.length+1||entry.previous!==(entries.at(-1)?.content_hash??null)||parents.some(p=>!entries.some(e=>e.version===p)))throw new HttpError(409,'restored ancestry differs');
           if(body.publisher)publishers[entry.version]=body.publisher;
-          await tx.put('native-publishers',publishers);await tx.put('native-entries',[...entries,entry]);return{restored:true};
+          await writeState(tx,'native-publishers',publishers);await writeState(tx,'native-entries',[...entries,entry]);return{restored:true};
         }
         if(op==='native-verify-budget'){
           const used=await tx.get<number>('native-verifications-used')??0;
@@ -52,28 +58,28 @@ export class ExperimentCoordinator extends DurableObject<Env> {
           if(!budget||budget.until<=Date.now())budget={count:0,until:Date.now()+600000};
           if(budget.count>=20)return{allowed:false};budget.count++;await tx.put('auth-budget',budget);return{allowed:true};
         }
-        if(op==='native-refs'){const events=await tx.get<NativeRef[]>('native-ref-events')??[],heads=await tx.get<Record<string,string>>('native-ref-heads')??{};return{schema_version:1,events,heads,tip:events.at(-1)?.content_hash??null};}
+        if(op==='native-refs'){const events=await readState<NativeRef[]>(tx,'native-ref-events')??[],heads=await readState<Record<string,string>>(tx,'native-ref-heads')??{};return{schema_version:1,events,heads,tip:events.at(-1)?.content_hash??null};}
         if(op==='native-ref-append'){
-          const ref=refSchema.parse(body.ref),events=await tx.get<NativeRef[]>('native-ref-events')??[],heads=await tx.get<Record<string,string>>('native-ref-heads')??{},entries=await tx.get<NativeEntry[]>('native-entries')??[];
+          const ref=refSchema.parse(body.ref),events=await readState<NativeRef[]>(tx,'native-ref-events')??[],heads=await readState<Record<string,string>>(tx,'native-ref-heads')??{},entries=await readState<NativeEntry[]>(tx,'native-entries')??[];
           const existing=events[ref.sequence-1];if(existing){if(existing.content_hash!==ref.content_hash)throw new HttpError(409,'native reference history diverges');return{ref:existing,retained:true};}
-          if(events.length>=1024||ref.sequence!==events.length+1||ref.previous!==(events.at(-1)?.content_hash??null)||ref.expected!==(Object.hasOwn(heads,ref.branch)?heads[ref.branch]:null)||!entries.some(e=>e.version===ref.target))throw new HttpError(409,'branch expectation or reference history changed');
-          heads[ref.branch]=ref.target;await tx.put('native-ref-events',[...events,ref]);await tx.put('native-ref-heads',heads);return{ref,retained:true};
+          if(events.length>=4096||ref.sequence!==events.length+1||ref.previous!==(events.at(-1)?.content_hash??null)||ref.expected!==(Object.hasOwn(heads,ref.branch)?heads[ref.branch]:null)||!entries.some(e=>e.version===ref.target))throw new HttpError(409,'branch expectation or reference history changed');
+          heads[ref.branch]=ref.target;await writeState(tx,'native-ref-events',[...events,ref]);await writeState(tx,'native-ref-heads',heads);return{ref,retained:true};
         }
         if(op==='native-log'||op==='native-backup-authority'){
-          const entries=await tx.get<NativeEntry[]>('native-entries')??[];
-          const publishers=await tx.get<Record<string,{username:string;published_at:number}>>('native-publishers')??{};
-          return {schema_version:1,backend:'ace-native-v1',entries,publishers,tip:entries.at(-1)?.content_hash??null,qualification:'caller_asserted_requires_ACE_verification',...(op==='native-backup-authority'?{reviews:await tx.get('native-reviews')??[],refs:{schema_version:1,events:await tx.get<NativeRef[]>('native-ref-events')??[],heads:await tx.get<Record<string,string>>('native-ref-heads')??{},tip:(await tx.get<NativeRef[]>('native-ref-events'))?.at(-1)?.content_hash??null}}:{})};
+          const entries=await readState<NativeEntry[]>(tx,'native-entries')??[];
+          const publishers=await readState<Record<string,{username:string;published_at:number}>>(tx,'native-publishers')??{};
+          return {schema_version:1,backend:'ace-native-v1',entries,publishers,tip:entries.at(-1)?.content_hash??null,qualification:'caller_asserted_requires_ACE_verification',...(op==='native-backup-authority'?{issues:await readState<any>(tx,'native-issues')??[],reviews:await readState<any>(tx,'native-reviews')??[],refs:{schema_version:1,events:await readState<NativeRef[]>(tx,'native-ref-events')??[],heads:await readState<Record<string,string>>(tx,'native-ref-heads')??{},tip:(await readState<NativeRef[]>(tx,'native-ref-events'))?.at(-1)?.content_hash??null}}:{})};
         }
         if(op==='native-append'){
           const entry=entrySchema.parse(body.entry),parents=body.parents as string[];
-          const entries=await tx.get<NativeEntry[]>('native-entries')??[];
+          const entries=await readState<NativeEntry[]>(tx,'native-entries')??[];
           const existing=entries[entry.sequence-1];
           if(existing){if(existing.content_hash!==entry.content_hash)throw new HttpError(409,'native remote history diverges; choose a fresh store name');return {entry:existing,retained:true};}
-          if(entries.length>=256||entry.sequence!==entries.length+1||entry.previous!==(entries.at(-1)?.content_hash??null)
+          if(entries.length>=1024||entry.sequence!==entries.length+1||entry.previous!==(entries.at(-1)?.content_hash??null)
             ||entries.some(e=>e.version===entry.version)||!Array.isArray(parents)||parents.some(p=>!entries.some(e=>e.version===p)))throw new HttpError(409,'native journal sequence or ancestry does not extend the current history');
-          const publishers=await tx.get<Record<string,{username:string;published_at:number}>>('native-publishers')??{};
+          const publishers=await readState<Record<string,{username:string;published_at:number}>>(tx,'native-publishers')??{};
           publishers[entry.version]={username:String(body.publisher).slice(0,64),published_at:Date.now()};
-          await tx.put('native-publishers',publishers);await tx.put('native-entries',[...entries,entry]);return {entry,retained:true};
+          await writeState(tx,'native-publishers',publishers);await writeState(tx,'native-entries',[...entries,entry]);return {entry,retained:true};
         }
         // Separate daily DO names hold advisory inference reservations, never
         // candidate evaluation state. Each actual provider attempt spends a slot.

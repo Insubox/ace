@@ -1,0 +1,11 @@
+{
+  "name": "ace-example",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node src/main.cjs"
+  },
+  "dependencies": {
+    "decimal.js": "10.6.0"
+  }
+}

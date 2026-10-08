@@ -11,6 +11,17 @@ type User={username:string;role:z.infer<typeof role>;salt:string;password_hash:s
 export type Identity={username:string;role:z.infer<typeof role>;kind:'operator'|'account'};
 const random=(n:number)=>[...crypto.getRandomValues(new Uint8Array(n))].map(b=>b.toString(16).padStart(2,'0')).join('');
 const equal=(a:string,b:string)=>{let different=a.length^b.length;for(let i=0;i<Math.max(a.length,b.length);i++)different|=(a.charCodeAt(i)||0)^(b.charCodeAt(i)||0);return different===0;};
+const sessionToken=/^ace_session_[0-9a-f]{64}$/;
+function cookieName(request:Request){return new URL(request.url).protocol==='https:'?'__Host-ace_session':'ace_session_local';}
+function cookieToken(request:Request){
+ const name=cookieName(request),values=(request.headers.get('cookie')??'').split(';').map(v=>v.trim()).filter(v=>v.startsWith(name+'='));
+ if(values.length>1)throw new HttpError(401,'ambiguous session cookie');const value=values[0]?.slice(name.length+1);return value&&sessionToken.test(value)?value:null;
+}
+export function browserOrigin(request:Request){
+ const url=new URL(request.url);if(request.headers.get('origin')!==url.origin)throw new HttpError(403,'same-origin browser request required');
+ if(url.protocol!=='https:'&&!['localhost','127.0.0.1','[::1]'].includes(url.hostname))throw new HttpError(400,'browser sessions require HTTPS');
+}
+function sessionCookie(request:Request,token:string,maxAge:number){return`${cookieName(request)}=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${maxAge}${new URL(request.url).protocol==='https:'?'; Secure':''}`;}
 async function derive(value:string,salt:string){
   const key=await crypto.subtle.importKey('raw',bytes(value),{name:'PBKDF2'},false,['deriveBits']);
   const buffer=await crypto.subtle.deriveBits({name:'PBKDF2',salt:bytes(salt),iterations:100000,hash:'SHA-256'},key,256);
@@ -18,7 +29,7 @@ async function derive(value:string,salt:string){
 }
 export async function identity(request:Request,env:Env):Promise<Identity>{
   if(!env.API_TOKEN||env.API_TOKEN.length<32)throw new HttpError(503,'API authentication is not configured');
-  const provided=request.headers.get('authorization')??'';
+  const header=request.headers.get('authorization'),cookie=header?null:cookieToken(request),provided=header??(cookie?'Bearer '+cookie:'');
   const [actual,expected]=await Promise.all([sha256(bytes(provided)),sha256(bytes(`Bearer ${env.API_TOKEN}`))]);
   if(equal(actual,expected))return{username:'operator',role:'admin',kind:'operator'};
   if(!/^Bearer ace_session_[0-9a-f]{64}$/.test(provided))throw new HttpError(401,'unauthorized');
@@ -28,8 +39,9 @@ export async function identity(request:Request,env:Env):Promise<Identity>{
   if(!account)throw new HttpError(401,'unauthorized');return{...account,kind:'account'};
 }
 export function authorize(request:Request,current:Identity){
+  if(!request.headers.get('authorization')&&!['GET','HEAD'].includes(request.method))browserOrigin(request);
   const path=new URL(request.url).pathname;
-  if(current.role==='reader'&&!['GET','HEAD'].includes(request.method)&&path!=='/mcp'&&path!=='/v1/auth/logout')throw new HttpError(403,'read-only workspace account');
+  if(current.role==='reader'&&!['GET','HEAD'].includes(request.method)&&path!=='/mcp'&&path!=='/v1/auth/logout'&&!/^\/v1\/projects\/[A-Za-z0-9][A-Za-z0-9_-]{0,63}\/notifications\/read$/.test(path))throw new HttpError(403,'read-only workspace account');
 }
 export async function createUser(env:Env,current:Identity,input:Uint8Array){
   if(current.role!=='admin')throw new HttpError(403,'administrator account required');
@@ -58,8 +70,17 @@ export async function login(request:Request,env:Env,input:Uint8Array){
   return json({token,expires_at:expires,username:user.username,role:user.role});
 }
 export async function logout(request:Request,env:Env,current:Identity){
-  if(current.kind==='account'){const token=request.headers.get('authorization')!.slice(7);await env.DB.prepare('DELETE FROM native_sessions WHERE token_hash = ?').bind(await sha256(bytes(token))).run();}
+  if(current.kind==='account'){const token=request.headers.get('authorization')?.slice(7)??cookieToken(request)!;await env.DB.prepare('DELETE FROM native_sessions WHERE token_hash = ?').bind(await sha256(bytes(token))).run();}
   return json({signed_out:true});
+}
+export async function browserLogin(request:Request,env:Env,input:Uint8Array){
+ browserOrigin(request);const response=await login(request,env,input),session=await response.json() as {token:string;expires_at:number;username:string;role:Identity['role']};
+ const {token,...account}=session;return new Response(JSON.stringify(account),{headers:{'content-type':'application/json','cache-control':'no-store','set-cookie':sessionCookie(request,token,12*3600)}});
+}
+export async function browserLogout(request:Request,env:Env){
+ browserOrigin(request);const cookie=cookieToken(request),header=request.headers.get('authorization')?.slice(7),tokens=new Set([cookie,header].filter((v):v is string=>!!v&&sessionToken.test(v)));
+ for(const token of tokens)await env.DB.prepare('DELETE FROM native_sessions WHERE token_hash=?').bind(await sha256(bytes(token))).run();
+ return new Response(JSON.stringify({signed_out:true}),{headers:{'content-type':'application/json','cache-control':'no-store','set-cookie':sessionCookie(request,'',0)}});
 }
 export async function users(env:Env,current:Identity){
   if(current.role!=='admin')throw new HttpError(403,'administrator account required');

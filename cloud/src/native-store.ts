@@ -19,7 +19,7 @@ export const versionSchema=z.strictObject({version:z.strictObject({schema_versio
   if(names.length<1||names.length>4096||folded.size!==names.length||new Set(parents).size!==parents.length||[...parents].sort().some((p,i)=>p!==parents[i]))ctx.addIssue({code:'custom',message:'invalid native file tree or parents'});
   for(const name of names){const parts=name.toLowerCase().split('/');parts.pop();while(parts.length){if(folded.has(parts.join('/')))ctx.addIssue({code:'custom',message:'file/directory collision'});parts.pop();}}
 });
-export const entrySchema=z.strictObject({schema_version:z.literal(1),sequence:z.number().int().min(1).max(256),
+export const entrySchema=z.strictObject({schema_version:z.literal(1),sequence:z.number().int().min(1).max(1024),
   previous:hash.nullable(),version:hash,content_hash:hash});
 export type NativeEntry=z.infer<typeof entrySchema>;
 
@@ -59,7 +59,7 @@ export async function readFile(env:Env,name:string,kind:'objects'|'versions',id:
   const object=await env.ARTIFACTS.get(prefix(name)+`objects/${hash.parse(id)}`);if(!object)throw new HttpError(404,'native object not found');const bytes=new Uint8Array(await object.arrayBuffer());if(await sha256(bytes)!==id)throw new HttpError(503,'native object corrupted');return new Response(bytes,{headers:{'content-type':'application/octet-stream'}});
 }
 
-export const refSchema=z.strictObject({schema_version:z.literal(1),sequence:z.number().int().min(1).max(1024),previous:hash.nullable(),branch:storeName,expected:hash.nullable(),target:hash,content_hash:hash});
+export const refSchema=z.strictObject({schema_version:z.literal(1),sequence:z.number().int().min(1).max(4096),previous:hash.nullable(),branch:storeName,expected:hash.nullable(),target:hash,content_hash:hash});
 export type NativeRef=z.infer<typeof refSchema>;
 export async function readRefs(env:Env,name:string){return json(await coordinate(env,'NATIVE-STORE-'+storeName.parse(name),'native-refs'));}
 export async function appendRef(env:Env,name:string,input:Uint8Array){

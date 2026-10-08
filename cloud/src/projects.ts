@@ -5,8 +5,10 @@ import type {Identity} from './accounts';
 const memberName=z.string().regex(/^[a-z0-9][a-z0-9_-]{2,31}$/),role=z.enum(['owner','writer','reader']);
 const subject=(actor:Identity)=>actor.kind+':'+actor.username;
 export async function audit(env:Env,actor:Identity,project:string,action:string,resource:string,id=crypto.randomUUID()){
- await env.DB.prepare('INSERT INTO project_audit (id,project,actor,action,resource,recorded_at) VALUES (?,?,?,?,?,?) ON CONFLICT(id) DO NOTHING')
-  .bind(project+':'+id,project,subject(actor),action,resource.slice(0,256),Date.now()).run();
+ const identity=project+':'+id,stamp=Date.now();await env.DB.batch([
+  env.DB.prepare('INSERT INTO project_audit (id,project,actor,action,resource,recorded_at) VALUES (?,?,?,?,?,?) ON CONFLICT(id) DO NOTHING').bind(identity,project,subject(actor),action,resource.slice(0,256),stamp),
+  env.DB.prepare('INSERT INTO project_notifications (id,project,actor,action,resource,recorded_at) VALUES (?,?,?,?,?,?) ON CONFLICT(id) DO NOTHING').bind(identity,project,subject(actor),action,resource.slice(0,256),stamp)
+ ]);
 }
 export async function access(env:Env,actor:Identity,project:string,operation:'read'|'write'|'own'='read'){
  identifier.parse(project);if(actor.kind==='operator')return 'owner' as const;

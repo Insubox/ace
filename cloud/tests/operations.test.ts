@@ -25,3 +25,5 @@ it('reads real counters without spending budget and reports stale restore and wo
  expect(first.alerts).toContain('verification_pending_over_90_minutes');expect(first.alerts).toContain('no_recent_sealed_backup_with_completed_restore_drill');
  expect(JSON.stringify(first)).not.toMatch(/private-user|private-key|metrics-private|private-store/);
 });
+
+it('clears historical backup failures after a later successful recovery and reports new failures',async()=>{const now=Date.now();await env.DB.prepare("INSERT INTO workspace_backups (id,status,restore_status,created_at,completed_at) VALUES ('old-failure','failed',NULL,?,NULL),('repaired','completed','completed',?,?)").bind(now-10000,now-5000,now-1000).run();expect((await(await operations(env,operator)).json() as {alerts:string[]}).alerts).not.toContain('backup_or_restore_failure_recorded');await env.DB.prepare("INSERT INTO workspace_backups (id,status,created_at) VALUES ('new-failure','failed',?)").bind(now).run();expect((await(await operations(env,operator)).json() as {alerts:string[]}).alerts).toContain('backup_or_restore_failure_recorded');});

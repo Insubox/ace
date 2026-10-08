@@ -6,8 +6,8 @@ versions; no Git repository is used as their storage engine.
 
 Changing projects preserves the authenticated session, including when the previous
 project is still loading or a project request fails. Sign-out cancels outstanding
-requests and clears private views. Browser sessions currently stay in page memory;
-reloading the page or opening another tab requires signing in again.
+requests and clears private views. Browser account sessions use a 12-hour, host-only HttpOnly cookie;
+reloading the page or opening another tab restores the session. Mutations using a cookie require the exact ACE Origin. Sign-out revokes the session and clears private views in other account tabs. Operator tokens remain in page memory.
 
 ## Reviews
 
@@ -166,11 +166,16 @@ Apply migration `0010_application_runs.sql` before deploying the Worker with
 `APPLICATION_RUNS` bound to `ApplicationWorkflow` (`ace-applications`). Pin
 `APPLICATION_IMAGE_HASH` to the actual evaluator image digest when configured;
 null represents an unknown image identity, never the Rust verifier binary hash.
-The existing evaluator image already contains Python; application evaluation does
-not call a new Rust server command or change the pinned native-verifier binary.
+The evaluator image must contain Python, Node and the exact locked decimal.js bytes. Pin both the actual image digest and its compiled native-verifier binary hash after rebuilding; never substitute an image digest for a binary hash.
 
-Worker-only bundle validation can use `npm run build:worker -- --containers-rollout none`.
+Worker-only bundle validation uses `wrangler deploy --dry-run --containers-rollout none --config <deployment-config>` with the already-published image in that config. A config referencing a Dockerfile can still build the evaluator during dry-run.
 A full evaluator build needs `applications/` as well as `crates/`; managed cloud
 builds must mount the proxy CA as the `proxy_ca` BuildKit secret with TLS verification
 preserved. CI/release execution remains limited as described in
 [local delivery](local-delivery-0.4.md); development does not consume Actions quota.
+
+## Daily collaboration
+
+The Tasks view retains assigned work, status, source-version links and revision-bound comments. Readers can inspect and mark their own notifications read; writers can change tasks. Every project notification is private to members and excludes the current contributor’s own actions. Read cursors never skip future events. Tasks with no source history are included in disaster recovery.
+
+In Reviews, the author or owner can choose **Resolve branch conflicts**, inspect exact target/source bytes, keep either side, delete a file or edit UTF-8 text. Resolutions cover every conflicting file exactly once. Saving creates a native version with both parents, advances only the source branch, and invalidates prior approvals. An independent reviewer approves the new revision before the target can merge. Test the resulting application again. Branch and review changes reject a stale save; an interrupted request can reuse its UUID. Limits: 128 paths, 64 KiB per edited file, 512 KiB combined text; 64 tasks/project and 16 task events. No paid evaluator is required for collaboration.

@@ -11,6 +11,7 @@ use std::{
     time::{Duration, Instant},
 };
 const TEMPLATES: &str = include_str!("../../../applications/templates.json");
+const NODE_TEMPLATES: &str = include_str!("../../../applications/templates-node.json");
 const CASES: &str = include_str!("../../../applications/cases.json");
 const EXECUTOR: &str = include_str!("../../../applications/executor.py");
 const NAMES: [&str; 5] = [
@@ -26,18 +27,26 @@ fn profile(name: &str) -> Result<()> {
     }
     Ok(())
 }
-pub(crate) fn init(name: &str, output: &Path) -> Result<Value> {
+pub(crate) fn init(name: &str, output: &Path, runtime: &str) -> Result<Value> {
     profile(name)?;
+    if !["python3-stdlib-v1", "nodejs-decimal-v1"].contains(&runtime) {
+        return Err("unsupported application runtime".into());
+    }
     if output.symlink_metadata().is_ok() {
         return Err("application output already exists; choose a fresh directory".into());
     }
     std::fs::create_dir_all(output)?;
-    let templates: BTreeMap<String, BTreeMap<String, String>> = serde_json::from_str(TEMPLATES)?;
+    let templates: BTreeMap<String, BTreeMap<String, String>> =
+        serde_json::from_str(if runtime == "nodejs-decimal-v1" {
+            NODE_TEMPLATES
+        } else {
+            TEMPLATES
+        })?;
     for (path, source) in &templates[name] {
         create_atomic(&output.join(path), source.as_bytes())?;
     }
     Ok(
-        value!({"profile":name,"directory":output,"runtime":"python3-stdlib-v1","dependencies":"standard_library_only"}),
+        value!({"profile":name,"directory":output,"runtime":runtime,"dependencies":"immutable_lock"}),
     )
 }
 #[derive(Deserialize)]
@@ -59,32 +68,61 @@ struct Lock {
 }
 fn source(directory: &Path) -> Result<(String, BTreeMap<String, String>)> {
     let root = ace_runner::files::ReadDirectory::open(directory)?;
+    let manifest: Manifest = serde_json::from_value(ace_protocol::parse_json(
+        &root.read(Path::new("ace-app.json"), 32768)?,
+    )?)?;
+    profile(&manifest.profile)?;
+    let node = manifest.runtime == "nodejs-decimal-v1";
+    let templates: BTreeMap<String, BTreeMap<String, String>> =
+        serde_json::from_str(if node { NODE_TEMPLATES } else { TEMPLATES })?;
+    let names: Vec<&str> = if node {
+        templates[&manifest.profile]
+            .keys()
+            .map(String::as_str)
+            .collect()
+    } else {
+        NAMES.to_vec()
+    };
     let mut files = BTreeMap::new();
     let mut total = 0;
-    for name in NAMES {
+    for name in names {
         let bytes = root.read(Path::new(name), 32768)?;
         total += bytes.len();
         files.insert(name.to_owned(), String::from_utf8(bytes)?);
     }
-    if total > 65536 {
-        return Err("application source exceeds 64 KiB".into());
+    if total > if node { 131072 } else { 65536 } {
+        return Err("application source exceeds runtime limit".into());
     }
-    let manifest: Manifest =
-        serde_json::from_value(ace_protocol::parse_json(files["ace-app.json"].as_bytes())?)?;
-    let lock: Lock = serde_json::from_value(ace_protocol::parse_json(
-        files["dependencies.lock.json"].as_bytes(),
-    )?)?;
-    profile(&manifest.profile)?;
     if manifest.schema_version != 1
-        || manifest.runtime != "python3-stdlib-v1"
-        || manifest.entrypoint != "main.py"
         || manifest.dependencies != "dependencies.lock.json"
-        || lock.schema_version != 1
-        || lock.runtime != manifest.runtime
-        || !lock.external.is_empty()
-        || lock.local != ["core.py"]
+        || manifest.entrypoint != if node { "src/main.cjs" } else { "main.py" }
     {
-        return Err("unsupported manifest or dependency lock; this profile uses the Python standard library only".into());
+        return Err("unsupported application manifest".into());
+    }
+    if node {
+        for name in [
+            "dependencies.lock.json",
+            "package.json",
+            "package-lock.json",
+        ] {
+            if ace_protocol::parse_json(files[name].as_bytes())?
+                != ace_protocol::parse_json(templates[&manifest.profile][name].as_bytes())?
+            {
+                return Err("external dependencies must match the immutable lock".into());
+            }
+        }
+    } else {
+        let lock: Lock = serde_json::from_value(ace_protocol::parse_json(
+            files["dependencies.lock.json"].as_bytes(),
+        )?)?;
+        if manifest.runtime != "python3-stdlib-v1"
+            || lock.schema_version != 1
+            || lock.runtime != manifest.runtime
+            || !lock.external.is_empty()
+            || lock.local != ["core.py"]
+        {
+            return Err("unsupported manifest or dependency lock; this profile uses the Python standard library only".into());
+        }
     }
     Ok((manifest.profile, files))
 }
@@ -131,7 +169,8 @@ impl Drop for Container {
     }
 }
 impl Container {
-    fn invoke(&self, request: Value) -> Result<Value> {
+    fn invoke(&self, mut request: Value) -> Result<Value> {
+        request["local"] = value!(true);
         let mut cmd = Command::new("docker");
         cmd.args([
             "exec",
@@ -180,6 +219,10 @@ pub(crate) fn test(
         return Err("test output already exists; choose a fresh directory".into());
     }
     let (name, files) = source(directory)?;
+    let manifest_runtime = ace_protocol::parse_json(files["ace-app.json"].as_bytes())?["runtime"]
+        .as_str()
+        .ok_or("runtime missing")?
+        .to_owned();
     let suites: BTreeMap<String, Vec<Case>> = serde_json::from_str(CASES)?;
     let suite = &suites[&name];
     let mut inspect = Command::new("docker");
@@ -195,7 +238,8 @@ pub(crate) fn test(
         std::fs::set_permissions(temporary.path(), std::fs::Permissions::from_mode(0o755))?;
     }
     for (path, text) in &files {
-        create_atomic(&temporary.path().join(path), text.as_bytes())?;
+        let staged = temporary.path().join(path);
+        create_atomic(&staged, text.as_bytes())?;
     }
     let mount = format!(
         "type=bind,source={},target=/workspace/app,readonly",
@@ -246,14 +290,15 @@ pub(crate) fn test(
         "import time;time.sleep(300)",
     ]);
     command(start)?;
-    let compilation = container.invoke(value!({"mode":"compile"}))?;
+    let compilation = container.invoke(value!({"mode":"compile","runtime":manifest_runtime}))?;
     let compiled = compilation["compiled"]
         .as_bool()
         .ok_or("compiler result missing")?;
     let mut results = Vec::new();
     if compiled {
         for test in suite {
-            let observation = container.invoke(value!({"mode":"run","input":test.input}))?;
+            let observation = container
+                .invoke(value!({"mode":"run","input":test.input,"runtime":manifest_runtime}))?;
             let actual = serde_json::from_str::<Value>(
                 observation["stdout"]
                     .as_str()
@@ -278,7 +323,7 @@ pub(crate) fn test(
     }
     drop(container);
     let passed = results.iter().filter(|r| r["passed"] == true).count();
-    let report = value!({"schema_version":1,"profile":name,"runtime":compilation["runtime"],"compiled":compiled,"compile_errors":compilation["errors"],"status":if compiled&&passed==suite.len(){"passed"}else{"failed"},"cases":results,"passed":passed,"total":suite.len(),"source_hash":ContentHash::of_json(&files)?,"suite_hash":ContentHash::of_json(suite)?,"image_hash":image_id,"scope":"Recorded public application suite; fixed Python standard-library dependencies; read-only, resource-limited offline Docker container. Passing does not prove all inputs or qualify performance."});
+    let report = value!({"schema_version":1,"profile":name,"runtime":compilation["runtime"],"compiled":compiled,"compile_errors":compilation["errors"],"status":if compiled&&passed==suite.len(){"passed"}else{"failed"},"cases":results,"passed":passed,"total":suite.len(),"source_hash":ContentHash::of_json(&files)?,"suite_hash":ContentHash::of_json(suite)?,"image_hash":image_id,"scope":"Recorded public application suite; fixed manifest and locked dependencies; read-only, resource-limited offline Docker container. Passing does not prove all inputs or qualify performance."});
     std::fs::create_dir_all(output)?;
     create_atomic(&output.join("report.json"), &json(&report)?)?;
     let version = if let Some(destination) = destination {
@@ -329,9 +374,37 @@ mod tests {
         for name in ["hello-world", "tictactoe", "calculator"] {
             let root = tempfile::tempdir().unwrap();
             let directory = root.path().join("app");
-            init(name, &directory).unwrap();
+            init(name, &directory, "python3-stdlib-v1").unwrap();
             assert_eq!(source(&directory).unwrap().0, name);
             std::fs::write(directory.join("dependencies.lock.json"),br#"{"schema_version":1,"runtime":"python3-stdlib-v1","external":["requests"],"local":["core.py"]}"#).unwrap();
+            assert!(source(&directory).is_err());
+        }
+    }
+}
+
+#[cfg(test)]
+mod node_tests {
+    use super::*;
+    #[test]
+    fn node_project_structure_and_dependency_lock_are_checked() {
+        for name in ["hello-world", "calculator", "tictactoe"] {
+            let root = tempfile::tempdir().unwrap();
+            let directory = root.path().join("app");
+            init(name, &directory, "nodejs-decimal-v1").unwrap();
+            assert_eq!(source(&directory).unwrap().0, name);
+            std::fs::write(directory.join("package-lock.json"), "{}").unwrap();
+            assert!(source(&directory).is_err());
+        }
+    }
+    #[test]
+    fn nested_source_symlink_is_rejected_before_candidate_execution() {
+        #[cfg(unix)]
+        {
+            let root = tempfile::tempdir().unwrap();
+            let directory = root.path().join("app");
+            init("calculator", &directory, "nodejs-decimal-v1").unwrap();
+            std::fs::remove_file(directory.join("src/core.js")).unwrap();
+            std::os::unix::fs::symlink("/etc/passwd", directory.join("src/core.js")).unwrap();
             assert!(source(&directory).is_err());
         }
     }

@@ -3,7 +3,7 @@ import {it,expect} from 'vitest';
 import {sha256,coordinate} from '../src/contracts';
 import {ensure} from '../src/projects';
 import {putObject,putVersion,appendEntry,appendRef,nativeHash,readRefs} from '../src/native-store';
-import {createReview,reviewEvent,mergeReview,comparison,getReview} from '../src/collaboration';
+import {createReview,reviewEvent,mergeReview,comparison,getReview,reviewConflicts,resolveReview} from '../src/collaboration';
 import {mergeText} from '../src/source-merge';
 import type {Review} from '../src/review-state';
 const operator={username:'operator',kind:'operator',role:'admin'} as const;
@@ -50,4 +50,18 @@ it('retries a retained close event without duplicating it or accepting a changed
  const f=await fixture(),event=f.event('close','Close reviewed request');await reviewEvent(env,operator,f.store,f.review.id,encode(event));await reviewEvent(env,operator,f.store,f.review.id,encode(event));
  const retained=await(await getReview(env,operator,f.store,f.review.id)).json() as Review;expect(retained.status).toBe('closed');expect(retained.events).toHaveLength(1);
  await expect(reviewEvent(env,operator,f.store,f.review.id,encode({...event,body:'changed retry'}))).rejects.toThrow('identity');
+});
+it('resolves conflicting source atomically, invalidates approval and requires independent review again',async()=>{
+ const f=await fixture(true);await reviewEvent(env,f.reviewer,f.store,f.review.id,encode(f.event()));const conflicts=await(await reviewConflicts(env,operator,f.store,f.review.id)).json() as {base:string;conflicts:{path:string}[]};expect(conflicts.conflicts.map(c=>c.path)).toEqual(['app.py']);
+ const args={request_id:crypto.randomUUID(),revision:1,source:f.source,target:f.target,resolutions:[{path:'app.py',choice:'text',text:'RESOLVED\r\ntwo\r\nthree\r\n'}]};const result=await(await resolveReview(env,operator,f.store,f.review.id,encode(args))).json() as {version:string;review:Review};expect(result.review.revision).toBe(2);expect(result.review.source).toBe(result.version);expect(result.review.target).toBe(f.target);
+ await resolveReview(env,operator,f.store,f.review.id,encode(args));expect((await coordinate(env,'NATIVE-STORE-'+f.store,'native-log') as {entries:unknown[]}).entries).toHaveLength(4);
+ await expect(mergeReview(env,operator,f.store,f.review.id,encode({}))).rejects.toThrow('approval');await reviewEvent(env,f.reviewer,f.store,f.review.id,encode({...f.event(),revision:2,source:result.version}));expect((await mergeReview(env,operator,f.store,f.review.id,encode({}))).status).toBe(200);
+ const sealed=await env.ARTIFACTS.get(`native-stores/${f.store}/versions/${result.version}.json`);expect(await sealed!.json()).toMatchObject({version:{parents:[f.target,f.source].sort(),kind:{kind:'source'}}});
+});
+it('allows exact-side conflict choices, rejects unrelated replacements, stale heads and changed retry identities',async()=>{
+ const f=await fixture(true),args={request_id:crypto.randomUUID(),revision:1,source:f.source,target:f.target,resolutions:[{path:'app.py',choice:'theirs'}]};
+ await expect(resolveReview(env,operator,f.store,f.review.id,encode({...args,resolutions:[{path:'elsewhere.py',choice:'text',text:'inject'}]}))).rejects.toThrow('exactly once');
+ const result=await(await resolveReview(env,operator,f.store,f.review.id,encode(args))).json() as {version:string};expect(result.version).toMatch(/^[0-9a-f]{64}$/);
+ await expect(resolveReview(env,operator,f.store,f.review.id,encode({...args,resolutions:[{path:'app.py',choice:'ours'}]}))).rejects.toThrow('identity');
+ await expect(resolveReview(env,operator,f.store,f.review.id,encode({...args,request_id:crypto.randomUUID()}))).rejects.toThrow('changed');
 });

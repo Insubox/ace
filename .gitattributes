@@ -1,0 +1,3 @@
+# Keep upstream dependency bytes intact: runtime hashes include CRLF endings.
+applications/vendor/decimal.js -text whitespace=cr-at-eol,-blank-at-eof
+applications/vendor/DECIMAL-LICENSE.md -text whitespace=cr-at-eol,-blank-at-eof

@@ -116,7 +116,7 @@ Assess original local evidence with `ace memory`, `ace status` and replay. The b
 displays source as inert text; previews show 8 KiB, downloads preserve exact bytes.
 Publisher metadata identifies who first published an entry, not its author.
 
-Native limits are 256 versions/store, 4,096 files/version, 8 MiB/file and
+Native limits are 1,024 versions/store, 4,096 files/version, 8 MiB/file and
 128 MiB/version. One pull also limits distinct objects to 512 MiB. Hashes detect
 changes but are not signed checkpoints. Named branches and bounded native diffs/merges are implemented; review/issues,
 composition/promotion, full hosted merge UI and production-scale hosting remain further work.

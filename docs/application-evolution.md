@@ -9,7 +9,7 @@ can stop future attempts; an attempt already running retains its result.
 Each generation receives the exact retained application, its fixed public
 contract, test outcomes and scoped learning from preceding proposals. Source,
 agent strategy and provider output are untrusted. The model may propose changes
-to `main.py` and `core.py`; it cannot replace manifests, dependency locks, tests,
+to `main.py` and `core.py` for Python or `src/main.cjs` and `src/core.js` for JavaScript; it cannot replace manifests, dependency locks, tests,
 reports or verdicts. Raw context, request, response and normalized proposal/fault
 are retained with source and ancestry in ACE's native engine.
 

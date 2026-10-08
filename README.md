@@ -50,10 +50,11 @@ its data requires an ACE account. The [Observatory](docs/observatory.md) is the 
 interface for native versions, completed trials and learning from winners and losers.
 [Browser reviews and application projects](docs/collaboration-and-applications.md)
 add source comparisons, line comments, independent approval and native branch merge,
-plus Hello World, TicTacToe and Calculator with locked local dependencies,
-Python compilation and retained pass/fail tests. Create an example locally with
+plus assigned tasks, private notifications and conflict resolution requiring new approval.
+Hello World, TicTacToe and Calculator have Python console and
+[visual JavaScript projects](docs/visual-applications.md), compilation and retained pass/fail tests. Create an example locally with
 `ace app init calculator my-calculator`; `ace app test my-calculator --store ace-history`
-uses Docker and a prepared Python image as described in the guide.
+uses Docker and a prepared local image as described in the guide.
 [Application agent campaigns](docs/application-evolution.md) reuse tested source
 and retained learning, independently evaluate each new proposal and keep a new
 best only when it improves public-suite correctness without regressions.
@@ -63,7 +64,9 @@ and account recovery protect hosted access. [Automated backups](docs/backups.md)
 restore into isolated resources for verification. Local experiments remain account-free.
 
 The [0.4.0 delivery record](docs/local-delivery-0.4.md) distinguishes tested behavior
-from the remaining architecture and remote platform checks.
+from the remaining architecture and remote platform checks. The
+[2026-10-08 validation record](docs/validation-2026-10-08.md) documents application
+evolution, browser collaboration, isolated recovery and the visual examples.
 
 This repository implements **Phase 0: the domain kernel** and **Phase 1: a local
 WASM experiment runner**, plus the **Phase 2 Cloudflare control plane implementation**

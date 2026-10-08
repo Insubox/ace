@@ -51,7 +51,7 @@ its branch using `--expect`. The original working files are never overwritten.
 
 Text previews/merges cover UTF-8 files up to 64 KiB and 256 lines; byte hashes and
 full downloads cover larger/binary files. Diff previews cover at most 20 changed
-files. Source-tree and 256-version limits continue to apply. Reference logs allow
+files. Source-tree and 1,024-version limits continue to apply. Reference logs allow
 1,024 events and branch names use 1–64 portable letters/digits/hyphens/underscores.
 Branch deletion, forced rewinds, automatic rename detection and reference-log
 compaction are not implemented.

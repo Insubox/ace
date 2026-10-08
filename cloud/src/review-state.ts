@@ -1,3 +1,4 @@
+import {readState,writeState} from './paged-state';
 import {z} from 'zod';
 import {HttpError,hash} from './contracts';
 import {storeName,entrySchema,refSchema,type NativeEntry,type NativeRef} from './native-store';
@@ -5,31 +6,45 @@ export const reviewId=z.string().uuid();
 const actor=z.string().regex(/^(account:[a-z0-9][a-z0-9_-]{2,31}|operator:operator)$/);
 const text=z.string().min(1).max(2048).refine(s=>s.trim().length>0);
 export const createSchema=z.strictObject({id:reviewId,title:text,source_branch:storeName,target_branch:storeName,source:hash,target:hash,author:actor});
-export type Review={id:string;title:string;source_branch:string;target_branch:string;source:string;target:string;author:string;status:'open'|'closed'|'merged';revision:number;created_at:number;events:ReviewEvent[];request?:z.infer<typeof createSchema>;merge?:{version:string;entry:NativeEntry;ref:NativeRef}};
-export type ReviewEvent={id:string;actor:string;type:'comment'|'approve'|'request_changes'|'refresh'|'close'|'merge';body:string;revision:number;source:string;target:string;path?:string;line?:number;recorded_at:number};
+export type Resolution={id:string;request_hash:string;version:string;entry:NativeEntry;ref:NativeRef};
+export type Review={id:string;title:string;source_branch:string;target_branch:string;source:string;target:string;author:string;status:'open'|'closed'|'merged';revision:number;created_at:number;events:ReviewEvent[];request?:z.infer<typeof createSchema>;resolutions?:Resolution[];merge?:{version:string;entry:NativeEntry;ref:NativeRef}};
+export type ReviewEvent={id:string;actor:string;type:'comment'|'approve'|'request_changes'|'refresh'|'close'|'merge'|'resolve';body:string;revision:number;source:string;target:string;path?:string;line?:number;recorded_at:number};
 export function approved(review:Review,eligible?:string[]){const latest=new Map<string,string>();for(const event of review.events)if(event.revision===review.revision&&['approve','request_changes'].includes(event.type)&&event.actor!==review.author&&(!eligible||eligible.includes(event.actor)))latest.set(event.actor,event.type);return [...latest.values()].includes('approve')&&![...latest.values()].includes('request_changes');}
 export async function reviewOperation(tx:DurableObjectTransaction,op:string,body:Record<string,unknown>):Promise<unknown>{
- const reviews=await tx.get<Review[]>('native-reviews')??[];
+ const reviews=await readState<Review[]>(tx,'native-reviews')??[];
  if(op==='review-list')return{reviews};
- if(op==='review-restore'){const incoming=body.reviews as Review[];if(!Array.isArray(incoming)||incoming.length>32)throw new HttpError(409,'restored reviews exceed bounds');if(reviews.length&&JSON.stringify(reviews)!==JSON.stringify(incoming))throw new HttpError(409,'restored reviews differ');await tx.put('native-reviews',incoming);return{restored:true};}
- const heads=await tx.get<Record<string,string>>('native-ref-heads')??{};
+ if(op==='review-restore'){const incoming=body.reviews as Review[];if(!Array.isArray(incoming)||incoming.length>32)throw new HttpError(409,'restored reviews exceed bounds');if(reviews.length&&JSON.stringify(reviews)!==JSON.stringify(incoming))throw new HttpError(409,'restored reviews differ');await writeState(tx,'native-reviews',incoming);return{restored:true};}
+ const heads=await readState<Record<string,string>>(tx,'native-ref-heads')??{};
  if(op==='review-create'){
   const args=createSchema.parse(body),old=reviews.find(r=>r.id===args.id);if(old){for(const key of Object.keys(args) as (keyof typeof args)[])if((old.request??old)[key]!==args[key])throw new HttpError(409,'review request identity was reused');return old;}
   if(reviews.length>=32)throw new HttpError(409,'project review limit reached');if(args.source_branch===args.target_branch||args.source===args.target||heads[args.source_branch]!==args.source||heads[args.target_branch]!==args.target)throw new HttpError(409,'review branch heads changed or are identical');
-  const review:Review={...args,request:args,status:'open',revision:1,created_at:Date.now(),events:[]};await tx.put('native-reviews',[...reviews,review]);return review;
+  const review:Review={...args,request:args,status:'open',revision:1,created_at:Date.now(),events:[]};await writeState(tx,'native-reviews',[...reviews,review]);return review;
  }
  const review=reviews.find(r=>r.id===reviewId.parse(body.id));if(!review)throw new HttpError(404,'review not found');
  if(op==='review-get')return review;
+ if(op==='review-resolution-get'){const old=review.resolutions?.find(r=>r.id===reviewId.parse(body.request_id));if(old&&old.request_hash!==body.request_hash)throw new HttpError(409,'resolution request identity was reused');return old??null;}
+ if(op==='review-resolve'){
+  const old=review.resolutions?.find(r=>r.id===reviewId.parse(body.request_id));if(old){if(old.request_hash!==body.request_hash)throw new HttpError(409,'resolution request identity was reused');return old;}
+  const who=actor.parse(body.actor);if(who!==review.author&&body.owner!==true)throw new HttpError(403,'author or project owner required');
+  if(review.status!=='open'||review.revision!==body.revision||review.source!==body.source||review.target!==body.target||heads[review.source_branch]!==review.source||heads[review.target_branch]!==review.target)throw new HttpError(409,'review branches changed; compare again');
+  if(review.events.length>=64)throw new HttpError(409,'review event limit reached');
+  const entry=entrySchema.parse(body.entry),ref=refSchema.parse(body.ref),entries=await readState<NativeEntry[]>(tx,'native-entries')??[],refs=await readState<NativeRef[]>(tx,'native-ref-events')??[];
+  if(entries.length>=1024||refs.length>=4096||entry.sequence!==entries.length+1||entry.previous!==(entries.at(-1)?.content_hash??null)||ref.sequence!==refs.length+1||ref.previous!==(refs.at(-1)?.content_hash??null)||ref.branch!==review.source_branch||ref.expected!==review.source||ref.target!==entry.version||entries.some(e=>e.version===entry.version))throw new HttpError(409,'native history changed; retry resolution');
+  const resolution:Resolution={id:String(body.request_id),request_hash:String(body.request_hash),version:entry.version,entry,ref};
+  const publishers=await readState<Record<string,unknown>>(tx,'native-publishers')??{};publishers[entry.version]={username:who.split(':')[1],published_at:Date.now()};heads[ref.branch]=ref.target;
+  await writeState(tx,'native-entries',[...entries,entry]);await writeState(tx,'native-publishers',publishers);await writeState(tx,'native-ref-events',[...refs,ref]);await writeState(tx,'native-ref-heads',heads);
+  review.events.push({id:resolution.id,actor:who,type:'resolve',body:'Resolved source conflicts; independent approval is required again.',revision:review.revision,source:review.source,target:review.target,recorded_at:Date.now()});review.source=entry.version;review.revision++;review.resolutions=[...review.resolutions??[],resolution];await writeState(tx,'native-reviews',reviews);return resolution;
+ }
  if(op==='review-merge'&&review.merge)return review;
  const who=actor.parse(body.actor);
  if(op==='review-merge'){
   if(review.status!=='open')throw new HttpError(409,'review is not open');
   if(review.events.length>=64)throw new HttpError(409,'review event limit reached');
   if(heads[review.source_branch]!==review.source||heads[review.target_branch]!==review.target||!approved(review,body.eligible as string[]))throw new HttpError(409,'branches changed or independent approval is missing');
-  const entry=entrySchema.parse(body.entry),ref=refSchema.parse(body.ref),entries=await tx.get<NativeEntry[]>('native-entries')??[],refs=await tx.get<NativeRef[]>('native-ref-events')??[];
-  if(entries.length>=256||refs.length>=1024||entry.sequence!==entries.length+1||entry.previous!==(entries.at(-1)?.content_hash??null)||ref.sequence!==refs.length+1||ref.previous!==(refs.at(-1)?.content_hash??null)||ref.branch!==review.target_branch||ref.expected!==review.target||ref.target!==entry.version||entries.some(e=>e.version===entry.version))throw new HttpError(409,'native history changed; retry merge');
-  const publishers=await tx.get<Record<string,unknown>>('native-publishers')??{};publishers[entry.version]={username:who.split(':')[1],published_at:Date.now()};heads[ref.branch]=ref.target;
-  await tx.put('native-entries',[...entries,entry]);await tx.put('native-publishers',publishers);await tx.put('native-ref-events',[...refs,ref]);await tx.put('native-ref-heads',heads);
+  const entry=entrySchema.parse(body.entry),ref=refSchema.parse(body.ref),entries=await readState<NativeEntry[]>(tx,'native-entries')??[],refs=await readState<NativeRef[]>(tx,'native-ref-events')??[];
+  if(entries.length>=1024||refs.length>=4096||entry.sequence!==entries.length+1||entry.previous!==(entries.at(-1)?.content_hash??null)||ref.sequence!==refs.length+1||ref.previous!==(refs.at(-1)?.content_hash??null)||ref.branch!==review.target_branch||ref.expected!==review.target||ref.target!==entry.version||entries.some(e=>e.version===entry.version))throw new HttpError(409,'native history changed; retry merge');
+  const publishers=await readState<Record<string,unknown>>(tx,'native-publishers')??{};publishers[entry.version]={username:who.split(':')[1],published_at:Date.now()};heads[ref.branch]=ref.target;
+  await writeState(tx,'native-entries',[...entries,entry]);await writeState(tx,'native-publishers',publishers);await writeState(tx,'native-ref-events',[...refs,ref]);await writeState(tx,'native-ref-heads',heads);
   review.status='merged';review.merge={version:entry.version,entry,ref};review.events.push({id:review.id+'-merge',actor:who,type:'merge',body:'Merged source; new evaluation required.',revision:review.revision,source:review.source,target:review.target,recorded_at:Date.now()});
  }else{
   const event=z.strictObject({id:reviewId,actor,type:z.enum(['comment','approve','request_changes','refresh','close']),body:text,revision:z.number().int().positive(),source:hash,target:hash,path:z.string().max(2048).optional(),line:z.number().int().min(1).max(256).optional()}).parse(body.event);
@@ -43,5 +58,5 @@ export async function reviewOperation(tx:DurableObjectTransaction,op:string,body
   if(event.type==='close'){if(who!==review.author&&body.owner!==true)throw new HttpError(403,'author or project owner required');review.status='closed';}
   review.events.push({...event,recorded_at:Date.now()});
  }
- await tx.put('native-reviews',reviews);return review;
+ await writeState(tx,'native-reviews',reviews);return review;
 }

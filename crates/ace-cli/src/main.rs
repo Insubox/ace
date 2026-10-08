@@ -238,7 +238,12 @@ enum Command {
 #[derive(Subcommand)]
 enum AppCommand {
     /// Create Hello World, TicTacToe or Calculator in a fresh folder.
-    Init { profile: String, directory: PathBuf },
+    Init {
+        profile: String,
+        directory: PathBuf,
+        #[arg(long, default_value = "python3-stdlib-v1")]
+        runtime: String,
+    },
     /// Compile and test source against the fixed public suite; optionally retain all outcomes.
     Test {
         directory: PathBuf,
@@ -477,9 +482,11 @@ fn evidence_path(project: &Path, id: &EvidenceId) -> PathBuf {
 fn run(cli: Cli) -> Result<()> {
     match cli.command {
         Command::App { command } => match command {
-            AppCommand::Init { profile, directory } => {
-                print(&application::init(&profile, &directory)?)?
-            }
+            AppCommand::Init {
+                profile,
+                directory,
+                runtime,
+            } => print(&application::init(&profile, &directory, &runtime)?)?,
             AppCommand::Test {
                 directory,
                 output,

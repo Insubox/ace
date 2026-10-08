@@ -15,8 +15,8 @@ async function publish(request,config,path,init){
   await responseBytes(await request(config,path,init),16384);
 }
 async function remote(config,name,request){
-  const log=JSON.parse(await responseBytes(await request(config,`/v1/stores/${names(name)}`,{signal:fetchOptions.signal()}),262144));
-  if(log.schema_version!==1||log.backend!=='ace-native-v1'||!Array.isArray(log.entries)||log.entries.length>256)throw new Error('Unexpected remote native history');
+  const log=JSON.parse(await responseBytes(await request(config,`/v1/stores/${names(name)}`,{signal:fetchOptions.signal()}),1048576));
+  if(log.schema_version!==1||log.backend!=='ace-native-v1'||!Array.isArray(log.entries)||log.entries.length>1024)throw new Error('Unexpected remote native history');
   let previous=null;const seen=new Set();
   for(const [index,e] of log.entries.entries()){
     if(Object.keys(e).sort().join(',')!=='content_hash,previous,schema_version,sequence,version'||e.schema_version!==1||e.sequence!==index+1||e.previous!==previous||!hash.test(e.version)||!hash.test(e.content_hash)||nativeHash([1,e.sequence,e.previous,e.version])!==e.content_hash||seen.has(e.version))throw new Error('Remote native journal identity or order changed');
@@ -25,7 +25,7 @@ async function remote(config,name,request){
   if(log.tip!==previous)throw new Error('Remote native history tip differs');return log;
 }
 async function localFile(root,path,limit){const file=join(root,path);if(!(await lstat(file)).isFile()||!(await realpath(file)).startsWith(root+sep))throw new Error('Native transport source escapes its store');return boundedFile(file,limit);}
-async function remoteRefs(config,name,log,request){let value;try{value=JSON.parse(await responseBytes(await request(config,`/v1/stores/${name}/refs`,{signal:fetchOptions.signal()}),1048576));}catch(error){if(error.status===404)return{schema_version:1,events:[],heads:{},tip:null};throw error;}return validateRefs(value,new Set(log.entries.map(e=>e.version)));}
+async function remoteRefs(config,name,log,request){let value;try{value=JSON.parse(await responseBytes(await request(config,`/v1/stores/${name}/refs`,{signal:fetchOptions.signal()}),4194304));}catch(error){if(error.status===404)return{schema_version:1,events:[],heads:{},tip:null};throw error;}return validateRefs(value,new Set(log.entries.map(e=>e.version)));}
 export async function pushStore({directory,name,config,binary='ace',request=api,run=command,refs=true}){
   names(name);const root=await realpath(resolve(directory));const local=run(binary,['store','log',root]);
   if(local.backend!=='ace-native-v1'||local.verified!==true)throw new Error('Only verified native ACE stores can be published');

@@ -72,7 +72,7 @@ export function strictJson(source: string): unknown {
   let at = 0; let depth = 0;
   const ws = () => { while (/\s/.test(source[at] ?? '') && at < source.length) at++; };
   const string = (): string => {
-    const start = at++; while (at < source.length) { const c = source[at++]; if (c === '\\') at++; else if (c === '"') return JSON.parse(source.slice(start, at)); }
+    const start = at++; while (at < source.length) { const c = source[at++]; if (c === '\\') at++; else if (c === '"') {const value=JSON.parse(source.slice(start, at)) as string;if(!value.isWellFormed())throw new HttpError(400,'invalid Unicode string');return value;} }
     throw new HttpError(400, 'unterminated string');
   };
   const value = (): void => {

@@ -14,8 +14,10 @@ import * as projects from './projects';
 import {readVerification,requestVerification,readVerifiedRun} from './verification';
 import {requestBackup,listBackups,requestRestore,readDrill,readRestoreReceipt} from './backups';
 import {requestTrial,listTrials,readTrial,readProposal,retryTrial} from './observatory';
-import {applicationTemplates,retainedApplication,listApps,readApp,requestApp} from './applications';
+import {decimal} from './application-profiles';
+import {applicationTemplates,retainedApplication,listApps,readApp,requestApp,replayApp} from './applications';
 import {requestCampaign,listCampaigns,readCampaign,cancelCampaign} from './application-campaigns';
+import {listIssues,readIssue,createIssue,issueEvent,notifications,readNotifications} from './issues';
 export {ApplicationCampaignWorkflow} from './application-campaigns';
 export {ApplicationWorkflow} from './applications';
 import {operations} from './operations';
@@ -87,11 +89,13 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     try {
       if(request.method==='GET'&&['/','/setup','/recover'].includes(new URL(request.url).pathname))return new Response(dashboard,{headers:{'content-type':'text/html; charset=utf-8',
-        'content-security-policy':"default-src 'none'; script-src 'nonce-ace-native-dashboard-v1'; style-src 'nonce-ace-native-dashboard-v1'; font-src data:; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+        'content-security-policy':"default-src 'none'; script-src 'nonce-ace-native-dashboard-v1'; style-src 'nonce-ace-native-dashboard-v1'; font-src data:; connect-src 'self'; frame-src about:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
         'cache-control':'no-store','x-content-type-options':'nosniff','referrer-policy':'no-referrer'}});
       const url = new URL(request.url);
       if(url.pathname==='/v1/auth/setup'&&request.method==='POST')return await accounts.setup(env,await limitedBody(request,16384));
       if(url.pathname==='/v1/auth/login'&&request.method==='POST')return await accounts.login(request,env,await limitedBody(request,16384));
+      if(url.pathname==='/v1/auth/browser-login'&&request.method==='POST')return await accounts.browserLogin(request,env,await limitedBody(request,16384));
+      if(url.pathname==='/v1/auth/browser-logout'&&request.method==='POST'){if((await limitedBody(request,1)).length)throw new HttpError(400,'sign-out takes no payload');return await accounts.browserLogout(request,env);}
       if(url.pathname==='/v1/auth/recover'&&request.method==='POST')return await accounts.recover(request,env,await limitedBody(request,16384));
       const current=await accounts.identity(request,env);accounts.authorize(request,current);
       if(url.pathname==='/v1/operations'&&request.method==='GET')return await operations(env,current);
@@ -109,14 +113,20 @@ export default {
       if(restoration){if(request.method==='GET'&&!restoration[2])return await readRestoreReceipt(env,current,restoration[1]!);if(request.method==='POST'&&!restoration[2])return await requestRestore(env,current,restoration[1]!);if(request.method==='GET'&&restoration[2])return await readDrill(env,current,restoration[1]!,restoration[2],restoration[3]??restoration[5],restoration[4]);}
       if(url.pathname==='/v1/projects'&&request.method==='GET')return await projects.list(env,current);
       if(url.pathname==='/v1/projects'&&request.method==='POST')return await projects.create(env,current,await limitedBody(request,8192));
+      const issues=/^\/v1\/projects\/([A-Za-z0-9][A-Za-z0-9_-]{0,63})\/issues(?:\/([0-9a-f-]{36})(\/events)?)?$/.exec(url.pathname);
+      if(issues){const project=issues[1]!,id=issues[2];if(request.method==='GET'&&!issues[3])return id?await readIssue(env,current,project,id):await listIssues(env,current,project);if(request.method==='POST'){const input=await limitedBody(request,16384);if(!id)return await createIssue(env,current,project,input);if(issues[3]==='/events')return await issueEvent(env,current,project,id,input);}}
+      const activity=/^\/v1\/projects\/([A-Za-z0-9][A-Za-z0-9_-]{0,63})\/notifications(\/read)?$/.exec(url.pathname);
+      if(activity){if(request.method==='GET'&&!activity[2])return await notifications(env,current,activity[1]!);if(request.method==='POST'&&activity[2])return await readNotifications(env,current,activity[1]!,await limitedBody(request,8192));}
+      const replay=/^\/v1\/projects\/([A-Za-z0-9][A-Za-z0-9_-]{0,63})\/applications\/(app-[0-9a-f]{64})\/replay$/.exec(url.pathname);if(replay&&request.method==='POST'){if((await limitedBody(request,1)).length)throw new HttpError(400,'replay takes no payload');return await replayApp(env,current,replay[1]!,replay[2]!);}
       const apps=/^\/v1\/projects\/([A-Za-z0-9][A-Za-z0-9_-]{0,63})\/applications(?:\/(app-[0-9a-f]{64}))?$/.exec(url.pathname);
       const campaigns=/^\/v1\/projects\/([A-Za-z0-9][A-Za-z0-9_-]{0,63})\/application-campaigns(?:\/(campaign-[0-9a-f]{64})(\/cancel)?)?$/.exec(url.pathname);
       if(campaigns){const project=campaigns[1]!,id=campaigns[2];if(request.method==='GET'&&!campaigns[3])return id?await readCampaign(env,current,project,id):await listCampaigns(env,current,project);if(request.method==='POST'){const input=await limitedBody(request,8192);if(!id)return await requestCampaign(env,current,project,input);if(campaigns[3]==='/cancel'&&!input.length)return await cancelCampaign(env,current,project,id);}}
-      if(apps){if(request.method==='GET')return apps[2]?await readApp(env,current,apps[1]!,apps[2]):await listApps(env,current,apps[1]!);if(request.method==='POST'&&!apps[2])return await requestApp(env,current,apps[1]!,await limitedBody(request,131072));}
+      if(apps){if(request.method==='GET')return apps[2]?await readApp(env,current,apps[1]!,apps[2]):await listApps(env,current,apps[1]!);if(request.method==='POST'&&!apps[2])return await requestApp(env,current,apps[1]!,await limitedBody(request,262144));}
       const retainedApp=/^\/v1\/projects\/([A-Za-z0-9][A-Za-z0-9_-]{0,63})\/application-versions\/([0-9a-f]{64})$/.exec(url.pathname);
       if(retainedApp&&request.method==='GET')return await retainedApplication(env,current,retainedApp[1]!,retainedApp[2]!);
+      const dependency=/^\/v1\/projects\/([A-Za-z0-9][A-Za-z0-9_-]{0,63})\/application-dependencies\/decimal.js$/.exec(url.pathname);if(dependency&&request.method==='GET'){await projects.access(env,current,dependency[1]!);return new Response(decimal,{headers:{'content-type':'text/plain','cache-control':'private, max-age=3600'}});}
       const template=/^\/v1\/projects\/([A-Za-z0-9][A-Za-z0-9_-]{0,63})\/application-templates\/(hello-world|tictactoe|calculator)$/.exec(url.pathname);
-      if(template&&request.method==='GET')return await applicationTemplates(env,current,template[1]!,template[2]!);
+      if(template&&request.method==='GET')return await applicationTemplates(env,current,template[1]!,template[2]!,url.searchParams.get('runtime')??'python3-stdlib-v1');
       const trials=/^\/v1\/projects\/([A-Za-z0-9][A-Za-z0-9_-]{0,63})\/trials(?:\/(trial-[0-9a-f]{64})(\/(?:proposal|retry))?)?$/.exec(url.pathname);
       if(trials){if(request.method==='GET'&&trials[3]!=='/retry')return trials[2]?(trials[3]?await readProposal(env,current,trials[1]!,trials[2]):await readTrial(env,current,trials[1]!,trials[2])):await listTrials(env,current,trials[1]!);if(request.method==='POST'&&!trials[2])return await requestTrial(env,current,trials[1]!,await limitedBody(request,65536));if(request.method==='POST'&&trials[2]&&trials[3]==='/retry'){if((await limitedBody(request,1)).length)throw new HttpError(400,'retry accepts no replacement source');return await retryTrial(env,current,trials[1]!,trials[2]);}}
       const project=/^\/v1\/projects\/([^/]+)\/(members|audit)(?:\/([a-z0-9][a-z0-9_-]{2,31}))?$/.exec(url.pathname);
@@ -125,6 +135,8 @@ export default {
       if(url.pathname==='/v1/stores'&&request.method==='GET')return await projects.listStores(env,current);
       const check=/^\/v1\/stores\/([A-Za-z0-9][A-Za-z0-9_-]{0,63})\/versions\/([0-9a-f]{64})\/(verification(?:\/run)?|verify)$/.exec(url.pathname);
       if(check){await projects.access(env,current,check[1]!,request.method==='GET'?'read':'write');if(request.method==='GET'&&check[3]==='verification/run')return await readVerifiedRun(env,check[1]!,check[2]!);if(request.method==='GET'&&check[3]==='verification')return await readVerification(env,check[1]!,check[2]!);if(request.method==='POST'&&check[3]==='verify'){if((await limitedBody(request,1)).length)throw new HttpError(400,'verification does not accept caller-supplied results');const result=await requestVerification(env,check[1]!,check[2]!);await projects.audit(env,current,check[1]!,'verification.request',check[2]!);return result;}}
+      const reviewResolution=/^\/v1\/stores\/([A-Za-z0-9][A-Za-z0-9_-]{0,63})\/reviews\/([0-9a-f-]{36})\/(conflicts|resolve)$/.exec(url.pathname);
+      if(reviewResolution){if(request.method==='GET'&&reviewResolution[3]==='conflicts')return await collaboration.reviewConflicts(env,current,reviewResolution[1]!,reviewResolution[2]!,url.searchParams.has('base')?hash.parse(url.searchParams.get('base')):undefined);if(request.method==='POST'&&reviewResolution[3]==='resolve')return await collaboration.resolveReview(env,current,reviewResolution[1]!,reviewResolution[2]!,await limitedBody(request,1048576));}
       const reviews=/^\/v1\/stores\/([A-Za-z0-9][A-Za-z0-9_-]{0,63})\/reviews(?:\/([0-9a-f-]{36})(?:\/(events|merge))?)?$/.exec(url.pathname);
       if(reviews){const store=reviews[1]!,id=reviews[2];if(request.method==='GET')return id?await collaboration.getReview(env,current,store,id):await collaboration.listReviews(env,current,store);if(request.method==='POST'){const input=await limitedBody(request,16384);return !id?await collaboration.createReview(env,current,store,input):reviews[3]==='events'?await collaboration.reviewEvent(env,current,store,id,input):reviews[3]==='merge'?await collaboration.mergeReview(env,current,store,id,input):(()=>{throw new HttpError(404,'review route not found');})();}}
       const compare=/^\/v1\/stores\/([A-Za-z0-9][A-Za-z0-9_-]{0,63})\/compare$/.exec(url.pathname);

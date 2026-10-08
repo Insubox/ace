@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "runtime": "nodejs-decimal-v1",
+  "external": [
+    {
+      "name": "decimal.js",
+      "version": "10.6.0",
+      "sha256": "6e99821f8204c5f611b56077e3fce056a1562d22bc341a1f4af01afe7e527d83"
+    }
+  ],
+  "local": [
+    "src/core.js"
+  ]
+}

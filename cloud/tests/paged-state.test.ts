@@ -1,0 +1,18 @@
+import {env} from 'cloudflare:test';
+import {it,expect} from 'vitest';
+import {coordinate} from '../src/contracts';
+import {nativeHash,entrySchema,type NativeEntry} from '../src/native-store';
+import {readState,writeState} from '../src/paged-state';
+import {runInDurableObject} from 'cloudflare:test';
+it('pages large Unicode state and migrates legacy values atomically',async()=>{
+ const name='paging-'+crypto.randomUUID(),stub=env.COORDINATORS.get(env.COORDINATORS.idFromName(name));
+ await runInDurableObject(stub,async(_instance,state)=>{await state.storage.transaction(async tx=>{const legacy=[{version:'legacy'}];await tx.put('native-entries',legacy);expect(await readState(tx,'native-entries')).toEqual(legacy);const data=Array.from({length:1024},(_,i)=>({sequence:i+1,version:String(i).padStart(64,'0'),message:'🧠'.repeat(80)}));await writeState(tx,'native-entries',data);expect(await readState(tx,'native-entries')).toEqual(data);expect(await tx.get('native-entries')).toBeUndefined();const pages=await tx.list<Uint8Array>({prefix:'native-entries-page-'});expect(pages.size).toBeGreaterThan(1);expect([...pages.values()].every(v=>v.length<=65536)).toBe(true);await writeState(tx,'native-entries',legacy);expect(await readState(tx,'native-entries')).toEqual(legacy);expect((await tx.list({prefix:'native-entries-page-'})).size).toBe(1);});});
+ expect(()=>entrySchema.parse({schema_version:1,sequence:1025,version:'a'.repeat(64),previous:null,content_hash:'b'.repeat(64)})).toThrow();
+});
+it('serializes twenty concurrent native publications and concurrent campaign admission',async()=>{
+ const name='race-'+crypto.randomUUID(),entries=await Promise.all(Array.from({length:20},async(_,i)=>{const version=await nativeHash(['version',i]);return{schema_version:1,sequence:1,previous:null,version,content_hash:await nativeHash([1,1,null,version])};}));
+ const replies=await Promise.allSettled(entries.map(entry=>coordinate(env,name,'native-append',{entry,parents:[],publisher:'writer'})));expect(replies.filter(r=>r.status==='fulfilled')).toHaveLength(1);const log=await coordinate(env,name,'native-log') as {entries:unknown[]};expect(log.entries).toHaveLength(1);
+ const admissions=await Promise.all(Array.from({length:40},(_,i)=>coordinate(env,name,'campaign-register',{id:'campaign-'+i,known:[]}))) as {allowed:boolean}[];expect(admissions.filter(r=>r.allowed)).toHaveLength(32);expect(await coordinate(env,name,'campaign-register',{id:'campaign-0',known:[]})).toEqual({allowed:true});
+});
+
+it('publishes the 1024th version through native authority and refuses a 1025th',async()=>{const name='large-native-'+crypto.randomUUID(),entries:NativeEntry[]=[];let previous:string|null=null;for(let i=1;i<=1023;i++){const version=await nativeHash(['snapshot',i]),content_hash=await nativeHash([1,i,previous,version]);entries.push({schema_version:1,sequence:i,previous,version,content_hash});previous=content_hash;}await runInDurableObject(env.COORDINATORS.get(env.COORDINATORS.idFromName(name)),async(_instance,state)=>{await state.storage.transaction(tx=>writeState(tx,'native-entries',entries));});const version=await nativeHash(['snapshot',1024]),entry={schema_version:1,sequence:1024,previous,version,content_hash:await nativeHash([1,1024,previous,version])};await coordinate(env,name,'native-append',{entry,parents:[entries.at(-1)!.version],publisher:'writer'});const log=await coordinate(env,name,'native-log') as {entries:unknown[];tip:string};expect(log.entries).toHaveLength(1024);expect(log.tip).toBe(entry.content_hash);await expect(coordinate(env,name,'native-append',{entry:{...entry,sequence:1025},parents:[],publisher:'writer'})).rejects.toThrow();});

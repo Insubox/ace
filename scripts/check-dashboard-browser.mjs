@@ -33,11 +33,12 @@ const server=createServer(async(req,res)=>{
       return send(201,{created:true,username:args.username,role:'admin'});
     }
     if(req.method==='POST'&&url.pathname==='/v1/auth/recover'){const args=JSON.parse(input);assert.equal(args.code,setupCode);assert.equal(args.username,'fixture-admin');assert.equal(args.password,password);recoveryCalls++;return send(200,{recovered:true,sessions_revoked:true});}
-    if(req.method==='POST'&&url.pathname==='/v1/auth/login'){
+    if(req.method==='POST'&&url.pathname==='/v1/auth/browser-login'){
       const args=JSON.parse(input);if(args.password!==password)return send(401,{error:'invalid username or password'});
-      role=args.username==='fixture-reader'?'reader':'admin';return send(200,{token:fixtureToken});
+      role=args.username==='fixture-reader'?'reader':'admin';res.setHeader('set-cookie','ace_fixture_session='+fixtureToken+'; Path=/; HttpOnly; SameSite=Strict');return send(200,{});
     }
-    if(req.headers.authorization!==`Bearer ${fixtureToken}`)return send(401,{error:'unauthorized'});
+    if(url.pathname==='/v1/auth/browser-logout'){res.setHeader('set-cookie','ace_fixture_session=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0');return send(200,{signed_out:true});}
+    if(req.headers.authorization!==`Bearer ${fixtureToken}`&&!(req.headers.cookie??'').includes('ace_fixture_session='+fixtureToken))return send(401,{error:'unauthorized'});
     if(url.pathname==='/v1/auth/me')return send(200,{username:`fixture-${role}`,role,kind:'account'});
     if(req.method==='POST'&&url.pathname==='/v1/auth/logout')return send(200,{signed_out:true});
     if(req.method==='POST'&&url.pathname==='/v1/users'){
@@ -57,6 +58,8 @@ const server=createServer(async(req,res)=>{
     if(url.pathname===`/v1/projects/${name}/members`){if(req.method==='POST'){assert.equal(role,'admin');memberCalls++;}return send(200,{members:[{username:'fixture-admin',role:'owner'},{username:'fixture-reader',role:'reader'}]});}
     if(url.pathname===`/v1/stores/${name}/refs`){if(req.method==='POST'){assert.equal(role,'admin');const args=JSON.parse(input);assert.equal(args.branch,'browser-branch');assert.equal(args.expected,null);assert.equal(args.content_hash,nativeHash([1,args.sequence,args.previous,args.branch,args.expected,args.target]));branchCalls++;branchFixture={schema_version:1,events:[args],heads:{[args.branch]:args.target},tip:args.content_hash};}return send(200,branchFixture);}
     if(req.method==='GET'&&/^\/v1\/stores\/[^/]+\/reviews$/.test(url.pathname))return send(200,{reviews:[]});
+ if(req.method==='GET'&&url.pathname.endsWith('/issues'))return send(200,{issues:[]});
+ if(req.method==='GET'&&url.pathname.endsWith('/notifications'))return send(200,{events:[],unread_count:0,through:0});
     if(req.method==='GET'&&url.pathname.endsWith('/application-campaigns'))return send(200,{campaigns:[]});
     if(req.method==='GET'&&/^\/v1\/projects\/[^/]+\/applications$/.test(url.pathname))return send(200,{runs:[]});
     // Only read deployed store data. No production account or source is mutated.
@@ -126,7 +129,7 @@ try{
   assert.match(await evaluate("document.getElementById('candidate-detail').textContent"),/content_hash/);
   if(process.argv[4])await writeFile(process.argv[4].replace(/\.png$/, '-trials.png'),Buffer.from((await call('Page.captureScreenshot',{format:'png'})).data,'base64'));
   await call('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
-  for(const tab of ['home','trials','learning','versions']){
+  for(const tab of ['home','trials','learning','versions','reviews','applications','tasks']){
     await evaluate(`document.getElementById('nav-${tab}').click()`);
     assert.equal(await evaluate('document.documentElement.scrollWidth<=innerWidth'),true,`Mobile overflow in ${tab}`);
   }
@@ -171,5 +174,5 @@ try{
   await call('Page.navigate',{url:`${origin}/recover#recover=${setupCode}&user=fixture-admin`});await until("document.getElementById('recovery')&&!document.getElementById('recovery').hidden");assert.equal(await evaluate('location.hash'),'');
   await fill({'recover-password':password,'recover-confirm':password});await submit('recover-form');await until("document.getElementById('recover-result').textContent.includes('Password updated')");assert.equal(recoveryCalls,1);assert.equal(await evaluate("document.getElementById('recover-password').value"),'');
   assert.deepEqual(exceptions,[]);assert.deepEqual(violations,[]);
-  console.log(JSON.stringify({browser:'Chromium',deployed_html:!process.env.ACE_DASHBOARD_HTML,observatory_main_views:6,mobile_layout:true,loaded_observations:18,winning_and_failed_source:true,csp_violations:0,corrupt_objects_refused:true,logout_clears_private_views:true,server_verification:process.env.ACE_EXPECT_SERVER_VERIFICATION==='1',deployed_native_versions:6,deployed_read_requests:liveReads,source_hash_verified:true,inert_source:true,setup_fragment_removed:true,account_forms:'isolated_fixture_only',password_confirmation:true,project_team_form:true,native_branch_form:true,private_project_creation:true,proposal_http_retry:true,reader_cannot_run_trial:true,recovery_fragment_removed:true,recovery_form:true,admin_and_reader_views:true,production_mutations:0}));
+  console.log(JSON.stringify({browser:'Chromium',deployed_html:!process.env.ACE_DASHBOARD_HTML,observatory_main_views:7,mobile_layout:true,loaded_observations:18,winning_and_failed_source:true,csp_violations:0,corrupt_objects_refused:true,logout_clears_private_views:true,server_verification:process.env.ACE_EXPECT_SERVER_VERIFICATION==='1',deployed_native_versions:6,deployed_read_requests:liveReads,source_hash_verified:true,inert_source:true,setup_fragment_removed:true,account_forms:'isolated_fixture_only',password_confirmation:true,project_team_form:true,native_branch_form:true,private_project_creation:true,proposal_http_retry:true,reader_cannot_run_trial:true,recovery_fragment_removed:true,recovery_form:true,admin_and_reader_views:true,production_mutations:0}));
 }finally{socket.close();server.closeAllConnections();await new Promise(done=>server.close(done));}
