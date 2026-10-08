@@ -258,6 +258,30 @@ impl Fixture {
 }
 
 #[test]
+fn manifest_traversal_is_rejected_before_local_or_cloud_execution() {
+    for path in [
+        "../fast.wasm",
+        "artifacts/../../fast.wasm",
+        "./fast.wasm",
+        "",
+        "/fast.wasm",
+    ] {
+        let fixture = Fixture::new(&good());
+        fixture.configure(|config| config.candidates[0].module = PathBuf::from(path));
+        let error = load_config(&fixture.input).unwrap_err().to_string();
+        assert!(
+            error.contains("relative normal components"),
+            "{path}: {error}"
+        );
+        assert!(run(&fixture.input, &fixture.output, 1).is_err());
+        assert!(!fixture.output.exists());
+        let bundle = fixture.temp.path().join("bundle");
+        assert!(prepare_cloud(&fixture.input, &bundle).is_err());
+        assert!(!bundle.exists());
+    }
+}
+
+#[test]
 fn functional_run_preserves_sources_and_materializes_a_reproducible_champion() {
     let fixture = Fixture::new(&good());
     let source_before = fs::read(fixture.input.join("fast.wasm")).unwrap();

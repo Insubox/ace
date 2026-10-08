@@ -59,7 +59,8 @@ pub fn read_cloud_json<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T>
 
 /// Freeze a fresh plan and content-addressed modules; no network or compilation.
 pub fn prepare_cloud(directory: &Path, output: &Path) -> Result<CloudPlan> {
-    let mut config = load_config(directory)?;
+    let input = crate::files::ReadDirectory::open(directory)?;
+    let mut config = crate::config::load_config_from(&input)?;
     let requested_experiment = config.experiment.clone();
     let nonce = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -72,7 +73,7 @@ pub fn prepare_cloud(directory: &Path, output: &Path) -> Result<CloudPlan> {
     ))?;
     let modules = std::iter::once(&config.baseline)
         .chain(&config.candidates)
-        .map(|m| read_module(directory, &m.module))
+        .map(|m| input.read(&m.module, 1_048_576).map_err(RunnerError::from))
         .collect::<Result<Vec<_>>>()?;
     let plan = CloudPlan {
         schema_version: ace_protocol::ProtocolVersion,

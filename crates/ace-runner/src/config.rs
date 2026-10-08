@@ -135,8 +135,8 @@ impl Validate for RunConfig {
             return reject("relative improvement must be less than 1");
         }
         for module in std::iter::once(&self.baseline).chain(&self.candidates) {
-            if module.module.as_os_str().is_empty() || module.module.is_absolute() {
-                return reject("module paths must be relative to the experiment directory");
+            if crate::files::validate_relative(&module.module).is_err() {
+                return reject("module paths must contain only relative normal components");
             }
         }
         Ok(())
@@ -144,7 +144,11 @@ impl Validate for RunConfig {
 }
 
 pub fn load_config(directory: &Path) -> Result<RunConfig> {
-    let data = crate::files::read_beneath(directory, Path::new("experiment.json"), 1_048_576)?;
+    load_config_from(&crate::files::ReadDirectory::open(directory)?)
+}
+
+pub(crate) fn load_config_from(directory: &crate::files::ReadDirectory) -> Result<RunConfig> {
+    let data = directory.read(Path::new("experiment.json"), 1_048_576)?;
     let config: RunConfig = serde_json::from_value(ace_protocol::parse_json(&data)?)?;
     config.validate()?;
     Ok(config)

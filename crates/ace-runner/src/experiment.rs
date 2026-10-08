@@ -424,7 +424,8 @@ pub fn run(directory: &Path, output: &Path, jobs: u32) -> Result<RunReport> {
             "run output already exists; choose a new directory".into(),
         ));
     }
-    let mut config = load_config(directory)?;
+    let input = crate::files::ReadDirectory::open(directory)?;
+    let mut config = crate::config::load_config_from(&input)?;
     let requested_experiment = config.experiment.clone();
     let nonce = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -435,7 +436,11 @@ pub fn run(directory: &Path, output: &Path, jobs: u32) -> Result<RunReport> {
         ExperimentId::new(format!("EXP-{}", id_hash(&(&requested_experiment, nonce))?))?;
     let modules: Vec<_> = std::iter::once(&config.baseline)
         .chain(&config.candidates)
-        .map(|module| read_module(directory, &module.module))
+        .map(|module| {
+            input
+                .read(&module.module, 1_048_576)
+                .map_err(RunnerError::from)
+        })
         .collect::<Result<_>>()?;
     let timestamp = now();
     let input_hash = ContentHash::of_json(&(

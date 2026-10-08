@@ -14,12 +14,29 @@ use std::{
 /// directory/file; links, absolute paths and parent traversal are rejected.
 pub struct ReadDirectory(Dir);
 
+/// Validate manifest paths before any filesystem access. Opening still uses
+/// directory capabilities; lexical validation alone is not a symlink defense.
+pub fn validate_relative(relative: &Path) -> io::Result<()> {
+    if relative.as_os_str().is_empty()
+        || relative
+            .components()
+            .any(|c| !matches!(c, Component::Normal(_)))
+    {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "file path must contain only relative normal components",
+        ));
+    }
+    Ok(())
+}
+
 impl ReadDirectory {
     pub fn open(root: &Path) -> io::Result<Self> {
         Ok(Self(Dir::open_ambient_dir(root, ambient_authority())?))
     }
 
     pub fn read(&self, relative: &Path, limit: u64) -> io::Result<Vec<u8>> {
+        validate_relative(relative)?;
         let components = relative
             .components()
             .map(|component| match component {

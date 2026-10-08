@@ -43,6 +43,17 @@ policy and protocol input reads. It does not suppress scanner findings. The
 source SAST service must run again on the resulting commit to confirm its own
 finding status; a local test pass is not a scanner result.
 
+The reported service is Aikido, issue `50155735` for repository `3292055`.
+The original bounded directory-capability fix is commit
+`3a240949af0adef08c76905c84e038b57bc2d5d2`. The reads named by that finding
+no longer use `std::fs::File::open` in the current source. Confirm the branch
+and analyzed commit in Aikido before comparing line numbers. Subsequent
+hardening also validates module paths when decoding the manifest and holds
+the same root directory handle for the configuration and all modules during
+local execution and cloud bundle preparation. Parent traversal is rejected
+even when the referenced file exists; rejected input creates no run or cloud
+bundle. The integration suite exercises both entry points.
+
 The selected root is caller-authorized when opened. Hard links, mounted
 filesystems, a hostile account that can replace the selected root before it is
 opened, and blocking regular files on a remote filesystem are outside this file
