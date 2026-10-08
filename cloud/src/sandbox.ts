@@ -6,6 +6,7 @@ import { DurableObject } from 'cloudflare:workers';
 import { Files } from '@cloudflare/sandbox';
 import { type Env, type Job, type FinalizeJob, type CloudPlan, type ExperimentState,sha256,coordinate,immutablePut } from './contracts';
 import type {TrialJob,NativeBundle} from './observatory';
+import {reservePaidStart} from './spending-control';
 
 export type RunFile = { path: string; content: string };
 export class EvaluationSandbox extends DurableObject<Env> {
@@ -66,6 +67,7 @@ export class EvaluationSandbox extends DurableObject<Env> {
     // Separate DO name per lease ensures retries never share a candidate instance.
     const container = this.ctx.container;
     if (!container) throw new Error('Cloudflare Container binding is not configured');
+    await reservePaidStart(this.env,'container');
     const signal = AbortSignal.timeout(720_000);
     try {
       container.start({ image: container.images.ace, enableInternet: false });

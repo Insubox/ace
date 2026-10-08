@@ -20,8 +20,11 @@ private project identities, account details and recovery credentials are omitted
 Trial duration includes assembly, queues, retries, evaluation and archival from
 original acceptance to completion. It is not candidate execution latency. D1
 counts describe retained mirrors, not live queue depth, and a completed workflow
-does not assert that its proposal qualified. No monetary estimate is returned:
-provider billing is not collected by ACE.
+does not assert that its proposal qualified. `costs` remains null because live
+provider billing is not collected by ACE. The separate `spending_control` field
+reports the operator-verified billing observation, conservative reservations and
+paid execution availability. See [spending protection](spending-control.md) for
+the USD 175 cutoff, observation freshness and account invoice limitations.
 
 Alerts identify trials or verifications pending for more than 90 minutes and the
 absence of a backup sealed within the last 36 hours with a completed restore

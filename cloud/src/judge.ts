@@ -1,3 +1,4 @@
+import {reservePaidStart,requireSpendingAdmission} from './spending-control';
 import { z } from 'zod';
 import { type Env, type ExperimentState, type CloudPlan, identifier, hash, strictJson,
   sha256, coordinate, immutablePut, HttpError, json } from './contracts';
@@ -121,6 +122,7 @@ export async function judge(env: Env, bytes: Uint8Array, selector: 'flash' | 'cl
     known_failures: knownFailures }, questions: QUESTIONS };
   const requestBytes = new TextEncoder().encode(JSON.stringify(request));
   if (requestBytes.length > 49_152) throw new HttpError(413, 'judge request exceeds byte budget');
+  await requireSpendingAdmission(env);
   const budget = `JUDGE-BUDGET-${new Date().toISOString().slice(0, 10)}`;
   const claim = await coordinate(env, budget, 'judge-claim', { key: id }) as { disposition: string; token?: string };
   if (claim.disposition === 'busy' || claim.disposition === 'done') throw new HttpError(409, 'judge request is in progress; retry the same bytes');
@@ -132,6 +134,7 @@ export async function judge(env: Env, bytes: Uint8Array, selector: 'flash' | 'cl
   const started = Date.now();
   if (claim.disposition === 'budget') fault = 'budget_exhausted';
   else {
+    await reservePaidStart(env,'ai');
     try {
       const raw = await Promise.race([env.AI.run(`@cf/cloudflare/${model}`, request),
         new Promise<never>((_, reject) => { timer = setTimeout(() => reject(new Error('judge-deadline')), 10_000); })]);

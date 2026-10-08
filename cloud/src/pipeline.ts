@@ -1,5 +1,6 @@
+import {requireSpendingAdmission} from './spending-control';
 import { type Env, type Job, type FinalizeJob, type ExperimentState, type Task, type CloudPlan,
-  coordinate, sha256, immutablePut, jobSchema, hash, identifier } from './contracts';
+  coordinate, sha256, immutablePut, jobSchema, hash, identifier, HttpError } from './contracts';
 import { z } from 'zod';
 
 type Claim = { disposition: 'claimed' | 'busy' | 'done' | 'terminal'; token?: string; task?: Task; state?: ExperimentState };
@@ -60,6 +61,7 @@ export async function consumeEvaluation(env: Env, input: unknown): Promise<'ack'
   if (claim.disposition === 'terminal') { if (claim.state!.tasks[job.index]?.resultKey) await mirrorEvaluation(env, job, claim.state!.tasks[job.index]!); await mirror(env, claim.state!); await notify(env, job.experiment, claim.state!); return 'ack'; }
   if (claim.disposition === 'done') { await mirrorEvaluation(env, job, claim.task!); await mirror(env, claim.state!); await notify(env, job.experiment, claim.state!); return 'ack'; }
   try {
+    await requireSpendingAdmission(env,'container');
     const output = await env.SANDBOXES.getByName(`${job.experiment}-${job.index}-${claim.token}`).evaluate(job);
     const bytes = new TextEncoder().encode(output);
     if (bytes.length > 128_000) throw new Error('oversized evaluator output');
@@ -74,7 +76,7 @@ export async function consumeEvaluation(env: Env, input: unknown): Promise<'ack'
     await mirror(env, completed.state);
     await notify(env, job.experiment, completed.state);
     return 'ack';
-  } catch (e) { await coordinate(env, job.experiment, 'release', { ...job, token: claim.token }); throw e; }
+  } catch (e) { if(e instanceof HttpError&&e.status===429&&e.message.startsWith('ACE paid tasks paused:')){await failExperiment(env,job,'Paid execution paused by account spending control; no correctness conclusion.');return 'ack';} await coordinate(env, job.experiment, 'release', { ...job, token: claim.token }); throw e; }
 }
 
 export async function consumeFinalization(env: Env, job: FinalizeJob): Promise<'ack' | 'retry'> {
@@ -92,6 +94,7 @@ export async function consumeFinalization(env: Env, job: FinalizeJob): Promise<'
       const object = await env.ARTIFACTS.get(key);
       if (!object || await sha256(await object.arrayBuffer()) !== claim.state!.tasks[i]!.resultHash) throw new Error('accepted observation corrupted');
     }
+    await requireSpendingAdmission(env,'container');
     const files = filesSchema.parse(await env.SANDBOXES.getByName(`${job.experiment}-final-${claim.token}`).finalize(job, keys));
     if (new Set(files.map(f => f.path)).size !== files.length || !files.some(f => f.path === 'run.json')) throw new Error('incomplete run export');
     const prefix = `experiments/${job.experiment}/runs/${claim.token}/`;
@@ -102,7 +105,7 @@ export async function consumeFinalization(env: Env, job: FinalizeJob): Promise<'
     const completed = await coordinate(env, job.experiment, 'complete', { ...job, index: 'final', token: claim.token,
       resultKey: prefix + 'run.json', resultHash: await sha256(new TextEncoder().encode(run.content)) }) as { state: ExperimentState };
     await mirrorFinal(env, completed.state); await notify(env, job.experiment, completed.state); return 'ack';
-  } catch (e) { await coordinate(env, job.experiment, 'release', { ...job, index: 'final', token: claim.token }); throw e; }
+  } catch (e) { if(e instanceof HttpError&&e.status===429&&e.message.startsWith('ACE paid tasks paused:')){await failExperiment(env,job,'Paid execution paused by account spending control; no correctness conclusion.');return 'ack';} await coordinate(env, job.experiment, 'release', { ...job, index: 'final', token: claim.token }); throw e; }
 }
 
 export async function failExperiment(env: Env, job: FinalizeJob, error: string): Promise<void> {

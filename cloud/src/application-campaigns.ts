@@ -1,3 +1,4 @@
+import {reservePaidStart,requireSpendingAdmission} from './spending-control';
 import {WorkflowEntrypoint,type WorkflowEvent,type WorkflowStep} from 'cloudflare:workers';
 import {z} from 'zod';
 import {type Env,HttpError,json,sha256,strictJson,immutablePut,coordinate} from './contracts';
@@ -97,9 +98,11 @@ export async function generateApplication(env:Env,job:CampaignJob,args:Request,b
  const existing=await env.ARTIFACTS.get(prefix+'record.json');
  if(existing)record=strictJson(await existing.text()) as typeof record;
  else{
+  await requireSpendingAdmission(env);
   const budget='GENERATOR-BUDGET-'+new Date().toISOString().slice(0,10),claim=await coordinate(env,budget,'generator-claim',{key:id}) as {disposition:string;token?:string};
   if(['busy','done'].includes(claim.disposition))throw new HttpError(409,'application generation is already in progress');
   let strategy:string|null=null,files:Record<string,string>|null=null,fault:string|null=null,response:string|undefined,timer:ReturnType<typeof setTimeout>|undefined;
+  if(claim.disposition!=='budget')await reservePaidStart(env,'ai');
   if(claim.disposition==='budget')fault='budget_exhausted';
   else try{
    if(!env.AI)throw new Error('provider unavailable');

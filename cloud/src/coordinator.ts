@@ -1,6 +1,7 @@
 import {readState,writeState} from './paged-state';
 import {reviewOperation} from './review-state';
 import {issueOperation} from './issues';
+import {spendingOperation} from './spending-control';
 import { DurableObject } from 'cloudflare:workers';
 import { type Env, type ExperimentState, type Task, HttpError, json } from './contracts';
 import { entrySchema,refSchema,type NativeRef, type NativeEntry } from './native-store';
@@ -11,6 +12,7 @@ export class ExperimentCoordinator extends DurableObject<Env> {
       const op = new URL(request.url).pathname.slice(1);
       const body = await request.json() as Record<string, unknown>;
       const result = await this.ctx.storage.transaction(async tx => {
+        if(op.startsWith('spending-'))return spendingOperation(tx,op,body);
         if(op.startsWith('review-'))return await reviewOperation(tx,op,body);
         if(op.startsWith('issue-'))return await issueOperation(tx,op,body);
         if(op==='campaign-register'){const ids=new Set([...(await tx.get<string[]>('campaign-ids')??[]),...(body.known as string[])]),id=String(body.id);if(ids.has(id))return{allowed:true};if(ids.size>=32)return{allowed:false};ids.add(id);await tx.put('campaign-ids',[...ids]);return{allowed:true};}

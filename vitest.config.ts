@@ -5,7 +5,7 @@ export default defineConfig({
     main: './cloud/src/worker.ts',
     miniflare: {
       compatibilityDate: '2026-10-05', compatibilityFlags: ['nodejs_compat'],
-      bindings: { NATIVE_VERIFIER_BINARY_HASH:'f'.repeat(64), API_TOKEN: 'local-tests-only-0123456789abcdef0123456789abcdef' },
+      bindings: { SPENDING_CONTROL_MODE:'local-disabled', NATIVE_VERIFIER_BINARY_HASH:'f'.repeat(64), API_TOKEN: 'local-tests-only-0123456789abcdef0123456789abcdef' },
       durableObjects: { RESTORE_COORDINATORS:{className:'RestoreCoordinator',useSQLite:true}, COORDINATORS: { className: 'ExperimentCoordinator', useSQLite: true } },
       d1Databases: ['DB','RESTORE_DB'], r2Buckets: ['ARTIFACTS','BACKUPS','RESTORE_STORAGE'],
       queueProducers: { EVALUATIONS: 'ace-evaluations', FINALIZATIONS: 'ace-finalizations' },

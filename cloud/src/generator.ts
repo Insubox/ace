@@ -1,3 +1,4 @@
+import {reservePaidStart,requireSpendingAdmission} from './spending-control';
 import { z } from 'zod';
 import { type Env, identifier, hash, strictJson, sha256, coordinate, immutablePut, HttpError, json } from './contracts';
 
@@ -95,6 +96,7 @@ export async function generate(env: Env, input: Uint8Array, selector: Selector):
   const request = generationRequest(task);
   const requestBytes = encode(request);
   if (requestBytes.length > 65536) throw new HttpError(413, 'generator prompt exceeds byte budget');
+  await requireSpendingAdmission(env);
   const budget = `GENERATOR-BUDGET-${new Date().toISOString().slice(0, 10)}`;
   const claim = await coordinate(env, budget, 'generator-claim', { key: id }) as { disposition: string; token?: string };
   if (['busy', 'done'].includes(claim.disposition)) throw new HttpError(409, 'generation is in progress; retry identical bytes');
@@ -105,6 +107,7 @@ export async function generate(env: Env, input: Uint8Array, selector: Selector):
   const started = Date.now();
   if (claim.disposition === 'budget') generationFault = 'budget_exhausted';
   else {
+    await reservePaidStart(env,'ai');
     try {
       const raw = await Promise.race([env.AI.run(model, request), new Promise<never>((_, reject) => {
         timer = setTimeout(() => reject(new Error('generation-deadline')), 45000);

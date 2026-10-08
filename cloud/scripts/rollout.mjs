@@ -9,7 +9,7 @@ const provider=async init=>{const r=await fetch(path,{...init,headers:{authoriza
 const read=async()=>{const result=await provider({});const current=result.deployments?.[0];if(!current?.id||!Array.isArray(current.versions))throw Error('No current Worker deployment');return{id:current.id,versions:current.versions};};
 const deploy=async versions=>{const r=await provider({method:'POST',body:JSON.stringify({strategy:'percentage',versions,annotations:{'workers/message':'ACE checked gradual release'}})});return{id:r.id,versions:r.versions};};
 const smoke=async version=>{
- const headers={'Cloudflare-Workers-Version-Overrides':`${values.worker}=${version}`};
+ const headers={'Cloudflare-Workers-Version-Overrides':`${values.worker}="${version}"`};
  const r=await fetch(config.origin+'/',{headers,redirect:'error',signal:AbortSignal.timeout(15000)});if(!r.ok||!r.headers.get('content-security-policy')||(await r.text()).length<10000)throw Error('Observatory smoke check failed');
  const state=await(await api(config,'/v1/operations',{headers,signal:AbortSignal.timeout(15000)})).json();if(state.schema_version!==1||state.alerts.length)throw Error('Operations smoke check failed');return{observatory:true,authenticated_operations:true,alerts:0,evaluator_binary_hash:state.evaluator_binary_hash};
 };

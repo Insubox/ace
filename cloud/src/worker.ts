@@ -1,3 +1,4 @@
+import {requireSpendingAdmission,readSpending,updateSpending} from './spending-control';
 import {submit} from './submission';
 export {submit} from './submission';
 import { z } from 'zod';
@@ -99,6 +100,12 @@ export default {
       if(url.pathname==='/v1/auth/browser-logout'&&request.method==='POST'){if((await limitedBody(request,1)).length)throw new HttpError(400,'sign-out takes no payload');return await accounts.browserLogout(request,env);}
       if(url.pathname==='/v1/auth/recover'&&request.method==='POST')return await accounts.recover(request,env,await limitedBody(request,16384));
       const current=await accounts.identity(request,env);accounts.authorize(request,current);
+      if(url.pathname==='/v1/spending-control'&&request.method==='GET')return await readSpending(env,current);
+      if(url.pathname==='/v1/spending-control'&&request.method==='POST')return await updateSpending(env,current,await limitedBody(request,2048));
+      if(url.pathname==='/v1/spending-control/pause'&&request.method==='POST')return await updateSpending(env,current,await limitedBody(request,2048),true);
+      // Admission stops new expensive workflows before budgets or source are changed.
+      // Execution guards also cover already queued work and subsequent retries.
+      if(request.method==='POST'&&(/^\/v1\/(?:experiments|generate\/(?:qwen|llama)|judge\/(?:flash|clef))$/.test(url.pathname)||/^\/v1\/projects\/[^/]+\/(?:applications(?:\/app-[0-9a-f]{64}\/replay)?|application-campaigns|trials(?:\/trial-[0-9a-f]{64}\/retry)?)$/.test(url.pathname)||/^\/v1\/stores\/[^/]+\/versions\/[0-9a-f]{64}\/verify$/.test(url.pathname)))await requireSpendingAdmission(env,/^\/v1\/(?:generate|judge)\//.test(url.pathname)?'ai':'container');
       if(url.pathname==='/v1/operations'&&request.method==='GET')return await operations(env,current);
       if(url.pathname==='/v1/auth/me'&&request.method==='GET')return json(current);
       if(url.pathname==='/v1/auth/setup-ticket'&&request.method==='POST')return await accounts.setupTicket(env,current);

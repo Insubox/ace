@@ -1,3 +1,4 @@
+import {spendingStatus} from './spending-control';
 // Read-only infrastructure observations. No private source, user identifiers,
 // model traces, recovery tokens or passwords belong in this response.
 import {type Env,HttpError,json,coordinate} from './contracts';
@@ -39,5 +40,5 @@ export async function operations(env:Env,actor:Identity){
   pending_trials_over_90m:Number(results[4]!.results[0]?.count??0),pending_verifications_over_90m:Number(results[5]!.results[0]?.count??0),
   backups:results[8]!.results,latest_completed_backup:latest,latest_completed_restore_drill:restored,
   observatory_budget:{day,...budgets as Record<string,number>},alerts,
-  costs:null,cost_scope:'provider_billing_not_collected',qualification_scope:'workflow_completion_does_not_assert_candidate_correctness'},200);
+  spending_control:await spendingStatus(env),costs:null,cost_scope:'provider_billing_not_collected',qualification_scope:'workflow_completion_does_not_assert_candidate_correctness'},200);
 }

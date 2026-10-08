@@ -4,6 +4,7 @@
   "main": "src/worker.ts",
   "compatibility_date": "2026-10-05",
   "compatibility_flags": ["nodejs_compat"],
+  "vars":{"SPENDING_CONTROL_MODE":"enforce"},
   "rules": [{"type":"Text","globs":["**/*.html"],"fallthrough":true}],
   "ai": { "binding": "AI" },
   "durable_objects": { "bindings": [
