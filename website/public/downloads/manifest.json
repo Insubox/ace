@@ -3,7 +3,7 @@
   "version": "0.4.0",
   "source_commit": "0b913fbaf8c41c26aa7465bd80525f18b1142528",
   "source_access": "private_repository",
-  "scope": "Verified Linux offline technical preview; native Windows and macOS execution pending",
+  "scope": "Verified Linux and Mac Intel offline technical previews; native Windows and Apple silicon execution pending",
   "platforms": [
     {
       "target": "x86_64-unknown-linux-musl",
@@ -43,15 +43,52 @@
     },
     {
       "target": "aarch64-apple-darwin",
-      "status": "native_execution_pending"
+      "status": "native_execution_pending",
+      "release_channel": "beta"
     },
     {
       "target": "x86_64-apple-darwin",
-      "status": "native_execution_pending"
+      "status": "verified",
+      "archive": "ace-0.4.0-x86_64-apple-darwin.tar.gz",
+      "sha256": "e8ecd6b693d92b962cc3cfbcee0320b174ea684cca0a282cdfdf8200742e28b1",
+      "rust_tests": {
+        "passed": 128,
+        "ignored": 0
+      },
+      "first_use": {
+        "demo_programs": 13,
+        "qualified": 10,
+        "diagnostic_failures": 3,
+        "generations": 3,
+        "history_verified": true,
+        "mcp_tools": 30,
+        "unsigned_cells_verified": [
+          "MaxU32",
+          "MinU32"
+        ],
+        "mcp_experiment_verified": true,
+        "agent_proposals_verified": true,
+        "offline_inspector_verified": true,
+        "agent_rounds": 2,
+        "native_memory_verified": true,
+        "native_versions": 4,
+        "native_clone_verified": true,
+        "generator_fault_verified": true,
+        "git_snapshots": 3,
+        "third_party_notices_verified": true,
+        "git_clone_verified": true,
+        "git_provider_credentials": "absent",
+        "external_tool_path": "empty",
+        "provider_credentials": "absent"
+      },
+      "native_execution": "owner_intel_mac_uploaded_report_and_logs",
+      "verification_record": "mac-intel-verification.json",
+      "release_channel": "beta"
     },
     {
       "target": "x86_64-pc-windows-msvc",
-      "status": "native_execution_pending"
+      "status": "native_execution_pending",
+      "release_channel": "beta"
     }
   ]
 }

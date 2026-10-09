@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "target": "x86_64-apple-darwin",
+  "source_commit": "0b913fbaf8c41c26aa7465bd80525f18b1142528",
+  "version": "0.4.0",
+  "archive": "ace-0.4.0-x86_64-apple-darwin.tar.gz",
+  "archive_bytes": 3724696,
+  "sha256": "e8ecd6b693d92b962cc3cfbcee0320b174ea684cca0a282cdfdf8200742e28b1",
+  "binary_sha256": "13c24e4c445424534ee45b3f927e096f5520ee9ffffc82884ce958186bbb2f19",
+  "source_archive_sha256": "113b3fe5965bfe885a0bde4363caf5f41b2fd4fe6248339a73332b1435010289",
+  "rust_tests": {
+    "passed": 128,
+    "ignored": 0
+  },
+  "helper_sha256": {
+    "native-release.py": "94a72bbe5f1aef58d8c4a03328d7881359b55b9cb6c3e063f48894399abaeaf0",
+    "package-release.py": "a46507cc8e416da2887ce9ee2a8e1c8904a4be7674fe12a4f48255bce2ac8b36",
+    "check-package.py": "8b590a5b041f3c1ba1f38e0a86dad09f17404af930b2702ae4280c638ab6c4fd"
+  },
+  "uploaded_log_hashes": {
+    "rust-version": "8dc912acd5bfeafc70b01b1d2a2afb0844afa02f5dba2f1ae8d5c212d005afb6",
+    "rust-tests": "68ca6c83179812f10db44d8d4ac36668714f9e3da8f68d2a21455796e2ddfb37",
+    "release-build": "28d5bcd386c8d29f026b2a940a7422782e4bbb02671061237bf06b3f1f2863f7",
+    "package": "bd2963b643c2423ac2e691f2893b0b4b1db2348c7327d155650c3fb914d16f43",
+    "first-use": "469025952c9af9adc1044e56fa83a645f08af7a04bf8a1503fc203be4b44b5d9"
+  },
+  "first_use": {
+    "demo_programs": 13,
+    "qualified": 10,
+    "diagnostic_failures": 3,
+    "generations": 3,
+    "history_verified": true,
+    "mcp_tools": 30,
+    "unsigned_cells_verified": [
+      "MaxU32",
+      "MinU32"
+    ],
+    "mcp_experiment_verified": true,
+    "agent_proposals_verified": true,
+    "offline_inspector_verified": true,
+    "agent_rounds": 2,
+    "native_memory_verified": true,
+    "native_versions": 4,
+    "native_clone_verified": true,
+    "generator_fault_verified": true,
+    "git_snapshots": 3,
+    "third_party_notices_verified": true,
+    "git_clone_verified": true,
+    "git_provider_credentials": "absent",
+    "external_tool_path": "empty",
+    "provider_credentials": "absent"
+  },
+  "native_execution": "owner_intel_mac_uploaded_report_and_logs",
+  "package_integrity": "rechecked_on_linux_without_executing_Mach_O",
+  "host_system": "Darwin",
+  "host_machine": "x86_64",
+  "duration_ms": 750155,
+  "github_actions": false,
+  "scope": "Owner native execution evidence; source/helper/log/manifest/content/architecture hashes reviewed. No claim of macOS signing, notarization or Apple silicon execution.",
+  "publication": {
+    "public_archive": "https://ace.org.ai/downloads/ace-0.4.0-x86_64-apple-darwin.tar.gz",
+    "public_checksum": "https://ace.org.ai/downloads/ace-0.4.0-x86_64-apple-darwin.tar.gz.sha256",
+    "status": "native_checks_reviewed"
+  },
+  "release_channel": "beta"
+}

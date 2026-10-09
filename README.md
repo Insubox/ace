@@ -3,6 +3,9 @@
 ACE is an agent-first software evolution platform: experiments produce candidates,
 evaluation produces immutable evidence, and deterministic policy qualifies elites.
 Knowledge survives discarded code. The official project domain is **ace.org.ai**.
+The [Cloudflare-native platform guide](docs/cloudflare-native-platform.md) maps
+the hosted version engine, collaboration and evaluation services to their actual
+Cloudflare components. Local CLI downloads are additional clients.
 
 The complete-task repair campaigns, measured retrieval comparison and gated
 release/recovery procedures are described in
@@ -14,11 +17,13 @@ reproducible local checks that do not use GitHub Actions or paid cloud execution
 The local CLI now generates candidates and runs complete GCD experiments without
 Cloudflare, accounts, API keys or Docker. Build from source below, or download the
 [verified Linux 0.4.0 preview](https://github.com/Insubox/ace/releases/tag/ace-0.4.0-linux-preview-20261008).
-You can also download the verified Linux demo without an account from
+You can download the verified Linux or Mac Intel demo without an account from
 [ace.org.ai/getting-started](https://ace.org.ai/getting-started). GitHub source and
 release downloads require access to the private repository. The
 [delivery record](docs/linux-preview-delivery.md) includes its checksum and checks
-run against the actual GitHub download; current Windows/macOS packages remain unverified.
+run against the actual GitHub Linux download. The [Mac Intel record](docs/mac-intel-delivery.md)
+includes the owner's native execution and reviewed package checks; Windows and
+Mac Apple silicon packages remain unverified.
 The four-platform package workflow remains available; development currently
 validates locally while the GitHub Actions account limit is unresolved.
 See the [step-by-step guide](docs/getting-started.md) for Linux, macOS and Windows.

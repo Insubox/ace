@@ -3,9 +3,11 @@
 The currently verified executable source is
 `0b913fbaf8c41c26aa7465bd80525f18b1142528` (ACE 0.4.0).
 The [Linux candidate](https://github.com/Insubox/ace/releases/tag/ace-0.4.0-linux-candidate-20261008)
-has been downloaded and exercised independently. Windows and both macOS
-architectures pass Rust type checking on Linux, but native execution and packages
-are still pending. Do not publish a platform as verified before its native run.
+has been downloaded and exercised independently. [Mac Intel](mac-intel-delivery.md)
+passed native execution on the owner's Mac, with uploaded logs and package hashes
+reviewed before publication. Windows and macOS Apple silicon pass Rust type
+checking on Linux, but native execution and packages are still pending.
+Do not publish a platform as verified before its native run.
 
 ## Run the native release check
 

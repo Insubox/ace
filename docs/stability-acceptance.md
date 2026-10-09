@@ -11,8 +11,11 @@ The updated 2,784-object backup has now passed isolated restoration, native
 history verification, a replay from restored source and real read-only traffic
 switching. See [the recovery record](backups.md#updated-recovery-validation--2026-10-08).
 The [native distribution flow](native-distribution.md) passed on Linux, including
-a public website download and first-use check without credentials.
-Windows and both macOS architectures still require native execution; a
+a public website download and first-use check without credentials. Mac Intel
+also passed native workspace and extracted-package checks on the owner's Mac;
+the uploaded source/helper/log and package hashes were reviewed before publishing
+the same archive. See [the Mac Intel record](mac-intel-delivery.md).
+Windows and macOS Apple silicon still require native execution; a
 complete four-platform stable distribution is not yet claimed.
 
 ## Complete task campaigns and measured retrieval
