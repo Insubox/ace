@@ -6,17 +6,21 @@ returned HTTP 200. The namespace had no repositories at that observation.
 A separate validation Worker, `ace-artifacts-stage-20261009`, was deployed with
 its own D1 database, R2 bucket and Durable Object namespace. Its provider settings
 confirm the real `SOURCE_WORKSPACES` Artifacts binding to `ace-agents` (HTTP 200).
-The validation installation has no application authentication secret yet and
-authenticated routes therefore fail closed. It does not run paid AI, containers,
-scheduled jobs or production workflows.
+The validation used a generated ephemeral application secret held in process
+memory and configured through the provider secret API. That secret was removed
+afterward, so authenticated routes now fail closed. The installation does not
+run paid AI, containers, scheduled jobs or production workflows.
 
-The managed development environment's egress proxy denied access to the new
-validation hostname (HTTP CONNECT 403). An additive network configuration draft
-was saved; applying/publishing it and functional hosted acceptance are pending.
-Git remote authentication/push and the concurrent-agent demonstration are still
-unverified. The stable production Worker has not been promoted to this code and
-does not yet have the Artifacts binding. No Artifacts repository has been created
-by this implementation's validation.
+After the owner published the validation-host network configuration, hosted
+provisioning succeeded: two distinct authenticated test writers created separate
+real Artifacts repositories concurrently. One writer could not issue a credential
+for the other's workspace (HTTP 403). Both initial provider tokens were revoked.
+The real provider returned an HTTPS Git remote on the account-specific hostname
+`ef57d8aaa157d5317b2b78c7b7676ca6.artifacts.cloudflare.net`; the managed egress proxy
+denied its Git request (HTTP CONNECT 403). An additive network draft for that
+exact hostname was saved. Git authentication, pushes and concurrent source
+delivery remain unverified. The stable production Worker has not been promoted
+to this code and does not yet have the Artifacts binding.
 
 ## Storage responsibilities
 
@@ -166,9 +170,16 @@ spending reservations and restoration of task context. Provider RPC is simulated
 The client cases also check real local Git preparation, resume, exact-byte hashes,
 in-memory credentials, no overwrite and refusal of linked Git directories.
 
-Remaining hosted acceptance: activate validation-host network access; configure
-ephemeral validation authentication without persisting credentials; prepare and
-push two real workspaces concurrently; retain
+Hosted provisioning acceptance on 2026-10-09 also read back the private native
+baseline and branch references, unchanged `main`, retained task context after
+closure, both USD 1 planning reservations and revoked provider credentials.
+Both test workspaces were closed and the ephemeral application secret removed.
+The empty external repositories remain retained, consistent with the close API.
+These were validator-controlled accounts, not autonomous agents or independent
+human reviewers; the checks do not establish hosted proposal import or approval.
+
+Remaining hosted acceptance: activate the provider Git-host network access;
+prepare and push two real workspaces concurrently; retain
 both exact proposals and task context; exercise a source conflict and independent
 review; confirm main and learning behave as recorded; close/revoke credentials;
 read back the real Artifacts binding. Only that establishes hosted integration.
