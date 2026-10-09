@@ -50,6 +50,17 @@ estimate of general LLM learning, and the supplied proposal identities are
 caller declared. Real hosted model comparisons remain subject to spending,
 daily quotas and current evaluator evidence.
 
+The owner's next selected external project is [Pallets Click](click-pilot.md).
+The frozen Click 8.3.1 source has a reproduced Unicode completion inconsistency;
+no synthetic defect was inserted. Its original suite and 15 fixed repair cases
+produce 1,325 passing / 4 failing cases before the repair and 1,329 passing /
+zero failing afterward, preserving 21 skips and one expected failure. A rejected
+proposal also regressed an original Click test. The exact baseline, loser,
+winner and learning are retained in seven verified native versions. This explicit
+local Python profile uses declared proposals and zero paid provider calls; it
+does not turn the hosted three-template application evaluator into a general
+project build service. See [its acceptance receipt](../pilots/click/acceptance.json).
+
 ## Approval and release gate
 
 The v2 local complete-repository profile can capture an original verified native

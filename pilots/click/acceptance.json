@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "profile": "click-unicode-completion-v1",
+  "upstream": {
+    "url": "https://github.com/pallets/click",
+    "tag": "8.3.1",
+    "commit": "1d038f270701498433cb432f54db89f95f07a845",
+    "license": "BSD-3-Clause"
+  },
+  "image_id": "sha256:0b0b4340bdbbb237c56ce7d80cdb98f412c43d92fcb8a9415e70d89d9473f079",
+  "python_version": "3.11.2",
+  "context_hash": "92347e79f268a94ad7d89b3a4083ecdaaf965dd3ca9294251184a681aadeaff8",
+  "native_binary_sha256": "e79b45a91358687ab6087c7815e34f53bc5fc3660025e3cf1f0303a49b7662f6",
+  "native_versions": 7,
+  "baseline_source": "c4c94babee5334cd17a39a2c2a49a0959d414dea2c106078eff6438c69e7789c",
+  "baseline_result": "86d4de88166e8f23a2a19bbcecbb112efd836fe475a1b00bb8b8018dd9d7371e",
+  "losing_source": "91d063a2bc7c3592f51acc79005538dd9ccfba9bc57ec3fd335b64a2a80398c0",
+  "losing_result": "7163be1e2233301b249aacf9acfd3ec202a829b96928a53820fa3277cf7262f0",
+  "winning_source": "8aa58ef90f4a4c10e78ac1830c548e07551bf2cf12be2ab5d5a155a11e631bea",
+  "winning_result": "ca82faf494b09e0a8bc67a4bb1d3c1dd5ad7d0e11117386278e45d8ea3dbe7ad",
+  "baseline": {
+    "passed": 1325,
+    "failed": 4,
+    "skipped": 21,
+    "expected_failure": 1
+  },
+  "loser": {
+    "passed": 1320,
+    "failed": 9,
+    "regressed_original_suite": true,
+    "accepted": false
+  },
+  "winner": {
+    "passed": 1329,
+    "failed": 0,
+    "skipped": 21,
+    "expected_failure": 1,
+    "accepted": true
+  },
+  "protected_source_files": 143,
+  "clone_and_checkout_verified": true,
+  "paid_cloud_calls": 0,
+  "scope": "Local Linux Python 3.11; real wheel build and fixed public suites. Caller-declared proposals, no hosted qualification or general model benchmark.",
+  "hosting": {
+    "project": "click-pilot",
+    "private": true,
+    "native_versions": 7,
+    "objects": 166,
+    "downloaded_bytes": 3364780,
+    "tip": "05ad5168f8c4c8117a7e6a6bf405130904ff088f234c16325d13069b3027dec6",
+    "fresh_download_verified_by_native_engine": true,
+    "review": "42e9e45a-75cd-4c70-bf6c-0ac1ea1cf3c8",
+    "independent_approval_pending": true,
+    "main_source": "c4c94babee5334cd17a39a2c2a49a0959d414dea2c106078eff6438c69e7789c",
+    "winning_branch": "click-unicode-completion"
+  }
+}

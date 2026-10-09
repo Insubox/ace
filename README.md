@@ -14,7 +14,9 @@ reproducible local checks that do not use GitHub Actions or paid cloud execution
 The local CLI now generates candidates and runs complete GCD experiments without
 Cloudflare, accounts, API keys or Docker. Build from source below, or download the
 [verified Linux 0.4.0 preview](https://github.com/Insubox/ace/releases/tag/ace-0.4.0-linux-preview-20261008).
-The repository is private, so downloads require repository access. The
+You can also download the verified Linux demo without an account from
+[ace.org.ai/getting-started](https://ace.org.ai/getting-started). GitHub source and
+release downloads require access to the private repository. The
 [delivery record](docs/linux-preview-delivery.md) includes its checksum and checks
 run against the actual GitHub download; current Windows/macOS packages remain unverified.
 The four-platform package workflow remains available; development currently
@@ -23,6 +25,9 @@ See the [step-by-step guide](docs/getting-started.md) for Linux, macOS and Windo
 
 The [complete-project learning guide](docs/complete-project-learning.md) explains
 retrieval of exact-source reports from ACE's own development pilot.
+The [Click open-source pilot](docs/click-pilot.md) freezes an external Python
+project, builds its real package, evaluates a Unicode completion repair against
+its original suite and retains winning/losing source and learning in native ACE.
 
 From a source checkout with Git and Rust installed:
 
