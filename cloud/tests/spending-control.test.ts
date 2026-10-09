@@ -101,7 +101,7 @@ it('guards the real container start primitive and preserves reservations after p
 it('shows only availability to project members, without account spending amounts',async()=>{
  await seed(12345);
  const result=await(await readSpending(protectedEnv,{kind:'account',username:'reader',role:'reader'})).json();
- expect(result).toEqual({schema_version:1,enforced:true,paused:false,reason:null,ai_allowed:true,containers_allowed:true});
+ expect(result).toEqual({schema_version:1,enforced:true,paused:false,reason:null,ai_allowed:true,containers_allowed:true,artifacts_allowed:true});
 });
 it('acknowledges paused queued work without starting a sandbox, retry storms or false correctness claims',async()=>{
  const job={experiment:'EXP-spend-'+crypto.randomUUID(),planHash:'0'.repeat(64),index:0};

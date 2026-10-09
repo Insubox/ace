@@ -44,6 +44,8 @@ export type Env = {
   APPLICATION_IMAGE_HASH?:string;
   NATIVE_VERIFICATIONS: Workflow<import('./verification').VerificationJob>;
   DB: D1Database; ARTIFACTS: R2Bucket;
+  // Actual Cloudflare Artifacts product; ARTIFACTS above remains ACE's R2 store.
+  SOURCE_WORKSPACES?: Artifacts;
   BACKUPS?:R2Bucket; RESTORE_STORAGE?:R2Bucket; RESTORE_DB?:D1Database;
   RESTORE_COORDINATORS?:DurableObjectNamespace; BACKUP_WORKFLOW?:Workflow<import('./backups').BackupJob>;
   COORDINATORS: DurableObjectNamespace;

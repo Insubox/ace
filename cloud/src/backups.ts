@@ -1,3 +1,4 @@
+import type {Workspace} from './artifact-workspace-state';
 // Private disaster snapshots and isolated restoration drills. Sessions are excluded.
 import {WorkflowEntrypoint,type WorkflowEvent,type WorkflowStep} from 'cloudflare:workers';
 import {z} from 'zod';
@@ -11,7 +12,7 @@ const tables=['experiments','evaluations','evidence_index','native_users','nativ
 const backupId=z.string().regex(/^backup-(?:[0-9]{8}|[0-9a-f-]{36})$/);
 type Row=Record<string,string|number|null>;
 type Table={name:string;sql:string;columns:string[];rows:Row[]};
-type Log={entries:NativeEntry[];publishers:Record<string,{username:string;published_at:number}>;tip:string|null;reviews?:Review[];issues?:Issue[]};
+type Log={entries:NativeEntry[];publishers:Record<string,{username:string;published_at:number}>;tip:string|null;reviews?:Review[];issues?:Issue[];workspaces?:Workspace[]};
 type RefLog={events:NativeRef[];heads:Record<string,string>;tip:string|null};
 type Inventory={schema_version:1;id:string;started_at:number;tables:Table[];stores:Record<string,Log>;refs?:Record<string,RefLog>;experiments:Record<string,ExperimentState>;keys:string[]};
 type Item={key:string;hash:string;size:number};
@@ -44,7 +45,7 @@ export async function capture(env:Env,id:string):Promise<Inventory>{
  // Capture authoritative DO journals, even when a publication's D1 mirror lags.
  const projects=saved.find(t=>t.name==='native_projects')!.rows;
  if(projects.length>100)throw new Error('backup supports at most 100 projects');
- for(const project of projects){const name=String(project.name);if(!/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/.test(name))continue;const {refs:reference,...log}=await coordinate(env,'NATIVE-STORE-'+name,'native-backup-authority') as Log&{refs:RefLog};if(log.entries.length||log.issues?.length||log.reviews?.length){stores[name]=log;refs[name]=reference;}}
+ for(const project of projects){const name=String(project.name);if(!/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/.test(name))continue;const {refs:reference,...log}=await coordinate(env,'NATIVE-STORE-'+name,'native-backup-authority') as Log&{refs:RefLog};if(log.entries.length||log.issues?.length||log.reviews?.length||log.workspaces?.length){stores[name]=log;refs[name]=reference;}}
  if(saved.find(t=>t.name==='experiments')!.rows.length>100)throw new Error('backup supports at most 100 experiments');
  for(const row of saved.find(t=>t.name==='experiments')!.rows){const state=await coordinate(env,String(row.id),'status') as ExperimentState;experiments[String(row.id)]=state;}
  const keys:string[]=[];let cursor:string|undefined,total=0;
@@ -88,6 +89,7 @@ export async function restoreNative(env:Env,id:string,name:string,log:Log,items:
   }
   if(log.reviews){await restoreCoordinate(env,'RESTORE-'+id+'-NATIVE-'+name,'review-restore',{reviews:log.reviews});const actual=await restoreCoordinate(env,'RESTORE-'+id+'-NATIVE-'+name,'review-list') as {reviews:Review[]};if(JSON.stringify(actual.reviews)!==JSON.stringify(log.reviews))throw new Error('restored reviews differ');}
   if(log.issues){if(log.issues.some(issue=>issue.version&&!known.has(issue.version)))throw new Error('restored task source is unpublished');await restoreCoordinate(env,'RESTORE-'+id+'-NATIVE-'+name,'issue-restore',{issues:log.issues});const actual=await restoreCoordinate(env,'RESTORE-'+id+'-NATIVE-'+name,'issue-list') as {issues:Issue[]};if(JSON.stringify(actual.issues)!==JSON.stringify(log.issues))throw new Error('restored tasks differ');}
+  if(log.workspaces){if(log.workspaces.some(w=>!known.has(w.base)||w.version&&!known.has(w.version)))throw new Error('restored workspace source is unpublished');await restoreCoordinate(env,'RESTORE-'+id+'-NATIVE-'+name,'workspace-restore',{workspaces:log.workspaces});const actual=await restoreCoordinate(env,'RESTORE-'+id+'-NATIVE-'+name,'workspace-list') as {workspaces:Workspace[]};if(JSON.stringify(actual.workspaces)!==JSON.stringify(log.workspaces))throw new Error('restored workspaces differ');}
   const observed=await restoreCoordinate(env,'RESTORE-'+id+'-NATIVE-'+name,'native-log') as Log;if(observed.tip!==log.tip||JSON.stringify(observed.entries)!==JSON.stringify(log.entries)||JSON.stringify(observed.publishers)!==JSON.stringify(log.publishers))throw new Error('restored authority differs');
 
  return{name,versions:log.entries.length};

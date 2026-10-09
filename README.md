@@ -6,6 +6,9 @@ Knowledge survives discarded code. The official project domain is **ace.org.ai**
 The [Cloudflare-native platform guide](docs/cloudflare-native-platform.md) maps
 the hosted version engine, collaboration and evaluation services to their actual
 Cloudflare components. Local CLI downloads are additional clients.
+The [Artifacts agent workspace guide](docs/artifact-workspaces.md) describes the
+implemented staging adapter, concurrency and source checks; real provider access
+and hosted activation are pending.
 
 The complete-task repair campaigns, measured retrieval comparison and gated
 release/recovery procedures are described in

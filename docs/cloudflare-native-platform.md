@@ -51,23 +51,37 @@ checkout. These distinct capabilities must remain clear in a competition demo.
 
 Source repository access, public registration and access for competition judges
 are separate from hosted platform functionality. The repository currently remains
-private. No judge invitation, submission, source visibility change or eligibility
-claim has been made.
+private. No judge invitation, submission or source visibility change has been made.
 
 ## Competition-specific acceptance
 
-The official competition page is pending review: the managed environment's proxy
-blocked `www.cloudflare.com`. A saved network draft adds that exact host and
-preserves the other configured custom domains; the owner must save/publish the
-environment change before the page can be retrieved.
+The owner supplied the official `build-next-gen-git-platform-competition-terms.pdf`.
+Its SHA-256 is `a87556a400bddca338dfc1612692b303908134594a27cb2d65ebe44707ed57dd`.
+The requirements below come from that document, rather than assumptions from the
+product name or the previously blocked marketing page.
 
-Until the official rules are readable, deadline, eligibility, licensing,
-mandatory Git protocol behavior, deliverable format and demonstration/access
-requirements are **unverified**. The existing hosted architecture establishes
-Cloudflare-native implementation, not automatic competition compliance. Once
-the rules are available, map each requirement to actual evidence and complete
-any missing functionality within the owner's scope and spending controls.
+| Official requirement | Current evidence / remaining work |
+| --- | --- |
+| Workers **and Cloudflare Artifacts** (section 4) | Workers is deployed. The existing `ARTIFACTS` binding is an R2 bucket and does not satisfy the Artifacts product requirement. The [workspace adapter](artifact-workspaces.md) is implemented/tested locally; real service access and hosted acceptance are pending. |
+| Multiple agents working on changes concurrently (section 4) | Local workspace tests retain simultaneous proposals in separate native branches with task context. A real hosted Artifacts demonstration of agent changes, coordination, review and conflicts is still required. |
+| MIT, Apache 2.0 or BSD 2/3-Clause source license and root LICENSE (section 4) | Owner's licensing decision and root LICENSE are pending. No license grant or repository visibility change has been made. |
+| Complete source and execution instructions (sections 4 and 9) | Private source repository and local/cloud instructions exist. Judges' source/platform access must be arranged; the rules do not explicitly mandate a public repository. |
+| 5–10 minute demonstration video and completed application (section 4) | Recording and manual submission are pending. Automated entry is expressly prohibited. |
+| Deadline (section 2) | October 14, 2026, 11:59 PM PDT; October 15, 2026, 12:59 AM in Mexico City. |
+| Legal US/Canada residence and age 18+ at contest start (section 3) | Owner confirmed both in this conversation. This is a declaration, not independent eligibility verification. |
 
-Native macOS executable testing still needs a macOS machine. Cloudflare's Linux
-evaluation containers cannot establish native macOS runtime verification. This
-does not prevent the browser platform from running on Cloudflare.
+The scoring weights are 50% originality/quality for agent-oriented software
+collaboration, 25% concurrent agents, coordination, context preservation, review
+and conflict handling, and 25% usability/UX (section 6). Finalists give a 10-minute
+live presentation on October 21, 2026 at Cloudflare Connect, Moscone West,
+San Francisco; a potential winner must be physically present (sections 6–7).
+
+The rules do not explicitly require a Git HTTP/SSH server, arbitrary Click builds
+in the hosted evaluator, or native binaries for every desktop platform. Do not
+present those as mandatory contest acceptance. Conversely, merely naming an R2
+bucket ARTIFACTS is not use of the required product. ACE is not yet claimed to
+meet all submission requirements.
+
+Mac Intel execution was completed on the owner's Mac and the resulting package
+is publicly available as a beta; Windows/Mac Apple silicon native packages remain
+pending. Cloudflare's Linux containers cannot establish native macOS execution.

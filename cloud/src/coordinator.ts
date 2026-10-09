@@ -1,3 +1,4 @@
+import {workspaceOperation} from './artifact-workspace-state';
 import {readState,writeState} from './paged-state';
 import {reviewOperation} from './review-state';
 import {issueOperation} from './issues';
@@ -14,6 +15,7 @@ export class ExperimentCoordinator extends DurableObject<Env> {
       const result = await this.ctx.storage.transaction(async tx => {
         if(op.startsWith('spending-'))return spendingOperation(tx,op,body);
         if(op.startsWith('review-'))return await reviewOperation(tx,op,body);
+        if(op.startsWith('workspace-'))return await workspaceOperation(tx,op,body);
         if(op.startsWith('issue-'))return await issueOperation(tx,op,body);
         if(op==='campaign-register'){const ids=new Set([...(await tx.get<string[]>('campaign-ids')??[]),...(body.known as string[])]),id=String(body.id);if(ids.has(id))return{allowed:true};if(ids.size>=32)return{allowed:false};ids.add(id);await tx.put('campaign-ids',[...ids]);return{allowed:true};}
         if(op==='application-replay-register'){const ids=await tx.get<string[]>('application-replays')??[],id=String(body.id);if(ids.includes(id))return{allowed:true};if(ids.length>=2)return{allowed:false};await tx.put('application-replays',[...ids,id]);return{allowed:true};}
@@ -70,7 +72,7 @@ export class ExperimentCoordinator extends DurableObject<Env> {
         if(op==='native-log'||op==='native-backup-authority'){
           const entries=await readState<NativeEntry[]>(tx,'native-entries')??[];
           const publishers=await readState<Record<string,{username:string;published_at:number}>>(tx,'native-publishers')??{};
-          return {schema_version:1,backend:'ace-native-v1',entries,publishers,tip:entries.at(-1)?.content_hash??null,qualification:'caller_asserted_requires_ACE_verification',...(op==='native-backup-authority'?{issues:await readState<any>(tx,'native-issues')??[],reviews:await readState<any>(tx,'native-reviews')??[],refs:{schema_version:1,events:await readState<NativeRef[]>(tx,'native-ref-events')??[],heads:await readState<Record<string,string>>(tx,'native-ref-heads')??{},tip:(await readState<NativeRef[]>(tx,'native-ref-events'))?.at(-1)?.content_hash??null}}:{})};
+          return {schema_version:1,backend:'ace-native-v1',entries,publishers,tip:entries.at(-1)?.content_hash??null,qualification:'caller_asserted_requires_ACE_verification',...(op==='native-backup-authority'?{workspaces:await readState<any>(tx,'native-workspaces')??[],issues:await readState<any>(tx,'native-issues')??[],reviews:await readState<any>(tx,'native-reviews')??[],refs:{schema_version:1,events:await readState<NativeRef[]>(tx,'native-ref-events')??[],heads:await readState<Record<string,string>>(tx,'native-ref-heads')??{},tip:(await readState<NativeRef[]>(tx,'native-ref-events'))?.at(-1)?.content_hash??null}}:{})};
         }
         if(op==='native-append'){
           const entry=entrySchema.parse(body.entry),parents=body.parents as string[];

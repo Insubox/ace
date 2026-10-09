@@ -1,3 +1,4 @@
+import {listWorkspaces,createWorkspace,workspaceToken,seedWorkspace,submitWorkspace,closeWorkspace} from './artifact-workspaces';
 import {requireSpendingAdmission,readSpending,updateSpending} from './spending-control';
 import {servedVersion} from './version';
 import {submit} from './submission';
@@ -132,6 +133,18 @@ const handler = {
       if(restoration){if(request.method==='GET'&&!restoration[2])return await readRestoreReceipt(env,current,restoration[1]!);if(request.method==='POST'&&!restoration[2])return await requestRestore(env,current,restoration[1]!);if(request.method==='GET'&&restoration[2])return await readDrill(env,current,restoration[1]!,restoration[2],restoration[3]??restoration[5],restoration[4]);}
       if(url.pathname==='/v1/projects'&&request.method==='GET')return await projects.list(env,current);
       if(url.pathname==='/v1/projects'&&request.method==='POST')return await projects.create(env,current,await limitedBody(request,8192));
+      const workspaces=/^\/v1\/projects\/([A-Za-z0-9][A-Za-z0-9_-]{0,63})\/workspaces(?:\/([0-9a-f-]{36})\/(token|seed|proposal|close))?$/.exec(url.pathname);
+      if(workspaces){const project=workspaces[1]!,id=workspaces[2],action=workspaces[3];
+        if(request.method==='GET'&&!id)return await listWorkspaces(env,current,project);
+        if(request.method==='POST'){const input=await limitedBody(request,8192);
+          if(!id)return await createWorkspace(env,current,project,input);
+          if(action==='seed')return await seedWorkspace(env,current,project,id,input);
+          if(action==='proposal')return await submitWorkspace(env,current,project,id,input);
+          if(input.length)throw new HttpError(400,'workspace credential and close actions take no payload');
+          if(action==='token')return await workspaceToken(env,current,project,id);
+          if(action==='close')return await closeWorkspace(env,current,project,id);
+        }
+      }
       const projectMemory=/^\/v1\/projects\/([A-Za-z0-9][A-Za-z0-9_-]{0,63})\/learning$/.exec(url.pathname);
       if(projectMemory&&request.method==='GET')return await projectLearning(env,current,projectMemory[1]!,url);
       const issues=/^\/v1\/projects\/([A-Za-z0-9][A-Za-z0-9_-]{0,63})\/issues(?:\/([0-9a-f-]{36})(\/events)?)?$/.exec(url.pathname);
