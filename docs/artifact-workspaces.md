@@ -1,9 +1,10 @@
 # Cloudflare Artifacts agent workspaces
 
-Status: implemented and tested locally. Provider activation, the real namespace,
-Git remote authentication/push, and a hosted concurrent-agent demonstration are
-pending. The existing provider token is active and reads the deployed Worker
-settings (HTTP 200), but listing Artifacts namespaces returns HTTP 401. The
+Status: implemented and tested locally. The owner reports creating namespace
+`ace-agents`. Provider authorization, Git remote authentication/push, and a hosted
+concurrent-agent demonstration are pending. The existing provider token is active and reads the deployed Worker
+settings (HTTP 200), but listing Artifacts namespaces and reading `ace-agents` both return HTTP 401
+even after the owner created the namespace. The
 deployed Worker does not yet have a real Artifacts binding. No Artifacts resource
 has been created by this implementation's validation.
 
@@ -42,7 +43,8 @@ the example namespace with the account's namespace:
 
 The pinned Wrangler 4.147.0 schema supports this binding. A dry-run Worker bundle
 with this declaration succeeded using the already verified evaluator image;
-`ace-agents` in that dry run is an example, not a discovered account namespace.
+`ace-agents` was subsequently provided by the owner. The dry run validates the
+binding declaration, not provider access or independent namespace discovery.
 Do not deploy the checked-in D1 placeholder IDs. Preserve the deployed image,
 resource bindings, secrets, spending enforcement and gated release procedure.
 Adding Artifacts does not require rebuilding the unchanged Rust evaluator.
