@@ -16,11 +16,12 @@ provisioning succeeded: two distinct authenticated test writers created separate
 real Artifacts repositories concurrently. One writer could not issue a credential
 for the other's workspace (HTTP 403). Both initial provider tokens were revoked.
 The real provider returned an HTTPS Git remote on the account-specific hostname
-`ef57d8aaa157d5317b2b78c7b7676ca6.artifacts.cloudflare.net`; the managed egress proxy
-denied its Git request (HTTP CONNECT 403). An additive network draft for that
-exact hostname was saved. Git authentication, pushes and concurrent source
-delivery remain unverified. The stable production Worker has not been promoted
-to this code and does not yet have the Artifacts binding.
+`ef57d8aaa157d5317b2b78c7b7676ca6.artifacts.cloudflare.net`. After the owner
+published the exact hostname in the managed network policy, Git bearer
+authentication, actual pushes and concurrent native proposal import passed.
+The complete hosted acceptance passed 27 assertions, detailed below. The stable
+production Worker has not been promoted to this code and does not yet have the
+Artifacts binding; production activation requires the native review/release gate.
 
 ## Storage responsibilities
 
@@ -120,8 +121,8 @@ The client requires a clean committed working tree, pushes an exact commit,
 then asks ACE to retain it. Its Artifacts authorization header is scoped to the
 HTTPS remote in process memory, with redirects and prompts disabled; tokens do
 not enter command arguments, remote URLs, Git config, reports or console output.
-The current client uses bearer authentication. That provider-specific Git
-authentication and the real push/seed/proposal path still need live verification.
+The client uses bearer authentication. Provider-specific Git authentication and
+the real push/seed/proposal path passed the isolated hosted acceptance.
 Local-client tests perform actual Git init/add/commit while substituting the
 unavailable provider network operations; they are not hosted Artifacts evidence.
 
@@ -178,9 +179,23 @@ The empty external repositories remain retained, consistent with the close API.
 These were validator-controlled accounts, not autonomous agents or independent
 human reviewers; the checks do not establish hosted proposal import or approval.
 
-Remaining hosted acceptance: activate the provider Git-host network access;
-prepare and push two real workspaces concurrently; retain
-both exact proposals and task context; exercise a source conflict and independent
-review; confirm main and learning behave as recorded; close/revoke credentials;
-read back the real Artifacts binding. Only that establishes hosted integration.
-Production activation must then follow the existing native review/release gate.
+The complete hosted acceptance on 2026-10-09 passed 27 assertions against the
+actual Worker, Artifacts Git transport and provider RPC. Two separate client
+processes concurrently prepared/pushed verified baselines, then pushed/imported
+different proposals. Readback verified each native version's canonical identity,
+baseline parent and exact source bytes, separate branch heads and unchanged main.
+Both original proposals and their task context remained retained.
+
+A review between the competing agent branches rejected merging without another
+contributor's approval and rejected author self-approval. After a second account
+approved, the conflicting source still prevented merging. Explicit resolution
+invalidated the old approval; a new approval allowed only the isolated branch
+merge, with evaluation still required. The project main remained at its baseline.
+Proposal delivery revoked all Git tokens; both workspaces were subsequently
+closed and the memory-only application secret removed. No paid model or evaluator
+container was invoked by this acceptance.
+
+These checks validate the hosted integration and distinct contributor enforcement
+using validator-controlled accounts. They do not establish autonomous model
+efficacy, independent human approval or winning/losing evaluation learning.
+Production activation still requires the existing native review/release gate.
