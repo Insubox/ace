@@ -1,12 +1,22 @@
 # Cloudflare Artifacts agent workspaces
 
-Status: implemented and tested locally. The owner reports creating namespace
-`ace-agents`. Provider authorization, Git remote authentication/push, and a hosted
-concurrent-agent demonstration are pending. The existing provider token is active and reads the deployed Worker
-settings (HTTP 200), but listing Artifacts namespaces and reading `ace-agents` both return HTTP 401
-even after the owner created the namespace. The
-deployed Worker does not yet have a real Artifacts binding. No Artifacts resource
-has been created by this implementation's validation.
+Status as of 2026-10-09: implemented and tested locally. After the owner updated
+the provider token's permissions, listing namespaces and reading `ace-agents`
+returned HTTP 200. The namespace had no repositories at that observation.
+A separate validation Worker, `ace-artifacts-stage-20261009`, was deployed with
+its own D1 database, R2 bucket and Durable Object namespace. Its provider settings
+confirm the real `SOURCE_WORKSPACES` Artifacts binding to `ace-agents` (HTTP 200).
+The validation installation has no application authentication secret yet and
+authenticated routes therefore fail closed. It does not run paid AI, containers,
+scheduled jobs or production workflows.
+
+The managed development environment's egress proxy denied access to the new
+validation hostname (HTTP CONNECT 403). An additive network configuration draft
+was saved; applying/publishing it and functional hosted acceptance are pending.
+Git remote authentication/push and the concurrent-agent demonstration are still
+unverified. The stable production Worker has not been promoted to this code and
+does not yet have the Artifacts binding. No Artifacts repository has been created
+by this implementation's validation.
 
 ## Storage responsibilities
 
@@ -156,8 +166,10 @@ spending reservations and restoration of task context. Provider RPC is simulated
 The client cases also check real local Git preparation, resume, exact-byte hashes,
 in-memory credentials, no overwrite and refusal of linked Git directories.
 
-Remaining hosted acceptance: verify account/namespace access; deploy through the
-native review gate; prepare and push two real workspaces concurrently; retain
+Remaining hosted acceptance: activate validation-host network access; configure
+ephemeral validation authentication without persisting credentials; prepare and
+push two real workspaces concurrently; retain
 both exact proposals and task context; exercise a source conflict and independent
 review; confirm main and learning behave as recorded; close/revoke credentials;
 read back the real Artifacts binding. Only that establishes hosted integration.
+Production activation must then follow the existing native review/release gate.

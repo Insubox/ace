@@ -62,7 +62,7 @@ product name or the previously blocked marketing page.
 
 | Official requirement | Current evidence / remaining work |
 | --- | --- |
-| Workers **and Cloudflare Artifacts** (section 4) | Workers is deployed. The existing `ARTIFACTS` binding is an R2 bucket and does not satisfy the Artifacts product requirement. The [workspace adapter](artifact-workspaces.md) is implemented/tested locally; real service access and hosted acceptance are pending. |
+| Workers **and Cloudflare Artifacts** (section 4) | Workers is deployed. The existing `ARTIFACTS` binding is an R2 bucket and does not satisfy the Artifacts product requirement. The [workspace adapter](artifact-workspaces.md) is implemented/tested locally; real namespace access returned HTTP 200, and an isolated validation Worker has the product binding. Functional hosted acceptance and gated production activation are pending. |
 | Multiple agents working on changes concurrently (section 4) | Local workspace tests retain simultaneous proposals in separate native branches with task context. A real hosted Artifacts demonstration of agent changes, coordination, review and conflicts is still required. |
 | MIT, Apache 2.0 or BSD 2/3-Clause source license and root LICENSE (section 4) | Owner's licensing decision and root LICENSE are pending. No license grant or repository visibility change has been made. |
 | Complete source and execution instructions (sections 4 and 9) | Private source repository and local/cloud instructions exist. Judges' source/platform access must be arranged; the rules do not explicitly mandate a public repository. |
