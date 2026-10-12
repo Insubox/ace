@@ -1,5 +1,5 @@
 // Transport for ACE's native engine. Rust verifies downloaded versions locally.
-import { mkdir, writeFile, lstat, realpath,mkdtemp,rm } from 'node:fs/promises';
+import { mkdir, writeFile, lstat, realpath,mkdtemp,rm,readdir } from 'node:fs/promises';
 import { resolve, join, sep,dirname } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import {nativeHash,validateRefs} from './native-wire.mjs';
@@ -62,27 +62,55 @@ export async function pushStore({directory,name,config,binary='ace',request=api,
   if(saved.entries.length!==entries.length||saved.tip!==(entries.at(-1)?.content_hash??null))throw new Error('Published native history did not retain the expected tip');
   return {store:name,versions:entries.length,objects:uploaded.size,tip:saved.tip,backend:'ace-native-v1',qualification:'verified_locally_before_upload',...(refsLocal?{ref_events:refSequence,ref_tip:refTip}:{}),publication_order_reconciled:saved.tip!==local.tip};
 }
-export async function pullStore({directory,name,config,binary='ace',request=api,run=command}){
-  names(name);const log=await remote(config,name,request),root=resolve(directory);
-  await mkdir(root);for(const folder of['objects','versions','journal','views'])await mkdir(join(root,folder));
-  await writeFile(join(root,'.ace-store.json'),'{"ace_native_store":1}\n',{flag:'wx'});
+// The checkpoint pins identity and history, never credentials. Resume is opt-in.
+export async function pullStore({directory,name,config,binary='ace',request=api,run=command,resume=false}){
+  names(name);const root=resolve(directory),checkpoint='.ace-pull.json';
+  const log=await remote(config,name,request),reference=await remoteRefs(config,name,log,request);
+  const pin={schema_version:1,origin:config.origin??null,project:config.project??null,name,log,reference};
+  const equal=(a,b)=>nativeHash(a)===nativeHash(b);
+  const read=async(path,limit)=>{try{return await localFile(root,path,limit);}catch(error){if(error.code==='ENOENT')return null;throw error;}};
+  if(resume){
+    if(!(await lstat(root)).isDirectory()||await realpath(root)!==root)throw new Error('Resume requires a real native pull directory');
+    const saved=await read(checkpoint,8388608);
+    if(!saved||!equal(JSON.parse(saved),pin))throw new Error('Resume origin, project, journal or references changed');
+  }else{
+    await mkdir(root);
+    if(await realpath(root)!==root)throw new Error('Native pull directory escapes its destination');
+    await writeFile(join(root,checkpoint),JSON.stringify(pin)+'\n',{flag:'wx'});
+  }
+  // Refuse foreign files and symlinks, including directories, before reusing bytes.
+  const allowed=new Map([['objects',null],['versions',new Set(log.entries.map(e=>`${e.version}.json`))],['journal',new Set(log.entries.map(e=>`${String(e.sequence).padStart(8,'0')}.json`))],['views',new Set()],['refs',new Set(reference.events.map(e=>`${String(e.sequence).padStart(8,'0')}.json`))]]);
+  for(const item of await readdir(root)){
+    if(['.ace-store.json',checkpoint].includes(item)){await localFile(root,item,item===checkpoint?8388608:1024);continue;}
+    if(!allowed.has(item))throw new Error('Unexpected file in interrupted native pull');
+    if(!(await lstat(join(root,item))).isDirectory()||await realpath(join(root,item))!==join(root,item))throw new Error('Native pull directory is not a regular directory');
+    for(const file of await readdir(join(root,item))){if(item==='objects'?!hash.test(file):!allowed.get(item).has(file))throw new Error('Unexpected file in interrupted native pull');const path=join(root,item,file),stat=await lstat(path);if(!stat.isFile()||await realpath(path)!==path||stat.size>(item==='objects'?8388608:1048576))throw new Error('Native pull file escapes its store or byte budget');}
+  }
+  for(const folder of allowed.keys())await mkdir(join(root,folder),{recursive:true});
+  const keep=async(path,bytes,limit)=>{const existing=await read(path,limit);if(existing){if(!existing.equals(Buffer.from(bytes)))throw new Error('Interrupted native pull file differs');return;}await writeFile(join(root,path),bytes,{flag:'wx'});};
+  await keep('.ace-store.json','{"ace_native_store":1}\n',1024);
   const seen=new Set();let total=0;
   for(const entry of log.entries){
-    const bytes=await responseBytes(await request(config,`/v1/stores/${name}/versions/${entry.version}`,{signal:fetchOptions.signal()}),1048576),sealed=JSON.parse(bytes);
-    if(sealed.content_hash!==entry.version||!sealed.version?.files||Object.keys(sealed.version.files).length>4096)throw new Error('Downloaded native version differs');
+    const path=`versions/${entry.version}.json`;
+    const bytes=await read(path,1048576)??await responseBytes(await request(config,`/v1/stores/${name}/versions/${entry.version}`,{signal:fetchOptions.signal()}),1048576),sealed=JSON.parse(bytes);
+    if(Object.keys(sealed).sort().join(',')!=='content_hash,version'||sealed.content_hash!==entry.version||nativeHash(sealed.version)!==entry.version||!sealed.version?.files||Array.isArray(sealed.version.files)||Object.keys(sealed.version.files).length>4096)throw new Error('Downloaded native version differs');
     for(const id of Object.values(sealed.version.files)){
       if(!hash.test(id))throw new Error('Invalid downloaded native object ID');if(seen.has(id))continue;
-      const object=await responseBytes(await request(config,`/v1/stores/${name}/objects/${id}`,{signal:fetchOptions.signal()}),8388608);
+      const object=await read(`objects/${id}`,8388608)??await responseBytes(await request(config,`/v1/stores/${name}/objects/${id}`,{signal:fetchOptions.signal()}),8388608);
       if(rawHash(object)!==id)throw new Error('Downloaded native object hash differs');total+=object.length;if(total>536870912)throw new Error('Native pull exceeds the 512 MiB transport limit');
-      await writeFile(join(root,'objects',id),object,{flag:'wx'});seen.add(id);
+      await keep(`objects/${id}`,object,8388608);seen.add(id);
     }
-    await writeFile(join(root,'versions',`${entry.version}.json`),bytes,{flag:'wx'});
-    await writeFile(join(root,'journal',`${String(entry.sequence).padStart(8,'0')}.json`),JSON.stringify(entry)+'\n',{flag:'wx'});
+    await keep(path,bytes,1048576);
+    await keep(`journal/${String(entry.sequence).padStart(8,'0')}.json`,JSON.stringify(entry)+'\n',8192);
   }
-  const reference=await remoteRefs(config,name,log,request);if(reference.events.length){await mkdir(join(root,'refs'));for(const event of reference.events)await writeFile(join(root,'refs',`${String(event.sequence).padStart(8,'0')}.json`),JSON.stringify(event)+'\n',{flag:'wx'});}
+  for(const id of await readdir(join(root,'objects')))if(!seen.has(id))throw new Error('Unreferenced object in interrupted native pull');
+  for(const event of reference.events)await keep(`refs/${String(event.sequence).padStart(8,'0')}.json`,JSON.stringify(event)+'\n',8192);
+  // Check the pinned snapshot again before accepting the completed store.
+  if(!equal(await remote(config,name,request),log)||!equal(await remoteRefs(config,name,log,request),reference))throw new Error('Remote native history or references changed during pull');
   const verified=run(binary,['store','log',root]);
   if(verified.backend!=='ace-native-v1'||verified.verified!==true||verified.tip!==log.tip)throw new Error('Downloaded native history did not pass local ACE verification');
-  return {store:name,directory:root,versions:log.entries.length,objects:seen.size,tip:verified.tip,verified:true,bytes:total};
+  await rm(join(root,checkpoint));
+  return {store:name,directory:root,versions:log.entries.length,objects:seen.size,tip:verified.tip,verified:true,bytes:total,resumed:resume};
 }
 
 export async function fetchStore({directory,name,config,binary='ace',request=api,run=command}){

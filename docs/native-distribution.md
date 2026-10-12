@@ -123,3 +123,47 @@ Website archives are generated artifacts excluded from Git. Restore them from
 the verified package output before publishing the static site. Deployment must
 include the exact archive and checksum recorded in `downloads/manifest.json`;
 never deploy a page pointing to missing or unverified files.
+
+## Install from the public manifest
+
+The same verified helper is public at [ace.org.ai/downloads/install.py](https://ace.org.ai/downloads/install.py); it does not require access to the private source repository.
+
+With Python 3.11 or later and the delivery helper, install without repository or
+provider credentials into a directory that does not exist:
+
+```sh
+python3 scripts/download-release.py --dest /path/to/new/ace-preview
+/path/to/new/ace-preview/ace --version
+/path/to/new/ace-preview/ace demo demo --json
+```
+
+The helper reads `https://ace.org.ai/downloads/manifest.json` and selects the
+native Linux x86-64 or Mac Intel package. `--target x86_64-apple-darwin` or
+`--target x86_64-unknown-linux-musl` explicitly downloads the other verified
+platform without executing it. Windows and Mac Apple silicon remain pending
+beta platforms with no package; the helper refuses them.
+
+Each install requires a fresh destination, including on repeat runs; existing
+files, empty directories and symlinks are refused. It verifies the manifest,
+published checksum, archive checksum and exact regular package members, then
+ties executable and notices hashes, source commit, version and target to build
+metadata. It never extracts arbitrary archive paths. Downloads retain TLS
+verification and the configured proxy, accept only credentialless HTTPS within
+ACE's public downloads path, follow at most five redirects with fresh requests,
+and use per-download time and size budgets (30 seconds, 32 MiB compressed and
+64 MiB expanded for packages). Redirect requests contain no authorization or
+cookie headers. No GitHub token or provider secret is needed.
+
+The install includes `ace`, the getting-started guide, build metadata, third-party
+notices, the original archive and checksum, and the manifest. Failure or a Python
+interrupt removes an incomplete destination; abrupt process termination can leave
+an incomplete directory that must be removed before retrying. Checksums bind files
+to the HTTPS manifest; they are not independent publisher signatures. These
+unsigned previews retain the OS protection and platform limitations above.
+
+To repeat the existing first-use verification on the installed archive:
+
+```sh
+python3 scripts/check-package.py /path/to/new/ace-preview/ace-0.4.0-x86_64-unknown-linux-musl.tar.gz
+python3 -m unittest discover -s scripts/tests -p test_download_release.py
+```

@@ -119,3 +119,20 @@ production accounts were created. The deployed Observatory branch form also pass
 Chromium desktop/mobile checks using isolated account mutations and real read-only
 source/evidence data. Local MCP now exposes thirty tools, including native branch,
 diff, merge and fetch operations within the selected workspace.
+
+Interrupted native downloads retain a credential-free `.ace-pull.json` checkpoint
+in the destination. After restoring authentication or connectivity, explicitly
+resume the same pull with the same origin, project and remote store:
+
+```sh
+node cloud/scripts/store-sync.mjs pull ./incoming REMOTE --resume --session PRIVATE_SESSION_FILE --ace /absolute/path/to/ace
+```
+
+HTTP 401 and 403 stop immediately; the client never retries authentication.
+Resume pins the original journal and branch references, rejects changed snapshots,
+checks cached canonical versions and object hashes, and includes reused objects in
+the 512 MiB limit. It refuses symlinks, foreign files and corrupt existing files
+rather than overwriting them. Successful Rust verification removes the checkpoint.
+If the remote history advanced or local files were corrupted, choose a fresh
+destination. Keep the destination private and avoid concurrent local writers;
+a partial checkpoint or partially written file requires a fresh destination.

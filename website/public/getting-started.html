@@ -7,6 +7,12 @@
 <h1 style="font-family:Newsreader,serif;font-weight:300;font-size:clamp(40px,6vw,72px);line-height:1.05">Run your first ACE experiment.</h1>
 <p>The native CLI demo runs offline. It needs no account, API key, Cloudflare service, Node or Docker. ACE preserves source and learning in its own version engine; Git is optional for compatibility.</p>
 <p style="padding:18px;border:1px solid #D2461C;border-radius:8px"><strong>No account is needed for the Linux or Mac Intel demo.</strong> Choose the package matching your computer below. Source access and complete application campaigns still require access to the private GitHub repository. Windows and Mac Apple silicon betas are in preparation; native testing is pending.</p>
+<h2 style="font-family:Newsreader,serif;font-size:32px">Verified installation helper</h2>
+<p>If you have Python 3.11 or later, this optional helper chooses the Linux x86-64 or Mac Intel package, checks its checksum and build metadata, and installs into a new folder. No account or API key is needed. You can also use the manual download instructions below.</p>
+<pre style="background:#1A1915;color:#F3F1EA;padding:20px;border-radius:8px;overflow-x:auto">curl --fail --show-error https://ace.org.ai/downloads/install.py -o install.py
+python3 install.py --dest ace-preview
+./ace-preview/ace demo</pre>
+<p><a href="/downloads/install.py" style="text-decoration:underline">Read or download the installer</a> · <a href="/downloads/install.py.sha256" style="text-decoration:underline">Installer SHA-256</a>. Use a new folder name on each installation. The helper rejects modified packages, unsafe archive entries and existing folders. Windows and Mac Apple silicon packages are still pending beta; Mac Intel remains unsigned and unnotarized.</p>
 <h2 style="font-family:Newsreader,serif;font-size:32px">1. Download the package and checksum</h2>
 <p>Download both files into the same folder:</p>
 <h3>Linux Intel / AMD 64-bit</h3>
