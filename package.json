@@ -28,5 +28,6 @@
   },
   "overrides": {
     "workerd": "1.20261006.1"
-  }
+  },
+  "license": "MIT"
 }

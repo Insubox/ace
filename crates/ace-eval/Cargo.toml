@@ -4,6 +4,7 @@ description = "Portable advisory judge routing and evidence-linked calibration"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
+license.workspace = true
 
 [dependencies]
 ace-core.workspace = true

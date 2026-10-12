@@ -4,6 +4,7 @@ description = "Isolated local WASM experiments, measurement and reproduction"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
+license.workspace = true
 
 [dependencies]
 ace-core.workspace = true
