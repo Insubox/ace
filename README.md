@@ -21,8 +21,7 @@ The local CLI now generates candidates and runs complete GCD experiments without
 Cloudflare, accounts, API keys or Docker. Build from source below, or download the
 [verified Linux 0.4.0 preview](https://github.com/Insubox/ace/releases/tag/ace-0.4.0-linux-preview-20261008).
 You can download the verified Linux or Mac Intel demo without an account from
-[ace.org.ai/getting-started](https://ace.org.ai/getting-started). The source and GitHub
-release downloads are public, and ACE source is licensed under MIT. The
+[ace.org.ai/getting-started](https://ace.org.ai/getting-started). ACE source is licensed under MIT. The
 [delivery record](docs/linux-preview-delivery.md) includes its checksum and checks
 run against the actual GitHub Linux download. The [Mac Intel record](docs/mac-intel-delivery.md)
 includes the owner's native execution and reviewed package checks; Windows and
