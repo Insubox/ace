@@ -6,7 +6,7 @@
 <p style="font-size:12px;color:#D2461C;letter-spacing:.12em">LINUX X86-64 PREVIEW + MAC INTEL BETA</p>
 <h1 style="font-family:Newsreader,serif;font-weight:300;font-size:clamp(40px,6vw,72px);line-height:1.05">Run your first ACE experiment.</h1>
 <p>The native CLI demo runs offline. It needs no account, API key, Cloudflare service, Node or Docker. ACE preserves source and learning in its own version engine; Git is optional for compatibility.</p>
-<p style="padding:18px;border:1px solid #D2461C;border-radius:8px"><strong>No account is needed for the Linux or Mac Intel demo.</strong> Choose the package matching your computer below. Source access and complete application campaigns still require access to the private GitHub repository. Windows and Mac Apple silicon betas are in preparation; native testing is pending.</p>
+<p style="padding:18px;border:1px solid #D2461C;border-radius:8px"><strong>No account is needed for the Linux or Mac Intel demo.</strong> Choose the package matching your computer below. The <a href="https://github.com/Insubox/ace" style="text-decoration:underline">source repository</a> is public under the <a href="https://github.com/Insubox/ace/blob/main/LICENSE" style="text-decoration:underline">MIT license</a>. Windows and Mac Apple silicon betas are in preparation; native testing is pending.</p>
 <h2 style="font-family:Newsreader,serif;font-size:32px">Verified installation helper</h2>
 <p>If you have Python 3.11 or later, this optional helper chooses the Linux x86-64 or Mac Intel package, checks its checksum and build metadata, and installs into a new folder. No account or API key is needed. You can also use the manual download instructions below.</p>
 <pre style="background:#1A1915;color:#F3F1EA;padding:20px;border-radius:8px;overflow-x:auto">curl --fail --show-error https://ace.org.ai/downloads/install.py -o install.py
@@ -42,9 +42,9 @@ cd ace-0.4.0-x86_64-apple-darwin</pre>
 ./ace history ace-evolution</pre>
 <p>Generations preserve linked evidence and previous champions. MCP integration exposes 30 local tools for proposals, execution, native source history and collaboration. Consult the packaged guide or <a href="https://github.com/Insubox/ace/blob/main/docs/getting-started.md" style="text-decoration:underline">repository documentation</a> for agent campaigns, replay, clone and checkout.</p>
 <h2 style="font-family:Newsreader,serif;font-size:32px">Windows and Mac Apple silicon · beta in preparation</h2>
-<p>Native packages for Windows and Mac Apple silicon still require execution on those platforms. Developers with repository access can use the <a href="https://github.com/Insubox/ace/blob/main/docs/native-distribution.md" style="text-decoration:underline">native build and verification guide</a>. No GitHub Actions minutes or provider account is needed for local validation.</p>
+<p>Native packages for Windows and Mac Apple silicon still require execution on those platforms. Developers can use the <a href="https://github.com/Insubox/ace/blob/main/docs/native-distribution.md" style="text-decoration:underline">native build and verification guide</a>. No GitHub Actions minutes or provider account is needed for local validation.</p>
 <h2 style="font-family:Newsreader,serif;font-size:32px">Work with complete applications</h2>
-<p>Hello World, TicTacToe and Calculator compile and test as complete projects under protected dependencies and suites. These campaigns require repository access, Rust, Node and Docker. They are separate from the standalone binary demo.</p>
+<p>Hello World, TicTacToe and Calculator compile and test as complete projects under protected dependencies and suites. These campaigns require a clone of the public repository, Rust, Node and Docker. They are separate from the standalone binary demo.</p>
 <pre style="background:#1A1915;color:#F3F1EA;padding:24px;border-radius:12px;font-size:13px">git clone https://github.com/Insubox/ace.git
 cd ace
 cargo build --locked -p ace-cli

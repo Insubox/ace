@@ -113,11 +113,11 @@ download each uploaded archive and checksum again and repeat its first-use
 check on the corresponding platform. Match the package source commit across
 all four targets. Publishing a new package does not promote a new backend.
 
-The GitHub repository currently remains private. Its assets require repository
-access. Public binary downloads on `ace.org.ai` make the offline Linux CLI usable
-without exposing the source repository. Public source access is a separate
-owner decision. Do not claim public GitHub access until visibility or intended
-developer invitations have been confirmed.
+The [GitHub repository](https://github.com/Insubox/ace) is public under the
+[MIT license](../LICENSE). Source clones and GitHub release downloads require no
+repository invitation. Public binary downloads on `ace.org.ai` remain available
+for the offline Linux and Mac Intel clients. Third-party components retain their
+own licenses and native packages include their attribution notices.
 
 Website archives are generated artifacts excluded from Git. Restore them from
 the verified package output before publishing the static site. Deployment must
@@ -126,7 +126,7 @@ never deploy a page pointing to missing or unverified files.
 
 ## Install from the public manifest
 
-The same verified helper is public at [ace.org.ai/downloads/install.py](https://ace.org.ai/downloads/install.py); it does not require access to the private source repository.
+The same verified helper is public at [ace.org.ai/downloads/install.py](https://ace.org.ai/downloads/install.py); it does not require a source checkout or GitHub account.
 
 With Python 3.11 or later and the delivery helper, install without repository or
 provider credentials into a directory that does not exist:

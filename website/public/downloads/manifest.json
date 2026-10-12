@@ -2,7 +2,7 @@
   "schema_version": 1,
   "version": "0.4.0",
   "source_commit": "0b913fbaf8c41c26aa7465bd80525f18b1142528",
-  "source_access": "private_repository",
+  "source_access": "public_repository",
   "scope": "Verified Linux and Mac Intel offline technical previews; native Windows and Apple silicon execution pending",
   "platforms": [
     {
@@ -90,5 +90,7 @@
       "status": "native_execution_pending",
       "release_channel": "beta"
     }
-  ]
+  ],
+  "source_license": "MIT",
+  "source_repository": "https://github.com/Insubox/ace"
 }
