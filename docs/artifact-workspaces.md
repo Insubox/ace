@@ -1,5 +1,38 @@
 # Cloudflare Artifacts agent workspaces
 
+Production activation on 2026-10-12: the owner independently approved and merged
+review `b7ce938e-ec21-4fa2-9b1c-e986539423a3`. Exact merged native source
+`94f1ec47142f99a026846e985f6c64471a64d129c63d755c03f03cc8eb9638f5`
+passed the trusted isolated profile: 128 Rust tests, 154 Worker tests, 46 client
+tests, compilation, TypeScript, native contract and schemas. Report, logs and
+learning are retained in native evidence
+`a21ed3be80761543688d876f8b4ad1791b957fa6aae97811de25e43b07aa1582`.
+Worker `b6bbec7b-a9fb-47a0-b095-fdd5106dc212` serves that approved source, exposes
+the Agents/workspaces interface and returns the real Artifacts binding on the
+authenticated API. Live operations returned no alerts. Source/history/reviews
+remain available; paid starts remain paused until the stale billing snapshot is
+replaced by a genuine current observation.
+
+For this installation's existing Durable Object namespaces, version-only
+activation did not make the new workspace operations available; guarded probes
+reverted each unsuccessful attempt. A supported full Wrangler deployment of the
+same approved frozen source with immediate Durable Object code updates succeeded.
+Readback verified that all three Durable Object namespace IDs were preserved.
+Do not treat a healthy Worker page or version assignment as proof that its
+coordinators support newly added operations. Validate the actual workspace route
+and exact source headers after activation. For this topology use the actual
+private configuration and the supported command:
+
+```sh
+wrangler deploy --config PRIVATE_CONFIG --durable-objects-code-update-mode immediate
+```
+
+Retain independent approval, exact-source evaluation and release-plan checks
+before activation, then verify the deployed version/source, namespace identities,
+operations, spending enforcement and workspace API; preserve rollback evidence.
+The following 2026-10-09 notes describe preparation and hosted acceptance before
+this production activation.
+
 Status as of 2026-10-09: implemented and tested locally. After the owner updated
 the provider token's permissions, listing namespaces and reading `ace-agents`
 returned HTTP 200. The namespace had no repositories at that observation.
